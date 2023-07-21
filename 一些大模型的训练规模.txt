@@ -1,0 +1,23 @@
+[imagen] dataset=(400 + 460)M = 860M
+        batchsize=2048
+        iterations= 2.5m steps
+        gpus=64x64:256 tpu, otherwise: 128 tpu
+        epoch= 2.5 * 10**6 * 2048 / ((400 + 460) * 10 ** 6) = 6
+        model_size= 2B + 600M + 400M
+
+[dalle2] dataset=250M
+        model_seiz: 3.5B + 700M + 300M
+        batch_size: 2048 + 1024 + 512
+        Iterations: 800K + 1M + 1M
+        epoch=6.5 + 4 + 2
+
+[vit] dataset=300M
+[CLIP] dataset=400M
+[tryonDIffusion] dataset=4M
+
+[stable diffusion 1.x]
+        dataset=超2B
+        batch_size=2048=256*8
+        gpus=32 x 8 = 256
+        iteration:
+

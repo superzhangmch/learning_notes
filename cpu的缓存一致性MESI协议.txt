@@ -1,0 +1,35 @@
+多核CPU下的缓存要做到一致性——也就是有cache仿佛没cache，很基本的一个协议是MESI。
+
+它的原理，大体上说是，写前先通知其他核，令相应远端cache line失效——也就是获取独占权（RFO-request for ownership）, 并置其他为不可用。而读的时候，则若本地没失效（invalid）则继续用，否则重新读过来。
+所以关键就在于write前通知，获得全体认可后开始写；而收到写通知的，则置当前值为不可用，直到writer写完才读到新值。
+
+按这种思路，分布式缓存一致性也可以这么搞。但是性能会低得毫无用处；而且因为网络等异常，也很难搞。
+cpu上为啥就可用呢？关键在于cpu、cache、内存间的互联，并不像计算机网络那么不可靠，而且天然地带有某种锁或者互斥在其中。因为它们是连接在同一根系统总线（bus）上的。总线上不可能同时传输两种信号，所以如果有两处同时发信号，只有一个能发成（或者冲突都发不成吧）。信号发出去，其实就是在广播，而接收总线上的信息，大体上靠的是监听，所以信息可以一次发送，马上被监听到——也就是接收到。这就为实现复杂的MESI提供了条件。
+
+======
+【更多关于“缓存一致性”的知识】
+
+缓存一致性，即cache coherence。关于cpu访问内存，还有一个名词是memory consistency——比如 sequential consistency，顺序一致性。按中文都是一致性，但coherence和consistency是不一样的。
+cache coherence只关心单个（实际中选折中粒度，比如64字节的所谓cache line）内存单元的读写一致性；而memory consistency关心的是所有（通过关注读写的顺序）内存单元的读写一致性。
+先有单个存储单元的一致性，才可以谈多个单元的一致性。因此大体上说cache coherence是consistency的基础。
+
+cache 一致性的目的是实现把cache隐藏，仿佛cache不存在。具体上大体是把对该存储单元的读写串行化，所有写必须串行；读可以并行但是不能伴随写（MESI正是如此）。consistency可以有多种级别要求，但是 cache coherence则只有一种——绝不能返回旧值；因此cache coherence在单个单元上，实现了线性一致性的。
+
+======
+【MESI与线性一致性的关系】
+一个bus based 多核系统，假如没有store buffer，invalid queue等；只有mesi，实现了怎样的consistency呢？
+按某些线索，大体上就是顺序一致性。
+或曰未必。待确证后补。
+
+======
+【在 invalid queue 与 store buffer 等加持下，MESI还有啥用】
+
+cache 一致性如mesi，对cpu访问内存提供了很强的单存储单元的一致性。
+按一般的cpu的套路，因为MESI读写时如果是invalid或者非独享，则成本是巨大的，针对读写分别引入了所谓的invalid queue 与 store buffer 优化，以异步化提高性能。在必要时需要重新得到线性一致性时，则需要加入CPU的特殊fence指令，来作强行同步。
+这样看，MESI带来了美好，为了性能，又破坏了美好（只得到了最终一致性；而且多线程程序默认就是这样），为了得到美好还需要额外周折一番。
+何苦呢。这MESI到底有啥用？就是不用MESI，好像也不过如此吧。忙活了半天，仿佛一夜回到解放前。
+
+引入store buffer等后，为了恢复顺序一致性，需要fence指令。那如果就不用MESI，更不需要store buffer与invalid queue；必要时候加fence；这样会怎样呢？
+首先没有MESI，则cache数据修改后，别处并不知情于是一直作cache读并持续读到旧。这显然是不合适的。所以没有严格的MESI，至少需要一个差不多的满足延迟（最终）一致性的cache coherence 算法。
+既然是个延迟一致性的算法，总需要有某个东西作延迟的wrtie广播与read值更新吧；这两个东西和write buffer和 invalid queue，简直一模一样。只是在MESI情况下，不是必须，而现在变成了必须。然后需要顺序一致性的时候，当然还是免不了需要fence。
+于是，你得到的，还是这样一套东西。

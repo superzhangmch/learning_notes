@@ -1,0 +1,8 @@
+《Newton vs the machine: solving the chaotic three-body problem using deep neural networks》
+其思路：
+数据来源：用Brutus软件构造大量3体轨迹数据。
+约束：只考虑三个等质量物体x1, x2, x3，在同一平面内，且0初速。
+初始状态：三者重心为坐标原点，x1坐标为(1,0), 则知道x2坐标，可反解除x3坐标。所以说初始条件依赖于2个变量。
+model：多层FC，其输入为x2坐标与时间t，即<x2_x, x2_y，t>, 预测t时刻的x1，x2坐标。
+
+所以说是给定起始状态，直接一步到位预测任意时间t的三物之坐标（而非分步累加预测什么的），就像LLM作数学计算题

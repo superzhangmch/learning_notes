@@ -3,3 +3,5 @@ LLaMa3：8k的训练窗口，短文本拼成8k。提到训练时用 attn mask �
 《Fewer Truncations Improve Language Modeling》：提到LLaMa2，PaLM也是 concatenate-then-split, 为了充分利用训练context，导致完整的序列被truncation。按作者给的图可以看到，传统方法等价于把原始的训练大语料用 <|endoftext|> 拼接成单个序列，然后按train context length粒度切成片。该文觉得应该尽量少的把完整文本切开（通过某种方式密排而少truncation）。
 
 《IN-CONTEXT PRETRAINING: LANGUAGE MODELING BEYOND DOCUMENT BOUNDARIES》：本文讲，构建pretrain数据序列时，应该把内容上相关的原始sequence聚合起来令挨着。从文中图2可以看到，单个原始序列，是有可能在train context length处被中间切开，导致下一样本序列的start部分是该被切开数据的后半段。
+
+pretrain的时候，确实惯常做法是concatenate-then-split。但是在fine tune的时候，看到一些做法，都不会轻易把数据切开（可以拼，但是不切而是padding）

@@ -1,1 +1,6 @@
+LLaMa3：8k的训练窗口，短文本拼成8k。提到训练时用 attn mask 把他们隔离开。见 https://ai.meta.com/blog/meta-llama-3/。说明之前好多LLM并没attn mask作区隔
+
+《Fewer Truncations Improve Language Modeling》：提到LLaMa2，PaLM也是 concatenate-then-split, 为了充分利用训练context，导致完整的序列被truncation。按作者给的图可以看到，传统方法等价于把原始的训练大语料用 <|endoftext|> 拼接成单个序列，然后按train context length粒度切成片。该文觉得应该尽量少的把完整文本切开。
+
+
 

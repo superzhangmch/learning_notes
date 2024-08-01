@@ -1,0 +1,20 @@
+单机多线程竞争问题，可能有各种炫酷解法，但是加锁的方式绝对是简单有效的。被锁住的地方，可以保证绝对的不被影响。
+多于跨机器的分布式系统，当也面对类似场景的时候，往往也会想到用锁。
+
+不过这时候需要的是全局分布式锁。
+往往会期盼，这分布式锁能像单机锁一样：lock，do anything; unlock；然后一切ok。
+实际上，分布式锁并不是这样的，基本上难以达到想要的那种效果的。这是因为，分布式锁一般都是带超时的，否则某个加锁节点挂掉后再也不恢复，那就彻底锁死了。而一但锁带超时，就会有问题是：先获锁者在锁已经超时时还浑然不觉，而实际上锁已经被重新获取。于是锁的独占性被破坏了。
+一种办法是持锁者在一些关键地方作check，如果超时则break退出。如果check到确实超时了，自然退出没问题。问题是即使check到现在没问题，也有可能在这一瞬间发生了某些事（比如java的垃圾回收，或者进程被调度走等等），然后进程被停掉了若干时间，等进程再次回来的时候，实际已经超时了——这只发生在前后两个语句甚至指令之间。
+
+以上说的是希望无脑用锁然后do anything的事情。没绝对解的。
+
+如果是一些特殊情况，还是有一些特殊解法的。
+比如如果只是对单write的并发加锁。这时候一种方式就是《design data intensive applications》中介绍的fencing token：锁服务能加锁的同时，返回一个递增的fencing token数字；向存储服务write的时候把token带上去，由server端判断：如果token比server端存下的小，则拒绝；否则接收。
+不过，即使上面例子，如果是希望对"read and write"作加锁，仍然有问题。比如：假设是执行先读然后加1的计数器。假设一开始c=5。client1 get token=32, 10s后超时于是client2获得token=33；client1和client2都没法有绝对时间的概念，所以可能client1获得c=5并且没写入新值c=6前，client2也获得了c=5并计划write。最终client1虽有pause但是write还是发生在了client2之前——于是都写入了c=6。
+另外redis的redLock锁的争议中，antirez提到其实不用fencing token都可。其中争议，尚在研究。
+
+参考：
+redis的redLock锁的争议：
+https://martin.kleppmann.com/2016/02/08/how-to-do-distributed-locking.html（How to do distributed locking）
+http://antirez.com/news/101（Is Redlock safe?）
+上面两文的中文加分析：https://www.cnblogs.com/williamjie/p/11151742.html，https://www.cnblogs.com/williamjie/p/11151753.html。

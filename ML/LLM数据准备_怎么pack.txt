@@ -4,4 +4,4 @@ LLaMa3：8k的训练窗口，短文本拼成8k。提到训练时用 attn mask �
 
 《IN-CONTEXT PRETRAINING: LANGUAGE MODELING BEYOND DOCUMENT BOUNDARIES》：本文讲，构建pretrain数据序列时，应该把内容上相关的原始sequence聚合起来令挨着。从文中图2可以看到，单个原始序列，是有可能在train context length处被中间切开，导致下一样本序列的start部分是该被切开数据的后半段。
 
-pretrain的时候，确实惯常做法是concatenate-then-split。但是在fine tune的时候，看到一些做法，都不会轻易把数据切开（可以拼，但是不切而是padding）
+pretrain的时候，确实惯常做法是concatenate-then-split。但是在fine tune的时候，看到的各种做法，都不会把数据切开（可以拼，但是不切而是padding）

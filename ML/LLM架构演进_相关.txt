@@ -3,3 +3,4 @@ LLM基座横向对比： https://zhuanlan.zhihu.com/p/663970656 https://docs.qq.
 bypefallback指的是如果超出了BPE范围: to convert unk character to utf-8 bytes
 
 SwiGLU：所简记的笔记 https://zhuanlan.zhihu.com/p/594210718
+pre-norm: https://zhuanlan.zhihu.com/p/494661681

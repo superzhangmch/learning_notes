@@ -1,0 +1,5 @@
+<<TRAINING DIFFUSION MODELS WITH REINFORCEMENT LEARNING>> （可简称DDPO）https://arxiv.org/pdf/2305.13301，https://rl-diffusion.github.io/，把txt2img的diffusion模型与强化学习结合了起来。
+对一些不太期望prompt能工作的场合（比如生成画质压缩的图），如果能设计出 reward，则可以该文提出的DDPO。
+文章给出了一种让让结果img与prompt更加align的reward设计：用LLava给出“生成的图”的描述text（问LLaVa，what is happening in the picture?），然后让文本相关性模型判定“llava的描述text”与原始prompt的文本相关性，并用该文本相关性作为reward。
+
+《easyphoto》生成人体写真一文，正用到了上面的DDPO一文。它是把生成的人脸与训练集人像的相似度当做了reward。

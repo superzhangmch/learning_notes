@@ -1,0 +1,3 @@
+RLHF中，要用GPT模型作为reward 模型。也就是：文本->float_score. 参https://sudhirpol522.medium.com/reward-model-training-6d1693e41962，做法是用 input 序列的最后一个token的output表示，外接新的层，以便弄出一个float类型的score。然后作整体的微调即可。
+
+另外，在《GPT-1》paper中（https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf， 3.2节），也是上面这样的操作：input灌入GPT，取最后一个token的最后一层transformer的output，经过外接的层，得到需要的标量结果。

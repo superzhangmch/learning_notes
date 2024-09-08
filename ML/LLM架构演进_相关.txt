@@ -3,4 +3,7 @@ LLM基座横向对比： https://zhuanlan.zhihu.com/p/663970656 https://docs.qq.
 bypefallback指的是如果超出了BPE范围: to convert unk character to utf-8 bytes
 
 SwiGLU：所简记的笔记 https://zhuanlan.zhihu.com/p/594210718
-pre-norm: https://zhuanlan.zhihu.com/p/494661681
+pre-norm: https://zhuanlan.zhihu.com/p/494661681, 以及自己简记的笔记 https://zhuanlan.zhihu.com/p/712333430
+
+1. 多头attn
+LLM中有个基础维度d，FFN中一般把它扩为4倍，而 多头attn中，每个 head 的 dim=d/num_of_head

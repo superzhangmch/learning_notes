@@ -1,0 +1,9 @@
+transformer：
+用于 LLM (GPT)时，是以 teaching force 的首尾接龙方式用的。
+用于一般性应用的时候，并不一定要以接龙方式，input seq 和 output seq是同一个sequence。而是可以 input 和 output是不同的东西：也就是作为seq2seq模型用，比如中文文字串=>中文切词，拼音串=>汉字串。BERT后接的任务，都就属于这样的应用。另一个例子是，谷歌的自动计数的 repNet，input序列是按时间维的帧序列，output 序列中元素表示：当前帧所属的循环的周期长度。
+
+diffusion model：
+图扩散模型中，是直接在图片的-1~1归一化后的RGB空间上搞（SD中则是latent上）：x_t.shape = [bs, h, w, 3]。
+而在其他应用中
+（1）、 music2dance 《EDGE: editable dance generation from music》中，x_t.shape = [batch_size, 时间维度(总帧数)， 单帧的pose特征]，而单帧pose：则是把24个关节点，每个关节点共6个特征，以及其他，共151个特征，全部flatten成一维。
+（2）、在tts生成任务中，比如tortoise-tts《better speech synthesis through scaling》,是在mel谱上搞，即努力带条件生成一个好的mel谱，从而让下游的vocoder可以在一个好的mel谱的基础上还原出语音（字节的seed-tts的diffusion，也基本上是这样）。

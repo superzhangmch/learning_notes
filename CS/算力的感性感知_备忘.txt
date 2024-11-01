@@ -1,0 +1,7 @@
+Blue Gene/L在2004年首次推出时，其峰值计算能力约为360 teraflops。同时期曾经入top500榜(z最高拍几十名)的nk*, 算力在4T
+
+现在(2024年)的单卡NVIDIA H100算力大约是 60T，则8卡的单台机器就能有当时的蓝色基因L的算力。
+
+GeForce GTX 1080：fp32算力 8.9T，（FP64）为0.35 TFLOPS
+GeForce RTX 3080 fp32算力 29.8T, GeForce RTX 4090： 82.6 teraflops（FP32）,RTX 4080：49 teraflops（FP32）
+

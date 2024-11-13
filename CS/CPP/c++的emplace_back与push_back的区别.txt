@@ -1,0 +1,16 @@
+#c++:emplace_back与push_back的区别
+
+无脑用emplace_back 替换push_back 无鸟用
+-----------------------------------------------
+std::vecotr 作 push_back(Cls(...)) 这样的操作的时候，会先调用构造函数，然后复制构造函数；若用 emplace_back 据说可以少一次构造，因此我是一直以为emplace_back 真的只需要一次构造函数。
+经试验，emplace_back 也是两次：一次临时对象的构造，第二次是对该临时对象的复制或移动构造（取决于是否有移动构造函数）（而且g++下经试验，和push_back的构造函数的调用情况一样的）
+因此无脑使用emplace_back 并不会有任何奇效。
+
+真正区别在于接收的参数形态不同，因而效果有差异
+-----------------------------------------------------
+上面用emplace_back 无奇效，是因为emplace_back 并不是把push_back替换就行。实际上，emplace_back 的调用参数是逐个罗列构造函数的参数；而push_back的参数则是已构建好的（哪怕临时的）object。
+
+所以:
+如果一个类Cls只有无参构造函数，则用emplace_back 的时候，应该是v.emplace_back(), 括号内写空。如果是push_back 则应该是：v.push_back(Cls());
+如果一个类Cls是有参数a1, a2, aN参数的构造函数，则用emplace_back 的时候，应该是v.emplace_back(a1, a2, ..., aN)。如果是push_back 则应该是：v.push_back(Cls(a1, a2, , aN)), 当然push_back也可以是v.push_back({a1, a2, , aN})， 但是会先构建一个临时对象。
+

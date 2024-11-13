@@ -1,0 +1,8 @@
+c++的库函数is_pod怎么实现的?
+
+c++标准库中有一些特殊的模板类，比如： is_pod/is_standard_layout 等等。这这些要是自己实现一个，实在是没头绪。
+那么标准库怎样实现的呢？
+
+答案是：需要编译器的直接支持。只靠c++自身是没法写出这样的模板类的。
+
+https://stackoverflow.com/questions/20181702/which-type-traits-cannot-be-implemented-without-compiler-hooks

@@ -6,9 +6,9 @@ so的编译一般是通过命令： ```gcc -shared -fPIC -o xxx.so xxx xxx xxx .
 
 ### 1. 静态联编
 
-如果是通过 ```-Lxxx -lXXX``` 方式指定的，那么就按照so的搜索规则来找so，需要的时候设置```LD_LIBRARY_PATH```环境变量就是了。可以用``` readelf ```来查看具体so的路径被指定成了什么。注意so名字需要是 libXXX.so 形式。
+如果是通过 ```-Lxxx -lXXX``` 方式指定的，那么就按照so的搜索规则来找so，需要的时候设置```LD_LIBRARY_PATH```环境变量就是了。可以用``` readelf ```来查看具体so的路径被指定成了什么。注意 so 名字需要是 lib**XXX**.so 形式。
 
-如果没用-L -l方式，而是直接指定路径联编（```gcc a.cpp /aa/bb/cc/libX.so ``` 这样），LD_LIBRARY_PATH经试验对绝对路径和具体相对路径(比如./)的情况没效。实际运行的时候会在相应绝对或相对路径下寻找so文件，找不到则报错。
+如果没用-L -l方式，而是直接指定路径联编（```gcc a.cpp /aa/bb/cc/libX.so ``` 这样），LD_LIBRARY_PATH经试验对绝对路径和具体相对路径(比如./)的情况没效。实际运行的时候会在相应绝对或相对路径下寻找 so 文件，找不到则报错。
 
 联编后的生成文件并没有把so包括进去，运行的时候，是由系统自动加载（mmap方式）。
 
@@ -16,7 +16,7 @@ C++调用C++写的so的时候，不需要 ```extern "C"```.
 
 ### 2. 动态调用：用 dlopen / dlsym等
 
-用dlopen的时候需要联编 dl 库（ldd看到所用机器上是libdl.so.2）。
+用dlopen的时候需要联编 dl 库（ldd 看到所用机器上是 libdl.so.2）。
 
 用dlopen方式加载使用so，本质上仍然是用mmap系统调用，只是只有在使用到这个so的时候，mmap才会调用到。可以通过查看 /proc/PID/maps看到这点。
 

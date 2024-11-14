@@ -1,4 +1,4 @@
-# 链接库 libc.so.6 名字中为什么是 6
+# so 动态链接库 libc.so.6 名字中为什么是 6
 
 据wikipedia：
 > In the early 1990s, the developers of the Linux kernel forked glibc. Their fork, called "Linux libc", was maintained separately for years and released versions 2 through 5.

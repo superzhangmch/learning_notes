@@ -1,4 +1,4 @@
-# so 动态链接库:编译以及使用
+# so 动态链接库：怎么编译出 so 以及怎么使用
 
 so的编译一般是通过命令： ```gcc -shared -fPIC -o xxx.so xxx xxx xxx ... ```，注意用 “-shared -fPIC” 参数选项。
   

@@ -1,0 +1,15 @@
+宇宙微波背景辐射
+==============
+
+对宇宙微波背景辐射很有兴趣。作为非专业人，遍翻资料，似乎明白了。特把自己的很不专业的理解(与描述)记录在此。防忘。
+
+人们无论怎样去除可能的各种干扰，总发现能接收到来自各个方向的均匀的某些波段的电磁波，最后发现它正好和约2.76K的黑体辐射出的电磁波辐射吻合，而且是相当相当的吻合。
+黑体在一个特定的温度下，会辐射出各种波段的电磁波，但是不同波长的辐射强度是不一样的。“波长(X)-辐射强度（Y）”坐标下的图的形状大约是倒V形。宇宙微波背景辐射在各个波段的辐射都和2.76K的黑体的辐射几乎一致。其辐射图的定点对应的波段就是微波，所以才说是"微波"背景辐射。
+
+然后说其乃宇宙大爆炸理论的一个证据。这是因为，如果当初真有大爆炸，那么当初的那些炙热电磁辐射，由于宇宙扩张膨胀，红移(这个红移是“宇宙学红移”，指的是宇宙空间扩展导致的光的波长变长；而不是运动导致的多普勒红移)会当将电磁波的波长拉长，直到目前拉长成了微波：
+Evidence for the Big Bang The: cosmic background radiation (sometimes called the CBR), is the afterglow of the big bang, cooled to a faint whisper in the microwave spectrum by the expansion of the Universe for 15 billion years (which causes the radiation originally produced in the big bang to redshift to longer wavelengths).
+
+【参看】
+http://csep10.phys.utk.edu/astr162/lect/cosmology/cbr.html
+宇宙学红移：http://webbtelescope.org/webb_telescope/science_on_the_edge/cosmological_redshift.php
+http://curious.astro.cornell.edu/physics/104-the-universe/cosmology-and-the-big-bang/expansion-of-the-universe/610-what-is-the-difference-between-the-doppler-redshift-and-the-gravitational-or-cosmological-redshift-advanced

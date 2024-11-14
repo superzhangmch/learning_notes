@@ -41,7 +41,7 @@ C++ 中命名变量的时候，变量名当然肯定不能与关键字冲突。�
 int main()
 <%    // 即 {
        int and1 =1;
-       printf("hello world, %d \n", 12 and 21);
+       printf("hello world, %d \n", 12 and 21); // 注意这里： 12 "and" 21 == 12 & 21
        return 0;
 %>    // 即 }
 ```

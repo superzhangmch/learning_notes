@@ -12,7 +12,7 @@
 
 根据，《Measuring Word Significance using Distributed Representations of Words》，高频低频两个极端的词的向量长度都会小，频度适中的词向量长度会较大。词频与词向量长度呈下图形状。随着词频增大，长度先增后降。
 
-![word_emb_len_distribute](word_emb_len_distribute.png)
+![word_emb_len_distribute](./img/word_emb_len_distribute.png)
 
 按作者解释，词向量长度，取决于训练时参数更新的方向上的累加。
 

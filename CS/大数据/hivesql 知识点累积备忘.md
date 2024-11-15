@@ -56,6 +56,22 @@ select a.* from a left outer join b on a.id = b.id where b.id is null
 ```
 anti join 大体如此，实际和上面略有差别，用的时候对比下。
 
+### 12. 窗口函数
+比如抽取一定天内的数据，每天随机选 N 条
+```
+select * from ( 
+    SELECT day, ... other_fields ..., 
+           ROW_NUMBER() OVER ( PARTITION BY day ORDER BY RAND () ) AS rn  
+    FROM tab_name 
+    WHERE day between (..., ...) and other_condition = 'other_condition' 
+) as t WHERE rn <= 每天多少条
+```
+用法：
+```
+<窗口函数名>(<表达式>) OVER ([PARTITION BY <列名>] [ORDER BY <列名> [ASC|DESC]] [ROWS|RANGE BETWEEN <开始> AND <结束>])
+```
+<窗口函数名>(<表达式>)：这是要执行的窗口函数，如 ROW_NUMBER()、SUM()、AVG()、RANK() 等。<表达式> 通常是列名，但也可以是更复杂的表达式。
+
 参考：
 
 https://www.linkedin.com/pulse/quick-card-apache-hive-joins-kumar-chinnakali： hive各种join

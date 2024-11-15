@@ -1,4 +1,4 @@
-# 编译依赖冲突怎么解决
+# so 动态链接库：依赖冲突怎么解决
 
 如果编译依赖有冲突：
 
@@ -55,16 +55,12 @@ int test2()
 ```
 
 ```
-// d.cpp 
-#include
-#include
-#include
-
+// d.cpp: 调用 libaa.so
 void test_so()
 {
     void *handle;
     int (*callfun)();
-    handle = dlopen("./libaa.so",RTLD_LAZY); 
+    handle = dlopen("./libaa.so",RTLD_LAZY); // b.cpp  c.cpp  => libaa.so
     callfun=(int(*)())dlsym(handle,"test2");
     callfun();
     dlclose(handle);
@@ -72,16 +68,12 @@ void test_so()
 ```
 
 ```
-// dd.cpp 
-#include
-#include
-#include
-
+// dd.cpp：调用 libaaa.so
 void test_so_1()
 {
     void *handle;
     int (*callfun)();
-    handle = dlopen("./libaaa.so",RTLD_LAZY);
+    handle = dlopen("./libaaa.so",RTLD_LAZY); // libaaa.so: bb.cpp  c.cpp
     callfun=(int(*)())dlsym(handle,"test2");
     callfun();
     dlclose(handle);
@@ -92,8 +84,8 @@ void test_so_1()
 // main.cpp
 int test1();
 extern "C" int test2();
-void test_so();
-void test_so_1();
+void test_so();   // from d.cpp
+void test_so_1(); // from dd.cpp
 int main()
 {
        test1();
@@ -108,7 +100,7 @@ int main()
 ```
 bash$ g++ -shared -fPIC -o libaaa.so bb.cpp  c.cpp  # => libaaa.so
 bash$ g++ -shared -fPIC -o libaa.so b.cpp  c.cpp    # => libaa.so
-bash$ g++ main.cpp a.cpp d.cpp dd.cpp -ldl         # => a.out
+bash$ g++ main.cpp a.cpp d.cpp dd.cpp -ldl          # => a.out
 bash$ ./a.out
 ```
 output:

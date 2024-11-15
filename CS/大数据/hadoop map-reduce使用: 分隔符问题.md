@@ -14,7 +14,7 @@
 只由以上 ```-jobconf mapred.text.key.partitioner.options=-k1,2``` 与 ```-jobconf stream.num.map.output.key.fields=3 ```，实测是可以实现按前两列最终文件分桶，且每个桶内按前三列排序的。
 
 ### 题外话：
-1. hadoop map-reduce 的job参数很繁杂。对我等新手，真是搞个半死，因此需要从整体上认识它。从整体上说，map-reduce就是个输入行间无序的管道处理系统，且此管道只能有两节(map, reduce)。除了作为2节管道，能得到的额外好处只有两个：1. 输出到多个文件的时候，可以选择输出到哪个文件； 2. 输出到每个文件的时候，数据可以按哪些字段排序。控制这两点的hadoop client 参数才是实实在在的，能帮助实现业务逻辑。其余参数只是为了高效执行任务。
+1. hadoop map-reduce 的job参数很繁杂。对我等新手，真是搞个半死，因此需要从整体上认识它。从整体上说，map-reduce就是个**输入行间无序**的管道处理系统，且此管道只能有两节(map, reduce)。除了作为2节管道，能得到的额外好处只有两个：1. 输出到多个文件的时候，可以选择输出到哪个文件； 2. 输出到每个文件的时候，数据可以按哪些字段排序。控制这两点的hadoop client 参数才是实实在在的，能帮助实现业务逻辑。其余参数只是为了高效执行任务。
 2. hadoop 就像是一个分布式计算机系统。job运行系统就像是操作系统，hdfs就像是硬盘（Unix只有一个根目录，而hadoop 像windows有c盘d盘一样，允许有多个不同hdfs://hostname:port:/ 或afs://hostname:port/等指定出的跟目录）。
 
 hadoop-site.xml 的 hadoop.job.ugi 指定了 user/password。这个账号是关于 job 执行系统的，但该账号在hdfs文件系统上也需要有相应的读或写权限。否则就像Unix系统中，可以登进系统，但执行不了文件操作。因此，执行 job 的时候，如果执行失败，需要看是否没有文件系统的读、写权限。对于-input，需有读权限，对于-ouput,需要写权限。因为hadoop 支持类似windows C、D盘一样多个“盘”（对应一个独立的hostname:port确定的hdfs文件系统）读写，因此需要保证每个“盘”上有相应的权限。当-input, -output 会跨越多个hdfs文件系统的时候，除了使用默认的那个，其他的都应该写全路径：hdfs://hostname:port/xx/bb/cc 这样。

@@ -1,0 +1,5 @@
+# HDFS：block与part文件的关系
+
+HDFS 中存储的文件是以block的方式组织的。但是和os的文件系统一样，用户是从外部无法感知block存在的。HDFS底层，会对大文件拆分成block，每个block会以OS一个单独文件的方式存放；HDFS会自动维护每个block的多个备份。文件与block的对应关系会存储在nameNode里。
+
+而part-000123这样的part文件呢？其实只是一个单独的HDFS文件而已。并不是说一个part文件就是一个block文件，实际上，一个part文件底层会有一个或多个block组成。一系列的part文件构成了一个对于用户来说的逻辑单文件，但是在HDFS层面，它认为是多个文件。

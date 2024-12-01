@@ -190,6 +190,105 @@ output:
 
 ![image](https://github.com/user-attachments/assets/df4058c9-4520-425d-b45e-1b32cad833a6)
 
+### 解析延拓
+
+$\zeta(s) = \sum_{n=1}^{\infty} \frac 1 {n^s}, s > 1$ 可以解析延拓到除了 s=1 外的整个复空间(其中积分是围着正实轴： $+\infty \stackrel {实轴上方} {\rightarrow } 环绕原点0 \stackrel {实轴下方}{\rightarrow } +\infty$)：
+
+$$zeta(s) = \frac {\Gamma(1-s)} {2 \pi i} \int_C \frac {(-z)^s} {(e^{z}-1) \cdot z} dz,\ \ \ s != 1$$
+
+它在 s=1 之外都有定义。不管怎样推出的，实际计算验证下：
+
+```
+import cmath
+from mpmath import mp
+import numpy as np
+from scipy.special import gamma
+
+def do_path_int(f, arr_path):
+    '''
+    离散化计算下沿路径的复积分
+    '''
+    if type(arr_path) == type([]): arr_path = np.array(arr_path)
+    
+    integral = 0.0
+
+    # Loop over each consecutive pair of points to form line segments
+    for i in range(len(arr_path) - 1):
+        z_start = arr_path[i]
+        z_end = arr_path[i + 1]
+        
+        # Calculate the small change in z for each subdivision
+        if abs(z_end.real-z_start.real) > 10 or  abs(z_end.imag-z_start.imag) > 10:
+            num_subdivisions = 100000
+        else:
+            num_subdivisions = 1000  # number of subdivisions per line segment
+        dz = (z_end - z_start) / num_subdivisions
+        
+        # Sum up contributions from each sub-segment
+        last_v = None
+        for j in range(num_subdivisions):
+            z0 = z_start + j * dz
+            z1 = z_start + (j + 1) * dz
+            
+            # Approximate integral over the small segment by trapezoidal rule
+            v = 0
+            try:
+                f1, f2 = f(z0), f(z1)
+                if f1 is None or f2 is None:
+                    v = last_v
+                    if v is None:
+                        print ('aaaavvvv', i, j, z0, z1, f1, f2)
+                else:
+                    v = 0.5 * (f1 + f2) * dz
+                    last_v = v
+            except:
+                v = last_v
+                print ('bbb', v)
+            integral +=v
+
+    return integral
+
+def get_zeta_val_by_int(s):
+    def f_int(z):
+        try:
+            ret = (-z)**s / (cmath.exp(z)-1) / z
+            return ret
+        except:
+            print ('aaaa', z)
+            return None
+    x = do_path_int(f_int, [500.+1j, -.1 + 1j, -0.1-1j, 500.-1j]) # 用 500 当做 infity
+    # 路径积分。从实轴下方的500+1j到上方500-1j之间不需要路径积分 
+    zeta_s = gamma(1-s) / (2*cmath.pi*1j) * x 
+    return zeta_s
+
+mp.dps = 10
+for s in [0.5 + 14.134725141*1j, 1+1j, -2-2j, 2+2j]:
+    x = get_zeta_val_by_int(s)
+    x1 = mp.zeta(s)
+    print ('should_be', s, x)
+    print ('calc', s, x1)
+    print ('__')
+
+```
+output:
+```
+('should_be', (0.5+14.134725141j), (-1.589580733999144e-06+3.1161849872000368e-06j))
+('calc', (0.5+14.134725141j), mpc(real='9.161612314364e-11', imag='-5.754826484396e-10')) # 都是零
+__
+('should_be', (1+1j), (0.5821575680493829-0.9268478056954552j))
+('calc', (1+1j), mpc(real='0.5821580597549', imag='-0.9268485643333')) 
+__
+('should_be', (-2-2j), (0.08635155276513681-0.020543236862247207j))
+('calc', (-2-2j), mpc(real='0.08638207303284', imag='-0.02053604281696'))
+__
+('should_be', (2+2j), (0.8673519647118549-0.2751268457031929j))
+('calc', (2+2j), mpc(real='0.8673518296346', imag='-0.2751272388086'))
+```
+两者是匹配的。
+
+不过如果 s 模长稍为过大（几十之后），则算出的差别很大，乃数值积分不准的问题。
+
+
 ### 其他
 ---
 

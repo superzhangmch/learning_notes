@@ -10,7 +10,7 @@ $$\frac 1 {n^s} = \frac 1 {n^{a+ib}} = \frac 1 {n^a} \exp^{(\log n) (-ib)} = \fr
 
 #### 2. 在 a <= 1 时
 
-按一般说法，它发散，所以才需要“解析延拓”。单就此级数论，为啥就发散？发散这意味着 $\sum_n \frac 1 {n^a} \cos(b \log n)$, $\sum_n \frac 1 {n^a} \sin(b \log n)$ 发散，而**为啥后者发散**？有一个[解释](https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas), 未察看究竟。
+按一般说法，它发散，所以才需要“解析延拓”(可延拓到只有s=1上没法定义)。单就此级数 $\sum_{n=1}^{\infty} \frac 1 {n^s}$ 而论，为啥就发散？发散则意味着 $\sum_n \frac 1 {n^a} \cos(b \log n)$, $\sum_n \frac 1 {n^a} \sin(b \log n)$ 发散，而**为啥后者发散**？有一个[解释](https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas), 未察看究竟。
 
 不过可以程序验证下，确实不太收敛的:
 
@@ -134,16 +134,17 @@ appr 9.162109038032135e-11      -5.754777319825002e-10
 appr 9.16337586146096e-11       -5.75611212710788e-10
 should_be   9.16161231436e-11  -5.7548264844e-10
 ```
-这是选了 zeta 函数第一个零点位置，确实算得可以（另外，这里没选用 s.real > 1， 但是欧拉麦克劳林公式也 work 得很好。多验证几个，都很好。所以**为啥呢**）。
+这是选了 zeta 函数第一个零点位置，确实算得可以（另外，这里没选用 s.real > 1， 但是欧拉麦克劳林公式也 work 得很好。多验证几个，都很好。所以为啥呢，[here](http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html)提到了成立条件）。
 
-如果算 `calc(-1+0.0000001*1j)`, N=100时得出 `-0.08333333333332066-1.654211440989384e-08*1j`, 很接近 -1/12。
+如果算 `calc(-1+0.0000001*1j)`, N=100时得出 `-0.08333333333332066-1.654211440989384e-08*1j`, 很接近 -1/12。这正是所谓自然数之和为 -1/12 的来源。
 
 如果算 `calc(-1+0*1j)`, mpmath给出-1/12. 欧拉法给出NaN。
 
 ### 零点
 ---
 
-仍然感性感受下 zeta(s) 在 s.real=0.5 时的零点。承上代码，扫描下可能得零点：
+仍然感性感受下 zeta(s) 在 s.real=0.5 时的零点。
+承上代码，扫描下可能的零点（仅仅为感受下，就不考虑高级方法方法比如 Riemann-Siegel 公式了）：
 
 ```
 fp = open("out.txt", "w") # 保存下来，画图看看
@@ -188,4 +189,13 @@ output:
 再把zeta(0.5+x*1j)的模长画出来（横坐标要除10），可清晰看出零点位置：
 
 ![image](https://github.com/user-attachments/assets/df4058c9-4520-425d-b45e-1b32cad833a6)
+
+### 其他
+---
+
+- http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html
+- https://math.stackexchange.com/questions/3963153/why-is-the-riemann-zeta-function-defined-with-limits-when-0-s-1
+- https://www.zhihu.com/question/421044878
+
+- 
 

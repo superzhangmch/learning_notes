@@ -196,6 +196,5 @@ output:
 - http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html
 - https://math.stackexchange.com/questions/3963153/why-is-the-riemann-zeta-function-defined-with-limits-when-0-s-1
 - https://www.zhihu.com/question/421044878
-
-- 
+- https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas
 

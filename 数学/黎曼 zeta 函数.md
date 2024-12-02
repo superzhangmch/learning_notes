@@ -205,7 +205,58 @@ $$\zeta(s) = \frac {1} {1 - 2^{1-s}} \eta(s) = \frac 1 {1 - 2^{1-s}} \sum_{n=1}^
 
 根据[here](https://math.stackexchange.com/questions/2188438/proving-convergence-of-the-dirichlet-eta-function),  $n^s−(n+1)^s=s∫^{n+1}_n x^{−s−1}dx$, 令 s=a+bi， c=|s| 则 $|n^s−(n+1)^s| \le c ∫^{n+1}_n |x^{−s−1}|dx = c ∫^{n+1}_n |x^{−a−1}|dx \le  c n^{−a−1} = c \frac 1 {n^{a+1}}$, 而 $\sum_n frac 1 {n^{a+1}}$ 在 a > 0时是收敛的。
 
+程序验证下：
+```
+import cmath
+from mpmath import mp
 
+def calc_zeta_by_eta(s, N=1000):
+    def eta(s):
+        r = 0
+        for n in range(1, N, 1):
+            r += 1. * (-1)**(n+1) / n **s
+        return r
+    return eta(s) / (1.-2**(1-s))
+
+mp.dps = 10
+for s in [0.5 + 14.134725141*1j, 0.5+1j, 2, 2.00001, 2.000001,  1+1j, 2+2j, 20+20j]:
+    #x = get_zeta_val_by_int(s)
+    x = calc_zeta_by_eta(s, 1000000)
+    print ('calc', s, x)
+
+    x1 = mp.zeta(s)
+    print ('should_be', s, x1)
+    print ('__')
+
+```
+output:
+```
+('calc', (0.5+14.134725141j), (0.000202381631061822-5.8421068595907595e-05j))
+('should_be', (0.5+14.134725141j), mpc(real='9.161612314364e-11', imag='-5.754826484396e-10')) # match
+__
+('calc', (0.5+1j), (0.14339954678105482-0.7222224653614551j))
+('should_be', (0.5+1j), mpc(real='0.1439364270773', imag='-0.7220997435288')) # match
+__
+('calc', 2, 1.6449340668491672)
+('should_be', 2, mpf('1.644934066848')) # match
+__
+('calc', 2.00001, 1.6449246914661195)
+('should_be', 2.00001, mpf('1.644924691471')) # match
+__
+('calc', 2.000001, 1.6449331293019531)
+('should_be', 2.000001, mpf('1.644933129297')) # match
+__
+('calc', (1+1j), (0.5821574820565929-0.9268490203508495j))
+('should_be', (1+1j), mpc(real='0.5821580597549', imag='-0.9268485643333')) # match
+__
+('calc', (2+2j), (0.867351829635518-0.275127238807934j))
+('should_be', (2+2j), mpc(real='0.8673518296346', imag='-0.2751272388086')) # match
+__
+('calc', (20+20j), (1.000000257966888-9.180469499612744e-07j))
+('should_be', (20+20j), mpc(real='1.000000257962', imag='-9.180469499534e-7')) # match
+_
+```
+在 real(s) > 0 上，都匹配。看来确实是其延拓。
 
 #### 2. 全空间延拓
 

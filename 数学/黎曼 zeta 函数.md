@@ -1,5 +1,9 @@
 # 黎曼 zeta 函数
 
+下面为感性认识下黎曼 zeta 函数，以及黎曼猜想。
+
+----
+
 黎曼 zeta (或 ζ) 函数，即 $\zeta(s) = \sum_{n=1}^{\infty} \frac 1 {n^s}$。
 
 #### 1. 在 s=a+ib, a > 1, $b \in \mathbb{R}$ 时
@@ -10,7 +14,14 @@ $$\frac 1 {n^s} = \frac 1 {n^{a+ib}} = \frac 1 {n^a} \exp^{(\log n) (-ib)} = \fr
 
 #### 2. 在 a <= 1 时
 
-按一般说法，它发散，所以才需要“解析延拓”(可延拓到只有s=1上没法定义)。单就此级数 $\sum_{n=1}^{\infty} \frac 1 {n^s}$ 而论，为啥就发散？发散则意味着 $\sum_n \frac 1 {n^a} \cos(b \log n)$, $\sum_n \frac 1 {n^a} \sin(b \log n)$ 发散，而**为啥后者发散**？有一个[解释](https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas), 未察看究竟。
+按一般说法，它发散，所以才需要“解析延拓”(可延拓到只有s=1上没法定义)。单就此级数 $\sum_{n=1}^{\infty} \frac 1 {n^s}$ 而论，为啥就发散？发散则意味着 $\sum_n \frac 1 {n^a} \cos(b \log n)$, $\sum_n \frac 1 {n^a} \sin(b \log n)$ 发散，而为啥后者发散？
+
+关于 zeta(s) 在 0 < real(s) < 1 的发散：
+- 有一个[解释](https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas), 未察看究竟。
+- 另据[here](https://math.stackexchange.com/questions/4144986/how-to-show-sum-1-ns-doesnt-converge-for-0-leq-res-leq-1?noredirect=1&lq=1), 由[Apostol的书11.6节](https://dl.icdst.org/pdfs/files1/ebc2974176a03ab93756026a97b6d370.pdf)，
+> **Theorem 11.8** if the series $\sum \frac {f(n)}{n^s}$ converges for $s = \sigma_0 + i t_0$, then it also
+> converges for all s with $\sigma > \sigma_0$. If it diverges for $s = \sigma_0 + i t_0$, then it
+> diverges for all s with $\sigma < \sigma_0$. 【zeta(1)不收敛，从而不可能有 real(s) < 1 使得 zeta(s) 收敛】
 
 不过可以程序验证下，确实不太收敛的:
 
@@ -378,6 +389,7 @@ __
 
 - http://numbers.computation.free.fr/Constants/Miscellaneous/zetaevaluations.html
 - https://math.stackexchange.com/questions/3963153/why-is-the-riemann-zeta-function-defined-with-limits-when-0-s-1
+- https://math.stackexchange.com/questions/4144986/how-to-show-sum-1-ns-doesnt-converge-for-0-leq-res-leq-1?noredirect=1&lq=1
 - https://www.zhihu.com/question/421044878
 - https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas
 - https://www.asmeurer.com/blog/posts/verifying-the-riemann-hypothesis-with-sympy-and-mpmath/

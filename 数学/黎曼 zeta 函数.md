@@ -1,6 +1,6 @@
 # 黎曼 zeta 函数
 
-下面为感性认识下黎曼 zeta 函数，以及黎曼猜想。
+下面为感性认识下黎曼 zeta 函数，感受下黎曼零点问题说了个啥。
 
 ----
 
@@ -23,7 +23,11 @@ $$\frac 1 {n^s} = \frac 1 {n^{a+ib}} = \frac 1 {n^a} \exp^{(\log n) (-ib)} = \fr
 > converges for all s with $\sigma > \sigma_0$. If it diverges for $s = \sigma_0 + i t_0$, then it
 > diverges for all s with $\sigma < \sigma_0$. 【zeta(1)不收敛，从而不可能有 real(s) < 1 使得 zeta(s) 收敛】
 
-不过可以程序验证下，确实不太收敛的:
+其证明截图如下：
+
+![image](https://github.com/user-attachments/assets/7eb7be5d-bbfc-4ad7-bf19-647a81ed12ed)
+
+可以程序验证下，确实不太收敛的:
 
 ```
 from mpmath import mp # 他可以高精度计算 zeta(s) 的值

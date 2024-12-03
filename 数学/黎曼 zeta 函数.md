@@ -175,7 +175,7 @@ $$\zeta(s) = \frac {1} {1 - 2^{1-s}} \eta(s) = \frac 1 {1 - 2^{1-s}} \sum_{n=1}^
 
 在 0 < real(s) <= 1 区间，ζ(s) 也差不多是交错的，为啥 η(s) 收敛，而 ζ(s) 发散？
 
-根据[here](https://math.stackexchange.com/questions/2188438/proving-convergence-of-the-dirichlet-eta-function),  $n^s−(n+1)^s=s∫^{n+1}_n x^{−s−1}dx$, 令 s=a+bi， c=|s| 则 $|n^s−(n+1)^s| \le c ∫^{n+1}_n |x^{−s−1}|dx = c ∫^{n+1}_n |x^{−a−1}|dx \le  c n^{−a−1} = c \frac 1 {n^{a+1}}$, 而 $\sum_n frac 1 {n^{a+1}}$ 在 a > 0时是收敛的。
+根据[here](https://math.stackexchange.com/questions/2188438/proving-convergence-of-the-dirichlet-eta-function),  $n^s−(n+1)^s=s∫^{n+1}_n x^{−s−1}dx$, 令 s=a+bi， c=|s| 则 $|n^s−(n+1)^s| ≤ c ∫^{n+1}_n |x^{−s−1}|dx = c ∫^{n+1}_n |x^{−a−1}|dx ≤ c n^{−a−1} = c \frac 1 {n^{a+1}}$, 而 $\sum_n \frac 1 {n^{a+1}}$ 在 a > 0时是收敛的。
 
 程序验证下：
 ```
@@ -349,6 +349,13 @@ __
 对于延拓后能覆盖 real(s) > 0 的延拓，可以推得 $$\zeta(s) = 2^s \pi^{s-1}\sin\left(\pi s\over 2 \right) \Gamma(1-s) \zeta(1-s)$$，从而再次延拓到全空间。
 
 如果定义 $ξ(s)=\frac {s(s-1)} 2 \pi^{−\frac s 2}\Gamma (\frac s 2)ζ(s)$，则上式可以简化成 $ξ(s)=ξ(1−s)$。可证 ξ(s) 的零点和 zeta(s) 的非平凡零点重合，且 ξ(s) 在 s.real=1/2 时是实函数，从而研究 ξ(s) 更方便。
+
+为啥 ξ(1/2+it) $\in \mathbb{R}$：
+- 由 ξ(s) 的定义有 $\overline {ξ(s)}=ξ(\overline s)$。需对 s(s-1)、 $\pi^{−\frac s 2}$、 $\Gamma (\frac s 2)$、 ζ(s) 逐项考察，他们都满足 $\overline {f(s)}=f(\overline s)$，再注意 $\overline {ab} = \overline a \overline b$。
+- $s=1-s=\overline s$ 而 $ξ(s)=ξ(1−s)$, 故 $ξ(\overline s) =ξ(s)$
+- 从而 $\overline {ξ(s)} = ξ(s)$，故 ξ(1/2+it) 为实的。
+
+
 
 ### 零点
 ---

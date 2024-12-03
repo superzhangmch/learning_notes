@@ -18,6 +18,7 @@ $$\frac 1 {n^s} = \frac 1 {n^{a+ib}} = \frac 1 {n^a} \exp^{(\log n) (-ib)} = \fr
 
 关于 zeta(s) 在 0 < real(s) < 1 的发散：
 - 有一个[解释](https://math.stackexchange.com/questions/2700579/how-to-prove-the-divergence-of-zetas), 未察看究竟。
+- 看这里：https://www.zhihu.com/question/5653967704
 - 另据[here](https://math.stackexchange.com/questions/4144986/how-to-show-sum-1-ns-doesnt-converge-for-0-leq-res-leq-1?noredirect=1&lq=1), 由[Apostol的书11.6节](https://dl.icdst.org/pdfs/files1/ebc2974176a03ab93756026a97b6d370.pdf)，
 > **Theorem 11.8** if the series $\sum \frac {f(n)}{n^s}$ converges for $s = \sigma_0 + i t_0$, then it also
 > converges for all s with $\sigma > \sigma_0$. If it diverges for $s = \sigma_0 + i t_0$, then it
@@ -26,6 +27,7 @@ $$\frac 1 {n^s} = \frac 1 {n^{a+ib}} = \frac 1 {n^a} \exp^{(\log n) (-ib)} = \fr
 其证明截图如下：
 
 ![image](https://github.com/user-attachments/assets/7eb7be5d-bbfc-4ad7-bf19-647a81ed12ed)
+
 
 可以程序验证下，确实不太收敛的:
 
@@ -207,6 +209,8 @@ output:
 
 ### 解析延拓
 ---
+
+所谓解析延拓指的是，用 A 式子定义的函数，能解析的定义域区域是 D，用 B 式子定义的函数，解析的定义域是 D1，而 D 与 D1 的交集含有开集，则非交集部分即为对方的延拓。比如: $A=\sum x^n$, $B=1/(1-x)$, 它们定义域不同，但是有交集，后者为前者延拓。
 
 #### 1. 0 < real(s) <= 1 空间的延拓
 
@@ -399,4 +403,5 @@ __
 - https://www.asmeurer.com/blog/posts/verifying-the-riemann-hypothesis-with-sympy-and-mpmath/
 - https://math.stackexchange.com/questions/4144986/how-to-show-sum-1-ns-doesnt-converge-for-0-leq-res-leq-1?noredirect=1&lq=1
 - Dirichlet Eta 收敛：https://math.stackexchange.com/questions/2188438/proving-convergence-of-the-dirichlet-eta-function
+- 为啥原始 zeta 函数不延拓则不收敛：https://www.zhihu.com/question/5653967704
 - https://dl.icdst.org/pdfs/files1/ebc2974176a03ab93756026a97b6d370.pdf

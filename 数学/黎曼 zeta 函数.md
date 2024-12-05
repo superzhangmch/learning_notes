@@ -476,6 +476,7 @@ def pi_x_by_riemann_full(x, N=20, K=500, form=0):
             rho1 = 0.5 - 1j * zt(k)
             zero_li += ei(math.log(x) * rho0 / n)  # Ei(log(x) * (rho/n)) == Ei(log(x**(rho/n))), 而 Ei(log(x)) == Li(x), 所以按说用 Li(x ** (rho0 / n)) 也行。
             zero_li += ei(math.log(x) * rho1 / n)  # 但是 Li(x) := int 1/ln(t) dt, ln(t) 在 t 是复数时， ln(x) 是复值函数，所以这里不能简单用 Li(x ** (rho0 / n))而要选对取值分支
+                                                   # https://math.stackexchange.com/questions/1144932/curve-profile-for-the-logarithm-integral-sum-term-of-riemann-explicit-formula
         int_log2 = f_int_log2(x) if (form == 0) else 0
         result += 1. * mobius(n) / n * (main_li - zero_li + int_log2)
     if form == 1:

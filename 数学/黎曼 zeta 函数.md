@@ -547,6 +547,7 @@ for dd in range(1, 20, 1):
 
 可见 Riemann 的精确公式确实很准（如果用更多零点参与计算，可以更准）。
 
+但是，对于不是特别巨大的数(10e17, 也不过1.34s)，竟然有算法（比如[github:primecount](https://github.com/kimwalisch/primecount)）直接快速求出 $\pi(x)$ 的精确值，可比上面 Riemann 精确公式要快多了。
 ### 其他
 ---
 

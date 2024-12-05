@@ -361,7 +361,7 @@ __
 ---
 
 仍然感性感受下 zeta(s) 在 s.real=0.5 时的零点（而由 $\zeta(s) = 2^s \pi^{s-1}\sin\left(\pi s\over 2 \right) \Gamma(1-s) \zeta(1-s)$ 可以得到平凡零点：s=2n, 即能满足 sin(.)=0的）。
-承上代码，扫描下可能的零点（仅仅为感受下，就不考虑高级方法方法比如 Riemann-Siegel 公式了）：
+承上代码，扫描下可能的零点（仅仅为感受下。趋近0不代表就是0。得靠 ξ(1/2+it) $\in \mathbb{R}$ 在疑似点前后的正负号的变化说明存在零点）：
 
 ```
 fp = open("out.txt", "w") # 保存下来，画图看看
@@ -406,6 +406,145 @@ output:
 再把zeta(0.5+x*1j)的模长画出来（横坐标要除10），可清晰看出零点位置：
 
 ![image](https://github.com/user-attachments/assets/df4058c9-4520-425d-b45e-1b32cad833a6)
+
+### 零点与素数公式关系
+----
+
+黎曼研究 zeta(s), 目的是给出小于 x 的素数个数公式 $\pi(x)$。不同于别人的近似公式，他的公式是精确的：
+
+$$\begin{align}
+J(x) &= \text{Li}(x) - \sum_{Im(\rho)>0} [\text{Li}(x^{\rho}+\text{Li}(x^{1-\rho})] + \int_x^\infty \frac {dt} {t(t^2-1) \ln t} - \ln 2 \\
+\pi(x) &= \sum_n \frac {\mu(n)} n J(x^{1/n}) \\
+\end{align}$$
+
+$\mu(n)$ 是莫比乌斯函数， { $\rho$ } 是按虚部大于 0 且升序的 zeta(s) 零点集合。
+
+上式有一个近似形式， $\pi(x) ≈ \sum_{n=1}^\infty \frac {\mu(n)} n \cdot (Li(x^{1/n})-\sum_\rho [Li(x^{\frac {\rho} n})+]Li(x^{\frac {1-\rho} n})) - \frac 1 {\log(x)} + \frac 1 {\pi} \arctan(\frac {\pi} {\log(x)})$ 。
+
+把求和项中只剩下 Li(.), 则： $\pi(x) ≈ \sum_{n=1}^\infty \frac {\mu(n)} n Li(x^{\frac 1 n}) = 1+\sum_{n=1} \frac {\log^n(x)} {n \cdot n! \cdot \zeta(n+1)}$.
+
+而还有近似式： $\pi(x) ≈ Li(x) = \int _x^\infty \frac {dt} {\ln(t)}$, 以及 $\pi(x) ≈ \frac x {\ln(x)}$. 
+
+把它们代码验证，比较下：
+```
+import mpmath
+import numpy as np
+from sympy import mobius
+import scipy.special as sp
+from scipy.special import zeta
+import math
+import cmath
+
+from scipy.integrate import quad
+
+# https://en.wikipedia.org/wiki/Prime-counting_function
+
+zeta0 = [float(L) for L in open("zeros_100k.txt") if L] # 提前准备的每行一个 zeta 零点
+def zt(i):
+    return zeta0[i-1]
+
+def f_int_log2(x):
+    '''
+    int_x^infty (1/[t(t^2-1)ln t]) dt - ln 2
+    '''
+    def integrand(t): return 1 / (t * (t**2 - 1) * np.log(t))
+    end = 100000
+    if end < x: end = x * 10
+    result, error = quad(integrand, x, end)
+    result = -math.log(2.)+result
+    return result
+
+#mpmath.mp.dps = 50
+#li = mpmath.li
+#ei = mpmath.ei
+ei = sp.expi
+def li(x): return ei(cmath.log(x))
+factorial = sp.factorial
+#zeta = mpmath.zeta
+
+def pi_x_by_riemann_full(x, N=20, K=500, form=0):
+    '''
+    N: 莫比乌斯展开项数
+    K: 使用的 zeta 零点数
+    '''
+    result = 0
+    for n in range(1, N, 1):
+        main_li = li(x**(1./n))
+        zero_li = 0
+        for k in range(1, K, 1):
+            rho0 = 0.5 + 1j * zt(k)
+            rho1 = 0.5 - 1j * zt(k)
+            zero_li += ei(math.log(x) * rho0 / n)  # Ei(log(x) * (rho/n)) == Ei(log(x**(rho/n))), 而 Ei(log(x)) == Li(x), 所以按说用 Li(x ** (rho0 / n)) 也行。
+            zero_li += ei(math.log(x) * rho1 / n)  # 但是 Li(x) := int 1/ln(t) dt, ln(t) 在 t 是复数时， ln(x) 是复值函数，所以这里不能简单用 Li(x ** (rho0 / n))而要选对取值分支
+        int_log2 = f_int_log2(x) if (form == 0) else 0
+        result += 1. * mobius(n) / n * (main_li - zero_li + int_log2)
+    if form == 1:
+        v = -1 / math.log(x) + 1/math.pi * math.atan(math.pi/math.log(x)) #-1/log(x) + 1/pi * arctan(pi/log(x))
+        result += v
+    return result
+
+def pi_x_by_mobius_li(x, N=20, form=0):
+    # N: 莫比乌斯展开项数
+    if form == 0:
+        result = 0
+        for n in range(1, N, 1):
+            result +=  1. * mobius(n) / n * li(x**(1./n))
+        return result
+    else:
+        result = 1
+        for n in range(1, N, 1):
+            try:
+                result += (log(x)**n)/(n*factorial(n)*zeta(n+1))
+            except:
+                break
+        return result
+
+def pi_x_by_li(x):
+    # li(x) = int(dt/ln(t)), t=0..x
+    return li(x)
+
+def pi_x_by_x_log_x(x):
+    # x / log(x)
+    return x / math.log(x)
+
+# ============
+arr = []
+for dd in range(1, 20, 1):
+    x = 10**dd
+    arr1 = ["10e%d" % dd]
+    s = pi_x_by_riemann_full(x, N=10, K=500, form=0); arr1.append(s)
+    s = pi_x_by_riemann_full(x, N=10, K=500, form=1); arr1.append(s)
+    s = pi_x_by_mobius_li(x, N=20, form=0); arr1.append(s)
+    s = pi_x_by_mobius_li(x, N=1000, form=1); arr1.append(s)
+    s = pi_x_by_li(x);  arr1.append(s)
+    s = pi_x_by_x_log_x(x); arr1.append(s)
+    arr.append(arr1)
+```
+可以得到:
+
+| 截止 | $\pi(x)$ | 精确公式 | 精确公式之近似 | $\sum_n \frac {\mu(n)} n Li(x^{\frac 1 n})$ | $1+\sum_n \frac {\log^n(x)} {n \cdot n! \cdot \zeta(n+1)}$ | Li(x)| $\frac x {\log(x)}$ |
+|----|----|----|----|----|----|----|----|
+|10e1|4|0|1|0|0|2|0|
+|10e2|25|0|1|0|0|5|4|
+|10e3|168|0|1|0|0|9|24|
+|10e4|1229|0|0|3|3|17|144|
+|10e5|9592|1|1|5|5|37|907|
+|10e6|78498|4|4|29|29|129|6116|
+|10e7|664579|7|7|88|88|339|44159|
+|10e8|5761455|7|7|96|96|754|332774|
+|10e9|50847534|16|16|79|79|1700|2592592|
+|10e10|455052511|188|188|1828|1828|3103|20758030|
+|10e11|4118054813|587|587|2319|2319|11587|169923160|
+|10e12|37607912018|926|926|1476|1476|38262|1416705193|
+|10e13|346065536839|1357|1357|5774|5774|108971|11992858452|
+|10e14|3204941750802|26170|26170|19201|19201|314889|102838308636|
+|10e15|29844570422669|30945|30945|73217|73217|1052618|891604962453|
+|10e16|279238341033925|45410|45410|327052|327053|3214632|7804289844393|
+|10e17|2623557157654233|323360|323360|598255|598253|7956590|68883734693928|
+|10e18|24739954287740860|773152|773152|3501392|3501408|21949524|612483070893536|
+|10e19|234057667276344607|3175041|3175041|23885089|23884993|99878497|5481624169369983|
+
+可见 Riemann 的精确公式确实很准（如果用更多零点参与计算，可以更准）。
 
 ### 其他
 ---

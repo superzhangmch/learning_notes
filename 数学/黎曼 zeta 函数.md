@@ -423,7 +423,7 @@ $\mu(n)$ 是莫比乌斯函数， { $\rho$ } 是按虚部大于 0 且升序的 z
 
 把求和项中只剩下 Li(.), 则： $\pi(x) ≈ \sum_{n=1}^\infty \frac {\mu(n)} n Li(x^{\frac 1 n}) = 1+\sum_{n=1} \frac {\log^n(x)} {n \cdot n! \cdot \zeta(n+1)}$.
 
-而还有近似式： $\pi(x) ≈ Li(x) = \int _x^\infty \frac {dt} {\ln(t)}$, 以及 $\pi(x) ≈ \frac x {\ln(x)}$. 
+而还有近似式： $\pi(x) ≈ Li(x)$, 以及 $\pi(x) ≈ \frac x {\ln(x)}$. 
 
 把它们代码验证，比较下：
 ```

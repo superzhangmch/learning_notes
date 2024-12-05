@@ -601,7 +601,7 @@ $$\begin{cases}
 J(x) &= Σ_{n=1}^\infty \frac {π(x^{1/n})} n = \text{Li}(x) - \sum_{Im(\rho)>0} [\text{Li}(x^{\rho}+\text{Li}(x^{1-\rho})] + \int_x^\infty \frac {dt} {t(t^2-1) \ln t} - \ln 2
 \end{cases}$$
 
-于是为了用基于 zeta(s) 零点的 Riemann 公式算 π(x), 其实也只需作有限项，且这有限项里，除了开头几项，后面的可以直接拿 $J(x) = Σ_{n=1}^\infty \frac {π(x^{1/n})} n$ 精准算出（因为展开后涉及到的 π(x^..) 值都很小。且后面的项值急速变小）。
+于是为了用基于 zeta(s) 零点的 Riemann 公式算 π(x), 其实也只需作有限项，且这有限项里，除了开头几项，后面的可以直接拿 $J(x) = Σ_{n=1}^\infty \frac {π(x^{1/n})} n$ 精准算出（这些项急速衰减，展开后涉及到的 π(x^..) 值都很小）。
 
 对应程序：
 ```

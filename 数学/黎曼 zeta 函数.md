@@ -549,6 +549,110 @@ for dd in range(1, 20, 1):
 可见 Riemann 的精确公式确实很准（如果用更多零点参与计算，可以更准）。
 
 但是，对于不是特别巨大的数(10e17, 也不过1.34s)，竟然有算法（比如[github:primecount](https://github.com/kimwalisch/primecount)）直接快速求出 $\pi(x)$ 的精确值，可比上面 Riemann 精确公式要快多了。
+
+### 再看基于 zeta(s) 零点的 Riemann 素数公式
+----
+
+对 π(x), 本来就有下面的莫比乌斯展开成立：
+
+$$\begin{cases}
+\pi(x) &= Σ_{n=1}^\infty \frac {\mu(n)} n J(x^{1/n})\\
+J(x) &= Σ_{n=1}^\infty \frac {π(x^{1/n})} n
+\end{cases}$$
+
+因为 $\pi(x^{\frac 1 n})$ 是小于 $x^{\frac 1 n}$ 的素数，所以 $x^{\frac 1 n} < 2$ 后, $\pi(x^{\frac 1 n}) = 0$，从而上面求和其实只有有限项。且 $\frac {\mu(n)} n J(x^{\frac 1 n})$ 逐项很快衰减, 比如 $\pi(10e8)$
+
+|n| $\frac {\mu(n)} n J(x^{\frac 1 n})$ | 截止n: $\sum_{i=1}^n \frac {\mu(i)} i J(x^{\frac 1 i})$ |
+|---|---|---|
+| 1 | 5762113.053 | 5762113.053 |
+| 2 | -623.549 | 5761489.504 |
+| 3 | -32.223 | 5761457.281 |
+| 4 | 0 | 5761457.281 |
+| 5 | -2.923 | 5761454.358 |
+| 6 | 1.597 | 5761455.955 |
+| 7 | -1.048 | 5761454.908 |
+| 8 | 0 | 5761454.908 |
+| 9 | 0 | 5761454.908 |
+| 10 | 0.350 | 5761455.258 |
+| 11 | -0.318 | 5761454.940 |
+| 12 | 0 | 5761454.940 |
+| 13 | -0.192 | 5761454.747 |
+| 14 | 0.143 | 5761454.890 |
+| 15 | 0.133 | 5761455.023 |
+| 16 | 0 | 5761455.023 |
+| 17 | -0.059 | 5761454.965 |
+| 18 | 0 | 5761454.965 |
+| 19 | -0.053 | 5761454.912 |
+| 20 | 0 | 5761454.912 |
+| 21 | 0.048 | 5761454.960 |
+| 22 | 0.045 | 5761455.005 |
+| 23 | -0.043 | 5761454.962 |
+| 24 | 0 | 5761454.962 |
+| 25 | 0 | 5761454.962 |
+| 26 | 0.038 | 5761455.000 (得到了最终值 $\pi(10e8)$ |
+| 27 | 0 | 5761455.000|
+
+$\pi(x) = \sum_{n=1}^\infty \frac {\mu(n)} n J(x^{\frac 1 n})$ 只有有限项，且有内外两重循环，把它展开一个个看，会发现第一项可不就是 π(x) 呗，也就是说该公式全展开后，第一项之外所有项的和是 0。所以用该公式算完后确实得到了 π(x) 的正确值，但其实第一项就偷偷算出它来了。后面的都是无用功装模作样而已。
+
+对比 $\pi(x) = \sum_n \frac {\mu(n)} n J(x^{1/n})$, 其实可以证明，正有这里的 J(..) = 上面的 J(..)，或者说把它们放一起：
+
+$$\begin{cases}
+\pi(x) &= Σ_{n=1}^\infty \frac {\mu(n)} n J(x^{1/n})\\
+J(x) &= Σ_{n=1}^\infty \frac {π(x^{1/n})} n = \text{Li}(x) - \sum_{Im(\rho)>0} [\text{Li}(x^{\rho}+\text{Li}(x^{1-\rho})] + \int_x^\infty \frac {dt} {t(t^2-1) \ln t} - \ln 2
+\end{cases}$$
+
+于是为了用基于 zeta(s) 零点的 Riemann 公式算 π(x), 其实也只需作有限项，且这有限项里，除了开头几项，后面的可以直接拿 $J(x) = Σ_{n=1}^\infty \frac {π(x^{1/n})} n$ 精准算出（因为展开后涉及到的 π(x^..) 值都很小。且后面的项值急速变小）。
+
+对应程序：
+```
+def J(x): 
+    def Pi(x):
+        return int(count_primes(int(x))) # 截止x的质数数量
+    s = 0 
+    for n in range(1, 1000000000, 1): 
+        c = Pi(x**(1/n))
+        if c <= 0: break
+        s += 1. / n * c 
+    return s 
+
+def pi_x_by_riemann_full(x, N=2000, K=500):
+    ''' 
+    N: 莫比乌斯展开项数. 这里动态阶段，所以 N 可以写很大
+    K: 使用的 zeta 零点数
+    '''
+    result = 0 
+    for n in range(1, N, 1): 
+        cur_x_n = x**(1./n)
+        if cur_x_n <= 1.99: break
+ 
+        if cur_x_n <= 100000000: # 小于多少时，不走零点直接算
+            Jx = 1. * mobius(n) / n * J(x**(1/n)) 
+        else:
+            main_li = li(x**(1./n))
+            zero_li = 0 
+            for k in range(1, K, 1): 
+                rho0 = 0.5 + 1j * zt(k)
+                rho1 = 0.5 - 1j * zt(k)
+                zero_li += ei(math.log(x) * rho0 / n)
+                zero_li += ei(math.log(x) * rho1 / n)
+            int_log2 = f_int_log2(x)
+            Jx = 1. * mobius(n) / n * (main_li - zero_li + int_log2)
+        result += Jx
+    return result
+
+def validate_pi_x_mobius(x):
+    # 验证 π(x) = Σ_n μ(n)}/n * J(x^{1/n}); J(x) = Σ_n π(x^{1/n})/n 
+    real = count_primes(x)
+    s = 0 
+    for i in range(1, 1000):
+        cur_x_n = x**(1./i) 
+        if cur_x_n <= 1.99: break
+        s1 = 1. * mobius(i) / i * J(cur_x_n)
+        s += s1
+        print (i, round(s1, 3), round(s, 3)) 
+    print (s, int(s - real))
+```
+
 ### 其他
 ---
 

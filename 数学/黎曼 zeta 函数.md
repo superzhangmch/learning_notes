@@ -439,7 +439,7 @@ from scipy.integrate import quad
 
 # https://en.wikipedia.org/wiki/Prime-counting_function
 
-zeta0 = [float(L) for L in open("zeros_100k.txt") if L] # 提前准备的每行一个 zeta 零点
+zeta0 = [float(L) for L in open("zeros_100k.txt") if L] # 提前准备的每行一个 zeta 零点。 https://github.com/Sielinski/Riemann-hypothesis/blob/master/zeros_100k
 def zt(i):
     return zeta0[i-1]
 

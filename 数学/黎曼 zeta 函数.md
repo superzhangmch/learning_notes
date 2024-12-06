@@ -80,10 +80,8 @@ $$\sum_{k=1}^{n} \frac{1}{k^s} \sim \zeta(s) - \frac{1}{(s-1)n^{s-1}} + \frac{1}
 
 $$\zeta(s) \sim \sum_{k=1}^{n} \frac{1}{k^s} + \frac{1}{(s-1)n^{s-1}} - \frac{1}{2n^s} + \sum_{i=1}^{\infty} \frac{B_{2i}}{(2i)!} \frac{(s+2i-2)!}{(s-1)!n^{s+2i-1}}$$
 
-python2 代码验证之：
+python 代码验证之：
 ```
-#encoding: gbk
-
 from mpmath import mp
 import numpy as np
 from scipy.special import bernoulli
@@ -132,8 +130,8 @@ def calc(s):
     x = mp.zeta(s)
     for N in [100, 1000]:
         approx_zeta = zeta_approximation(s, N=N)
-        print 'appr', approx_zeta.real, "\t", approx_zeta.imag
-    print 'should_be', float(x.real), "\t", float(x.imag)
+        print ('appr', approx_zeta.real, "\t", approx_zeta.imag)
+    print ('should_be', float(x.real), "\t", float(x.imag))
 
 calc(0.5 + 14.134725141*1j)
 ```

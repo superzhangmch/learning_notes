@@ -405,7 +405,8 @@ output:
 
 ![image](https://github.com/user-attachments/assets/df4058c9-4520-425d-b45e-1b32cad833a6)
 
-### 零点计数
+
+### 零点计数（虚部大于0的）
 ----
 
 截止 T 的零点数量大约是 $\frac T {2\pi} \log \frac T {2\pi} - \frac T {2\pi}$。根据复分析理论，零点数量可以通过 $N(s) = \int_C \frac {\zeta'(s)} {\zeta(s)} ds$ 算出，其中 C 是围绕被统计区域的曲线。直接强力作数值积分来算，速度太慢。

@@ -397,59 +397,11 @@ $$\begin{cases}
 J(x) &= Σ_{n=1}^\infty \frac {π(x^{1/n})} n = \text{Li}(x) - \sum_{Im(\rho)>0} [\text{Li}(x^{\rho}+\text{Li}(x^{1-\rho})] + \int_x^\infty \frac {dt} {t(t^2-1) \ln t} - \ln 2
 \end{cases}$$
 
-但要注意：riemann 的 π(x) 若只取有限项，则其实是关于x 的连续函数，若 x 正好是素数，则 π(x-ε) 比 π(x+ε) 会多1，从而 π(x) 取值会是 (π(x-ε)+π(x+ε))/2。这要求 π(x) 在素数点的取值要比实际多 1/2, 或者说令 π₀(x):=(根据x是否素数，取值π(x) 或 π(x)+1/2), 黎曼的素数计数公式其实是在拟合这个 π₀(x)。好在在这样的 π₀(x) 下，上面的莫比乌斯展开依然成立： $π_0(x) &= Σ_{n=1}^\infty \frac {\mu(n)} n J(x^{1/n}), where \ J(x) &= Σ_{n=1}^\infty \frac {π_0(x^{1/n})} n$。所以所有提到 π(x) 的地方，其实应该是 π₀(x).
+但要注意：riemann 的 π(x) 若只取有限项，则其实是关于x 的连续函数，若 x 正好是素数，则 π(x-ε) 比 π(x+ε) 会多1，从而 π(x) 取值会是 (π(x-ε)+π(x+ε))/2。这要求 π(x) 在素数点的取值要比实际多 1/2, 或者说令 π₀(x):=(根据x是否素数，取值π(x) 或 π(x)+1/2), 黎曼的素数计数公式其实是在拟合这个 π₀(x)。好在在这样的 π₀(x) 下，上面的莫比乌斯展开依然成立： $π_0(x) = Σ_{n=1}^\infty \frac {\mu(n)} n J(x^{1/n}), where \ J(x) = Σ_{n=1}^\infty \frac {π_0(x^{1/n})} n$。所以所有提到 π(x) 的地方，其实应该是 π₀(x).
 
 于是为了用基于 zeta(s) 零点的 Riemann 公式算 π(x), 其实也只需作有限项，且这有限项里，除了开头几项，后面的可以直接拿 $J(x) = Σ_{n=1}^\infty \frac {π(x^{1/n})} n$ 精准算出（这些项急速衰减，展开后涉及到的 π(x^..) 值都很小）。
 
-对应程序：
-```
-def J(x): 
-    def Pi(x):
-        return int(count_primes(int(x))) # 截止x的质数数量
-    s = 0 
-    for n in range(1, 1000000000, 1): 
-        c = Pi(x**(1/n))
-        if c <= 0: break
-        s += 1. / n * c 
-    return s 
-
-def pi_x_by_riemann_full(x, N=2000, K=500):
-    ''' 
-    N: 莫比乌斯展开项数. 这里动态阶段，所以 N 可以写很大
-    K: 使用的 zeta 零点数
-    '''
-    result = 0 
-    for n in range(1, N, 1): 
-        cur_x_n = x**(1./n)
-        if cur_x_n <= 1.99: break
- 
-        if cur_x_n <= 100000000: # 小于多少时，不走零点直接算
-            Jx = 1. * mobius(n) / n * J(x**(1/n)) 
-        else:
-            main_li = li(x**(1./n))
-            zero_li = 0 
-            for k in range(1, K, 1): 
-                rho0 = 0.5 + 1j * zt(k)
-                rho1 = 0.5 - 1j * zt(k)
-                zero_li += ei(math.log(x) * rho0 / n)
-                zero_li += ei(math.log(x) * rho1 / n)
-            int_log2 = f_int_log2(x)
-            Jx = 1. * mobius(n) / n * (main_li - zero_li + int_log2)
-        result += Jx
-    return result
-
-def validate_pi_x_mobius(x):
-    # 验证 π(x) = Σ_n μ(n)}/n * J(x^{1/n}); J(x) = Σ_n π(x^{1/n})/n 
-    real = count_primes(x)
-    s = 0 
-    for i in range(1, 1000):
-        cur_x_n = x**(1./i) 
-        if cur_x_n <= 1.99: break
-        s1 = 1. * mobius(i) / i * J(cur_x_n)
-        s += s1
-        print (i, round(s1, 3), round(s, 3)) 
-    print (s, int(s - real))
-```
+对应[代码](https://github.com/superzhangmch/riemann_zeta_some_scripts/blob/main/prime_count_using_mobius.py)，及[代码](https://github.com/superzhangmch/riemann_zeta_some_scripts/blob/main/prime_count_using_riemann's_formula_more.py)。
 
 ### 其他
 ---

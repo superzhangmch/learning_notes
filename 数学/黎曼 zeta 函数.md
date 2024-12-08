@@ -29,35 +29,7 @@ $$\frac 1 {n^s} = \frac 1 {n^{a+ib}} = \frac 1 {n^a} \exp^{(\log n) (-ib)} = \fr
 ![image](https://github.com/user-attachments/assets/7eb7be5d-bbfc-4ad7-bf19-647a81ed12ed)
 
 
-可以程序验证下，确实不太收敛的:
-
-```
-from mpmath import mp # 他可以高精度计算 zeta(s) 的值
-
-def zeta_approximation(s, N=100):
-    sum_terms = sum(1.0 / n**s for n in range(1, N+1))
-    return sum_terms
-
-mp.dps = 10
-s = -0.1 + 49.773832478 * 1j  # Example complex number
-s = 1 + 1.0 * 1j  # Example complex number
-x = mp.zeta(s)
-approx_zeta = zeta_approximation(s, N=1000000)
-print 'appr', approx_zeta.real, "\t", approx_zeta.imag
-print 'real', float(x.real), "\t", float(x.imag)
-
-s = 0.5 + 1.0 * 1j
-for N in [100, 1000, 10000, 100000, 1000000]:
-    approx_zeta = zeta_approximation(s, N=N)
-    print 'appr', approx_zeta.real, "\t", approx_zeta.imag
-
-# 有解析延拓的 zeta(s) 的真实取值
-mp.dps = 10
-x = mp.zeta(s)
-print 'should_be', float(x.real), "\t", float(x.imag)
-```
-
-输出：
+可以[程序](https://github.com/superzhangmch/riemann_zeta_some_scripts/blob/main/zeta_diverge_for_real_le1.py)验证下，确实不太收敛的:
 ```
 appr -8.24344142357     2.44850303408
 appr 25.2110006318      12.3943927543
@@ -120,30 +92,7 @@ $$\zeta(s) = \frac {1} {1 - 2^{1-s}} \eta(s) = \frac 1 {1 - 2^{1-s}} \sum_{n=1}^
 
 根据[here](https://math.stackexchange.com/questions/2188438/proving-convergence-of-the-dirichlet-eta-function),  $n^s−(n+1)^s=s∫^{n+1}_n x^{−s−1}dx$, 令 s=a+bi， c=|s| 则 $|n^s−(n+1)^s| ≤ c ∫^{n+1}_n |x^{−s−1}|dx = c ∫^{n+1}_n |x^{−a−1}|dx ≤ c n^{−a−1} = c \frac 1 {n^{a+1}}$, 而 $\sum_n \frac 1 {n^{a+1}}$ 在 a > 0时是收敛的。
 
-程序验证下：
-```
-import cmath
-from mpmath import mp
-
-def calc_zeta_by_eta(s, N=1000):
-    def eta(s):
-        r = 0
-        for n in range(1, N, 1):
-            r += 1. * (-1)**(n+1) / n **s
-        return r
-    return eta(s) / (1.-2**(1-s))
-
-mp.dps = 10
-for s in [0.5 + 14.134725141*1j, 0.5+1j, 2, 2.00001, 2.000001,  1+1j, 2+2j, 20+20j]:
-    #x = get_zeta_val_by_int(s)
-    x = calc_zeta_by_eta(s, 1000000)
-    print ('calc', s, x)
-
-    x1 = mp.zeta(s)
-    print ('should_be', s, x1)
-    print ('__')
-
-```
+[程序](https://github.com/superzhangmch/riemann_zeta_some_scripts/blob/main/zeta_by_eta.py)验证下：
 output:
 ```
 ('calc', (0.5+14.134725141j), (0.000202381631061822-5.8421068595907595e-05j))

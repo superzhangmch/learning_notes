@@ -70,9 +70,9 @@ should_be 0.143936427077     -0.722099743529
 ### 求值
 ---
 
-所以对 zeta(s), 只有 s > 1 时，才可按原始级数部分和逼近求值。
+所以对 zeta(s), 只有 real(s) > 1 时，才可按原始级数部分和逼近求值。
 
-然而 $\sum_n 1/N^s$, s > 1 收敛较慢，可借助[欧拉-麦克劳林求和公式](https://en.wikipedia.org/wiki/Euler%E2%80%93Maclaurin_formula)——该公式擅长的正是级数求和，要么计算不收敛级数的部分和，要么加速慢收敛级数。对应到 zeta 函数，该公式形式为：
+然而 $\sum_n 1/N^s$, s.real > 1 收敛较慢，可借助[欧拉-麦克劳林求和公式](https://en.wikipedia.org/wiki/Euler%E2%80%93Maclaurin_formula)——该公式擅长的正是级数求和，要么计算不收敛级数的部分和，要么加速慢收敛级数。对应到 zeta 函数，该公式形式为：
 
 $$\sum_{k=1}^{n} \frac{1}{k^s} \sim \zeta(s) - \frac{1}{(s-1)n^{s-1}} + \frac{1}{2n^s} - \sum_{i=1}^{\infty} \frac{B_{2i}}{(2i)!} \frac{(s+2i-2)!}{(s-1)!n^{s+2i-1}}$$
 

@@ -409,16 +409,18 @@ $$\frac{\xi'}{\xi}(s) = \frac{d}{ds} \left[ \log \frac{s(s-1)}{2} \right] + \fra
 
 可代码验证下：
 ```
-def get_zeta_val_by_int(y1, y2):
+def get_zeta_val_by_int(y1, y2，tp=0):
     def f_int(z):
         return mpmath.zeta(z, derivative=1) / mp.zeta(z)
     # 三种路径
-    x = do_path_int(f_int, [1+y1*1j, 1+y2*1j, 0+y2*1j, 0+y1*1j, 1+y1*1j]) # 矩形框“口”上进行
-    x = do_path_int(f_int, [0.5+y1*1j, 1+y1*1j, 1+y2*1j, 0.5+y2*1j]) # 反“匚”上进行。总值很小
-    x = do_path_int(f_int, [0.5+y2*1j, 0+y1*1j]) # 比左半矩形“匚”还少掉两横的竖线上进行。它的值占据了整个封闭曲线积分的几乎全部。
+    if tp == 0: x = do_path_int(f_int, [1+y1*1j, 1+y2*1j, 0+y2*1j, 0+y1*1j, 1+y1*1j]) # 矩形框“口”上进行
+    if tp == 1: x = do_path_int(f_int, [0.5+y1*1j, 1+y1*1j, 1+y2*1j, 0.5+y2*1j]) # 反“匚”上进行。总值很小
+    if tp == 2: x = do_path_int(f_int, [0.5+y2*1j, 0+y1*1j]) # 比左半矩形“匚”还少掉两横的竖线上进行。它的值占据了整个封闭曲线积分的几乎全部。
     x = x / (2*3.14159265)
     return x
-get_zeta_val_by_int(y1=10, y2=200)
+# 令积分路径的每个线段切分3000段，则
+get_zeta_val_by_int(y1=10, y2=2000, 1) # (-0.2533675701 - 0.1320660197j), 只看虚部 < 1
+get_zeta_val_by_int(y1=10, y2=2000, 2) # (31.19626967 + 1501.779909j), 只看虚部 1501 个零点。而实际是 1517 个
 ```
 
 ### 零点与素数公式关系

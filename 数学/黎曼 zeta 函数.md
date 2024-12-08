@@ -80,62 +80,7 @@ $$\sum_{k=1}^{n} \frac{1}{k^s} \sim \zeta(s) - \frac{1}{(s-1)n^{s-1}} + \frac{1}
 
 $$\zeta(s) \sim \sum_{k=1}^{n} \frac{1}{k^s} + \frac{1}{(s-1)n^{s-1}} - \frac{1}{2n^s} + \sum_{i=1}^{\infty} \frac{B_{2i}}{(2i)!} \frac{(s+2i-2)!}{(s-1)!n^{s+2i-1}}$$
 
-python 代码验证之：
-```
-from mpmath import mp
-import numpy as np
-from scipy.special import bernoulli
-from scipy.special import loggamma as gammaln
-
-def compute_expression(s, i):
-    '''
-    直接算阶乘/gamma 函数，要过大溢出。用 log 形式
-    '''
-    i = float(i)
-    
-    # Calculate the logarithm of the factorial terms
-    log_numerator = gammaln(s + 2*i - 1)  # (s + 2*i - 2)!
-    log_denominator = gammaln(2*i + 1) + gammaln(s)  # (2*i)! * (s-1)!
-    
-    # Compute the expression using the exponential of the difference
-    result = np.exp(log_numerator - log_denominator)
-    
-    return result
-
-def zeta_approximation(s, N=100):
-    # Initial sum of the series
-    sum_terms = sum(1.0 / n**s for n in range(1, N+1))
-    
-    # Calculate the correction term using Euler-Maclaurin formula
-    correction = 1. / N**(s-1) / (s-1) - 0.5 * N**(-s)
-    
-    # Bernoulli numbers for the correction terms
-    #B = bernoulli(2 * np.arange(1, 10)) # python3
-    m = 50
-    B = bernoulli(2*m) # bernoulli 数列奇数项取值为0
-    
-    # Add the Bernoulli correction terms
-    correction1 = 0.
-    for k in range(1, m+1):
-        xxx = compute_expression(s, k)
-
-        dd = 1. * B[2*k] / N**(s-1+2*k) * xxx
-        if abs(dd.real) < 1e-20 and abs(dd.imag) < 1e-20: break # 动态决定为达一定精度，要用多少项
-        print ('xx', k)
-        correction1 += dd
-    return sum_terms + correction + correction1
-
-def calc(s):
-    mp.dps = 10
-    x = mp.zeta(s)
-    for N in [100, 1000]:
-        approx_zeta = zeta_approximation(s, N=N)
-        print ('appr', approx_zeta.real, "\t", approx_zeta.imag)
-    print ('should_be', float(x.real), "\t", float(x.imag))
-
-calc(0.5 + 14.134725141*1j)
-```
-output:
+python [代码](https://github.com/superzhangmch/riemann_zeta_some_scripts/blob/main/zeta_using_euler_maclaurin_formula.py)验证之：
 ```
 ('xx', 1)
 ('xx', 2)
@@ -406,7 +351,7 @@ output:
 ![image](https://github.com/user-attachments/assets/df4058c9-4520-425d-b45e-1b32cad833a6)
 
 
-### 零点计数（虚部大于0的）
+### 零点计数（虚部大于 0 的）
 ----
 
 截止 T 的零点数量大约是 $\frac T {2\pi} \log \frac T {2\pi} - \frac T {2\pi}$。根据复分析理论，零点数量可以通过 $N(s) = \int_C \frac {\zeta'(s)} {\zeta(s)} ds$ 算出，其中 C 是围绕被统计区域的曲线。直接强力作数值积分来算，速度太慢。
@@ -453,6 +398,28 @@ get_zeta_val_by_int(y1=10, y2=200)
 | 1000000000 | 2846548032 | 2846548031.951251 |
 | 10000000000 | 32130158315 | 32130158313.90965 |
 | 30610046000 | 103800788359 | 103800788357.75623 |
+
+看 [zhihu:读懂黎曼猜想（6）——非平凡零点的分布](https://zhuanlan.zhihu.com/p/163513405)：对 $\int_C \frac {\xi'(s)} {\xi(s)} ds$ 作围道积分是可以直接求出 $\frac T {2\pi} \log \frac T {2\pi} - \frac T {2\pi}$ 的【不考虑平凡零点, ξ(s) 与 ζ(s) 零点重合。凭啥用前者而不是后者？】，因为，该文指出：
+
+令围道为以 1/2 为对称轴的矩形，因 ξ(s) 关于 1/2 竖线对称，从而对它积分可以只考虑右边一半。 $\xi(s) = \frac{1}{2} s(s-1) \pi^{-s/2} \Gamma\left(\frac{s}{2}\right) \zeta(s)$, 于是取log拆开再取导数有：
+
+$$\frac{\xi'}{\xi}(s) = \frac{d}{ds} \left[ \log \frac{s(s-1)}{2} \right] + \frac{d}{ds} \left[ \log \Gamma\left(\frac{s}{2}\right) - \frac{s}{2} \log \pi \right] + \frac{1}{2\pi i} \int_\Gamma \frac{\zeta'}{\zeta}(s) ds$$
+
+而对展开中除了 ζ(s) 项的右半矩形（反“匚”形的路径）上的积分的结果是： $\frac{T}{2\pi} \log \frac{T}{2\pi} - \frac{T}{2\pi} + \frac{7}{8} + \mathcal{O}\left(\frac{1}{T}\right)$——注意这就是计数公式了。这意味着 $\int_{反“匚”} \frac {\zeta'(s)} {\zeta(s)} ds$ 的取值很小——实际上该文证实是 O(log(T)) 的。因为 $\int_{口} \frac {\zeta'(s)} {\zeta(s)} ds$ 是零点计数，而再右半路径上积分值很小，那么也意味着另一半路径“匚”上的积分 $\int_{匚} \frac {\zeta'(s)} {\zeta(s)} ds$ 值很大。
+
+可代码验证下：
+```
+def get_zeta_val_by_int(y1, y2):
+    def f_int(z):
+        return mpmath.zeta(z, derivative=1) / mp.zeta(z)
+    # 三种路径
+    x = do_path_int(f_int, [1+y1*1j, 1+y2*1j, 0+y2*1j, 0+y1*1j, 1+y1*1j]) # 矩形框“口”上进行
+    x = do_path_int(f_int, [0.5+y1*1j, 1+y1*1j, 1+y2*1j, 0.5+y2*1j]) # 反“匚”上进行。总值很小
+    x = do_path_int(f_int, [0.5+y2*1j, 0+y1*1j]) # 比左半矩形“匚”还少掉两横的竖线上进行。它的值占据了整个封闭曲线积分的几乎全部。
+    x = x / (2*3.14159265)
+    return x
+get_zeta_val_by_int(y1=10, y2=200)
+```
 
 ### 零点与素数公式关系
 ----

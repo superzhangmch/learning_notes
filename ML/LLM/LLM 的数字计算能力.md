@@ -24,11 +24,12 @@
 ```
 - gemini 1.5 flash: 39587
 - gemini 2.0 flash: thirty-nine thousand five hundred and eighty-seven. 正确
-- claude3.5 sonet:  thirty three thousand eight hundred and twenty eight
+- claude3.5 sonet:  thirty three thousand eight hundred and twenty eight （不对）
 - GPT4: Sixty four thousand four hundred and fifty six（胡说）
 
 我猜测是 gemini 加了计算外挂. 后来测试：```what's the weather today in New York?```, 返回的答案是真实的，因此说明确实是走了计算外挂。
 
 ### 其他
 
-然而，从一系列数字的加法上看，LLM 是能直接得到正确答案的。多个数字加，需要处理好进位等问题。 LLM 怎么做到的？
+然而，从一系列数字的加法上看，如果不是特别复杂的数字（5480+8167+8927+5541+3653+5567+8768+3381+4302+8709这样的就挂了），LLM 是能直接得到正确答案的。多个数字加，需要处理好进位等问题。 LLM 怎么做到的？
+

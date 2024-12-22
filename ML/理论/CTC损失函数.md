@@ -10,6 +10,8 @@ seq2seq 建模的时候，input 和 output 长度不一定一样。一种情况�
 
 因此才引入了处理这类情况的 CTC 损失函数。CTC 的好处是能把 output 序列扩充成input 序列一样的长度，并作自动序列对齐。
 
+注意：如果 seq2seq 用 先拿到input的固定长度表示，然后解码出 output，则不适用 CTC。input 序列对应位置解码出 output 的建模方式时，才适用 CTC。
+
 ### CTC 做法
 ----
 
@@ -59,8 +61,17 @@ $$
 ### 解码生成
 ----
 
+按 CTC 方式解码，理论上的方式是：找出使得总和 log(序列似然) 最大的那个“aligment 序列簇”，该序列簇中任意一个序列都是某一序列的 “上述” 有效合法 alignment，且该簇包含了该序列的所有 aignment。于是找到该簇后，取其中任意一个元素，执行“扩充”时的相反方法，就得到了解码结果。
 
-参考：
+然而实际中，想找到它谈何容易（就是告诉你答案，你都得动态规划才能算出该簇的总似然得分，何谈遍历所有簇！）。
+
+所以实际中才用贪心算法或者beam search 算法近似之。
+
+前者即对每一个input 位置，算出 argmax(softmax(..)) 当做这个位置的解码结果，然后构建出总的 output 序列，然后对 ε 分隔的重复字符作去重从而得到最终结果。
+
+后者改进前者，但是和 CTC 的真正解码方式比，其实还是差的很远——只是对于训得好的 model，这样解码的结果和真正 CTC 解码结果差不太多而已。beam search 可以对当前所见作 bean，也可以对解码前缀作 beam。详见  https://distill.pub/2017/ctc/ 。
+
+### 参考
 - https://distill.pub/2017/ctc/ （很好）
 - https://ogunlao.github.io/blog/2020/07/17/breaking-down-ctc-loss.html
 - http://www.cs.toronto.edu/~graves/arabic_ocr_chapter.pdf （这个讲得很好）

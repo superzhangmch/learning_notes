@@ -71,10 +71,13 @@ $$
 
 后者改进前者，但是和 CTC 的真正解码方式比，其实还是差的很远——只是对于训得好的 model，这样解码的结果和真正 CTC 解码结果差不太多而已（CTC 已经把绝大部分概率值给了某一个 alignment 了）。beam search 可以对当前所见作 bean，也可以对解码前缀作 beam。详见  https://distill.pub/2017/ctc/ 。
 
+#### 怎么结合语言模型解码
+
 另还据该文，CTC 解码可以结合语言模型（CTC解码概率P(Y|X) 乘LM概率 P(Y) 作为候选结果的score; 而 L(Y) 含义见该文； $\alpha, \beta$ 是权重调节因子）：
 
 ![image](https://github.com/user-attachments/assets/3d27fc9b-2115-4813-a33f-64cf16a54068)
 
+AI 给出的 CTC 解码怎么结合 language model： $score = α ⋅ \log(P_{CTC}​) + β ⋅ \log(P_{LM}​)$ ， 和上面大同小异。
 
 再仔细看下 CTC loss 所训出的 model 到底学了个啥：理想情况下，正是学会了 input 的 每个 step 在 output 字符集上的分类。如果数据集一开始就标注了这点，也就不用 CTC 了。鉴于此，解码时当然不是非要用 CTC 的理想解码方式了。
 

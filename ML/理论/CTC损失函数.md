@@ -77,7 +77,11 @@ $$
 
 ![image](https://github.com/user-attachments/assets/3d27fc9b-2115-4813-a33f-64cf16a54068)
 
-AI 给出的 CTC 解码怎么结合 language model： $score = α ⋅ \log(P_{CTC}​) + β ⋅ \log(P_{LM}​)$ ， 和上面大同小异。
+AI 给出的 CTC 解码怎么结合 language model： 
+
+$$score = α ⋅ \log(P_{CTC}(Y)​) + β ⋅ \log(P_{LM}(Y)​)$$
+
+， 和上面大同小异。
 
 再仔细看下 CTC loss 所训出的 model 到底学了个啥：理想情况下，正是学会了 input 的 每个 step 在 output 字符集上的分类。如果数据集一开始就标注了这点，也就不用 CTC 了。鉴于此，解码时当然不是非要用 CTC 的理想解码方式了。
 

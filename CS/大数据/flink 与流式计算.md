@@ -13,6 +13,7 @@
 可以全局一个水位，或者按需在每一个聚合key上有独立的watermark。 watermark 的原理是：之前看到的所有数据的最大数据自身时间戳(业务时间而非process time)，减去一个预定义的等待窗口，就是watermark。新来的数据如果比watermark大，则它会被处理。如果比watermark低，则应该被丢弃，或者走特殊处理流程。
 
 ### 其他： flink 小解释
+----
 
 - flink 是 java 的。它通常是一个 java class 的 main 函数内，把所有处理算子组织成一个 DAG 计算图。构建完（只是build，很快执行完），然后就是 run_env.execute(..), 这时候 main 函数开始 block 在这里不动了：因为开始处理数据了。它会一直在那儿（流式，所以也就不会结束）。
 - sink：就是存储落盘的地方。

@@ -13,3 +13,6 @@ In Apache Pulsar, “properties” refer to key-value pairs that can be attached
 
 ### payload
 pulsar 原生只支持 byte 类型。业务需要的所有格式数据，都应该序列化到 byte 里。byte内部放了什么， pulsar 不管。
+
+### 生产者的业务时间
+有 event_timestamp 字段，设置即可。

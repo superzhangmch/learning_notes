@@ -1,0 +1,12 @@
+# pulsar 消息队列
+
+push data 时，需要设置一些字段的含义：
+
+### partitionKey
+producer 设定的一个字符串，用来hash后决定打给哪个partition的。
+In Apache Pulsar, the PartitionKey is an important concept when dealing with partitioned topics. Partitioned topics in Pulsar are used to enhance the scalability and parallelism of message processing by distributing messages across multiple partitions.
+
+### Property:
+In Apache Pulsar, “properties” refer to key-value pairs that can be attached to messages. These properties are part of the message metadata and can be used for a variety of purposes, such as adding custom metadata, enabling better message filtering, and facilitating application-specific logic.
+
+似乎只是为了方便 consumer。

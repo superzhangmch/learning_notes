@@ -8,6 +8,7 @@
 - transformer：[2022：Transformer-based Models for Arabic Online Handwriting Recognition](https://thesai.org/Downloads/Volume13No5/Paper_102-Transformer_based_Models_for_Arabic_Online_Handwriting.pdf)
 
 ### google 2016: Multi-Language Online Handwriting Recognition
+----
 
 ![image](https://github.com/user-attachments/assets/66c69b67-48fd-489c-8bd5-8e8a5ba85c3d)
 
@@ -16,6 +17,7 @@
 该文比较了 lstm，但是效果不如该文方法。
 
 ### google 2019: Fast Multi-language LSTM-based Online Handwriting Recognition
+----
 
 对上文方法，该文做了极大简化。
 
@@ -28,4 +30,20 @@ CTC 来处理这类seq2seq问题的合理性自不待言。它的input 特征处
 ![image](https://github.com/user-attachments/assets/4f20486e-5775-496e-9c1c-3d27814621fe)
 
 如上，图中 bezier 曲线的彩色的六个特征数值，被该文直接当做了 stroke 特征来用。但是还需考虑时间特征，决定 t(s)性质的系数γ₁, γ₂, γ₃也当做了特征用。除了这9个，还有一个当前segment是否属于落笔起笔的特征（对原始stroke会做适当的切分或合并）。
+
+bezier 的拟合，也是需要一定计算量的。这个拟合是当做一个 $loss=\sum_{i=0}^{N-1}[(x_i -x(s_i))^2 + (y_i -y(s_i))^2 + (t_i -t(s_i))^2]$ 的小任务来出来的。
+
+### 2022：Transformer-based Models for Arabic Online Handwriting Recognition
+----
+
+transformer 这样的可以 encoder-decoder 模式的 model 来做handwriting 问题，可以不用 CTC，而直接用 LLM 的 force-teaching 接龙方式预测。 也可以用 transformer 取代 RNN 而后接 CTC。对应该文的两图：
+
+![image](https://github.com/user-attachments/assets/63344128-09d9-42da-b761-83ada0f17a34)
+
+该文特征提取似为较传统的好多维各种特征（不像google上文之比较原始）。未究。
+
+### 其他参考
+----
+- https://essay.utwente.nl/87058/1/Bronkhorst_BA_EEMCS.pdf
+- HMM 方法： https://inria.hal.science/inria-00108307v1/document
 

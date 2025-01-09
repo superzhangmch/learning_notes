@@ -37,12 +37,15 @@
 - sink：就是存储落盘的地方。
 - assignTimestampsAndWatermarks: watermark 要怎么设置。
 - .window(…).trigger(…).process(…)：粗略地可以这样理解：window 负责定义聚合的容器，trigger 负责是否该作聚合，从而清空容器，process负责怎么做聚合
+- job 下面 有 task。
+- 运行时会有 job manager，下面有 task manager（一般怎么也得两个）。
+  - StreamExecutionEnvironment.getExecutionEnvironment().setParallelism(xx) 不能超 taskManager 下 slots 数量。否则资源不足，运行不起来。
 
 ### 上游
 ----
 不同上游一方面有时间对齐问题。另外，即使同一个上游，对于业务量大需要不同机房不同部署的情况，flink 和上游队列如果分机房部署，那么flink 与上游队列比如 pulsar 怎么连接呢？
 
-一般操作是flink 与 上游之间按机房直接连。这样一个假设就是用户总被打到同一个机房的上游队列，否则下游按窗口聚合就会被搞分裂了。 在现在的负载均衡机制下，用户总被打到同一个机房的上游队列一般是没啥问题的（所有用户访问同一个dns，但是会根据用户ip被路由到不同的实际ip）。
+一般操作是flink 与 上游之间按机房直接连。这样一个假设就是用户总被打到同一个机房的上游队列，否则下游按窗口聚合就会被搞分裂了。 在现在的负载均衡机制下，用户总被打到同一个机房的上游队列一般是没啥问题的（所有用户访问同一个dns，但是会根据用户ip被路由到不同的实际ip， 且一般会是一种hash一样的方式， 稳定打到同一机房）。
 
 ### 和 spark 对比
 ----

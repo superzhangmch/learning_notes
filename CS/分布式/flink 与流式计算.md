@@ -47,6 +47,8 @@
 
 一般操作是flink 与 上游之间按机房直接连。这样一个假设就是用户总被打到同一个机房的上游队列，否则下游按窗口聚合就会被搞分裂了。 在现在的负载均衡机制下，用户总被打到同一个机房的上游队列一般是没啥问题的（所有用户访问同一个dns，但是会根据用户ip被路由到不同的实际ip， 且一般会是一种hash一样的方式， 稳定打到同一机房）。
 
+另外注意一点：如果类似这样 .setSubscriptionName("some-subscription").setSubscriptionType(SubscriptionType.Shared) flink 代码内注册了一个 shared 源，那么别的地方同样正在启动的flink就会和本地的共享共同分担source，一条数据如果到了那儿就不会在这里了。
+
 ### 和 spark 对比
 ----
 

@@ -13,5 +13,9 @@ wenet 2.0 用了 U2++ 网络结构：也就是新增了一个 right2left（R2L) 
 一个 chunk 一般几百毫秒到一两秒。
 
 ### VAD 怎么处理的？
+wenet 内基于一些规则判断语音开始结束。
+
+参： https://mp.weixin.qq.com/s?__biz=MzU2NjUwMTgxOQ==&mid=2247484024&idx=1&sn=12da2ee76347de4a18856274ba6ba61f&chksm=fcaacaaccbdd43ba6b3e996bbf1e2ac6d5f1b449dfd80fcaccfbbe0a240fa1668b931dbf4bd5&scene=21#wechat_redirect
 
 ### eNet 号称流与非流一致处理。怎么和现实情况对应的？
+在  dynamic chunk 的 CTC 解码那一块。

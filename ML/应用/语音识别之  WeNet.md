@@ -7,7 +7,9 @@ wenet 2.0 用了 U2++ 网络结构：也就是新增了一个 right2left（R2L) 
 2. 为了双向，一个方式是用 Bert。但是 bert 实现方式是：随机把某些  token 换成 MASK 特殊 token，而不是作用于 attn mask 矩阵。这样一个batch内，只能部分token mask掉（因此低效吗）。总之用bert的话，“会极大增加训练和解码时的计算量”。
 3. 于是作者采用新增一个 decoder的方式。除了实现简单，还可以选择只开启一个decoder（同时 decoder 部分还能脱离CTC 解码，也算好处吧）。
 
-###  dynamic chunk 怎么决定
+###  dynamic chunk
+用于加速CTC的解码。不用等语音完全结束才开始CTC解码，而是随着chunk推进就可以做 CTC 解码。CTC 全解完后，开始做 R2L/L2R 的 rescore 优选。而后者并非流式的。
+
 一个 chunk 一般几百毫秒到一两秒。
 
 ### VAD 怎么处理的？

@@ -18,4 +18,6 @@ wenet 内基于一些规则判断语音开始结束。
 参： https://mp.weixin.qq.com/s?__biz=MzU2NjUwMTgxOQ==&mid=2247484024&idx=1&sn=12da2ee76347de4a18856274ba6ba61f&chksm=fcaacaaccbdd43ba6b3e996bbf1e2ac6d5f1b449dfd80fcaccfbbe0a240fa1668b931dbf4bd5&scene=21#wechat_redirect
 
 ### eNet 号称流与非流一致处理。怎么和现实情况对应的？
-在  dynamic chunk 的 CTC 解码那一块。
+鉴于 wenet 是两阶段的：先ctc弄出多个候选，再用 transformer decoder 选择出最佳候选。而后者要求能看到所有语音，所以，所谓 dynamic chunk 能有助于流式处理，不过是说能降低其时延，也就是能令 CTC 快速流式进行。当ctc 快速进行时，当然可以让用户看到识别过程，但是最终识别结果仍然需要被处理的语音全处理完后才能拿到。
+
+也就是，整体上仍然是一段一段的，并非流式。

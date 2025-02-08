@@ -29,6 +29,7 @@
 - 主要的方法： onElement、onProcessingTime、onEventTime、clear、onMerge、canMerge。其中任一数据进来都会执行 onElement，当窗口如前述方式合并时会调用到 merge。按 event time，比较 window.end-time 和水位，从而决定关窗对应 onEventTime。如果定了 local time timer, 则时间到执行到的是 onProcessingTime。
 - Trigger 类中，可以自定义 timer 作 复杂操作，有 event time timer 或 processing time  timer 两种。前者时间到调用 onEventTime(), 后者时间到则调用 onProcessingTime()。前者是靠水位触发的虚拟 timer，而后者是本地的真正 timer。
 
+note：聚合后，窗口内数据未必按 event time 排好序，若需要需自己排序。
 
 ### 其他： flink 小解释
 ----

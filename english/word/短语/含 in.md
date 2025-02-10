@@ -77,8 +77,37 @@
 
 ---  
 
-### **5. 其他表达**  
-- in fact
+### **5. 其他表达** 
+- **in fact** —— 事实上  
+- **in reality** —— 实际上  
+- **in truth** —— 事实上，实际上  
+- **in practice** —— 在实践中，实际上  
+- **in theory** —— 理论上  
+- **in essence** —— 本质上 
+- **in danger** —— 处于危险中  
+- **in trouble** —— 处于困境  
+- **in doubt** —— 令人怀疑  
+- **in control** —— 掌控中  
+- **in progress** —— 进行中  
+- **in motion** —— 运动中  
+- **in use** —— 在使用中  
+- **in decline** —— 在衰退中 
+- **in general** —— 一般来说  
+- **in particular** —— 特别是  
+- **in brief** —— 简而言之  
+- **in short** —— 简而言之  
+- **in detail** —— 详细地  
+- **in summary** —— 总结来说  
+- **in time** —— 及时  
+- **in the past** —— 在过去  
+- **in the future** —— 在未来  
+- **in the long run** —— 从长远来看  
+- **in the meantime** —— 与此同时  
+ - **in a hurry** —— 匆忙  
+- **in love** —— 陷入爱河  
+- **in fear** —— 处于恐惧中  
+- **in despair** —— 绝望中   
+-
 - **In case of**（以防）  
   *In case of emergency, call 911.*（紧急情况下，请拨打911。）   
 - **In short**（简而言之）  

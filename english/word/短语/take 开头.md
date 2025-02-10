@@ -23,6 +23,9 @@
     * 放轻松；别紧张
     * 例如：Take it easy, everything will be fine.（放轻松，一切都会好的。）
     * 例如：After working so hard, you deserve to take it easy this weekend.（努力工作后，你应该在周末放松一下。）
+- take your time
+    * 慢慢来：告诉别人不要着急，可以花更多的时间来完成某件事情，或者表示对别人的耐心和宽容。
+    * Take your time—there's no hurry.
 - Take into account
     * 考虑到；顾及
     * 例如：We need to take into account the weather conditions when planning the event.（我们在计划活动时需要考虑到天气情况。）

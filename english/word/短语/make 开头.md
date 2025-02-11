@@ -16,6 +16,7 @@
 - Make sense
     * 有道理；易于理解
     * Example: His explanation didn’t make sense.（他的解释毫无道理。）
+-  make use of: 利用
 
 ### 次常用
 

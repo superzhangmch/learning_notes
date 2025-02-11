@@ -63,7 +63,8 @@
   - The doctor **ruled out** the possibility of cancer.（医生排除了癌症的可能性。）  
 - **Wipe out**：消灭，彻底摧毁  
   - The tsunami **wiped out** the whole village.（海啸摧毁了整个村庄。）  
-
+- **weed out**: 淘汰：从一组中移除不需要的人或物。
+  - He is eager to weed out the many applicants he believes may be frauds. 他急于剔除那些他认为可能是行骗的申请人。
 ### **表示超出、胜过**  
 - **Stand out**：突出，引人注目  
   - His bright red jacket really **stands out**.（他鲜红的夹克衫很显眼。）  

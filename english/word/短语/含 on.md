@@ -131,3 +131,7 @@
   *How are you getting on with your project?*（你的项目进展如何？）  
 - **shed light on** 阐明，解释：揭示或解释某事物，使其更加清晰或易于理解。
   * A new approach offers an answer, and may shed light on an even bigger question. 一种新方法提供一个答案，而且可能阐明更大的问题。
+
+### 6. other
+- draw on：利用，借鉴：指从某个资源或经验中获取灵感或帮助。
+  * I'll have to draw on my savings. 我只得动用我的存款了。

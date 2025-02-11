@@ -49,3 +49,5 @@
   - The CEO decided to step down after ten years in charge.（这位CEO在掌管公司十年后决定辞职。）
   - The king was forced to step down and hand over power.（国王被迫退位并交出权力。）
 
+### other
+- down the street

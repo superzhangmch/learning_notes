@@ -123,7 +123,11 @@
 - **In moderation**（适量）  
   *You should eat sweets in moderation.*（你应该适量吃甜食。）  
 - **In good condition**（状态良好）  
-  *The car is still in good condition.*（这辆车仍然状态良好。）  
+  *The car is still in good condition.*（这辆车仍然状态良好。）
+- in good shape: 状态良好：准备好并有能力做某事。
+  * He's in good shape for a man of his age. 作为那把年纪的人来说，他身体不错。
+  * “in good shape”和“in good condition”都表示“状况良好”，但在使用上有细微差别。“in good shape”通常用于描述人的身体状况，表示“身体健康”或“身材良好”。例如，“He is in good shape”意为“他身体状况良好”。而“in good condition”则更常用于描述物品或事物的状态，表示“处于良好状态”或“完好无损”。例如，“The car is in good condition”意为“这辆车状况良好”。
+  * 然而，这两个短语有时也可以互换使用。例如，“The house is in good shape”和“The house is in good condition”都可以表示“这所房子状况良好”。但需要注意的是，“in good shape”在描述物品时，语气可能更为随意。
 - **In vain**（徒劳无功）  
   *All our efforts were in vain.*（我们所有的努力都白费了。）  
 

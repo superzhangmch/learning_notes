@@ -135,3 +135,5 @@
 ### 6. other
 - draw on：利用，借鉴：指从某个资源或经验中获取灵感或帮助。
   * I'll have to draw on my savings. 我只得动用我的存款了。
+- on par with：与……水平相当：与某人或某物处于相同的水平或标准。
+  * Would they put my interests on par with their own? 会把我的利益看得和他们自己的一样重要吗？

@@ -28,10 +28,16 @@
 - Close up：关闭；靠近。特写：指在照片或电影中，主体被紧密地拍摄并以相对较大的比例显示。
   - The shop closed up early today.（这家店今天提早关门了。）
   - The camera closed up on his face.（**镜头拉近**到了他的脸上。）
-- Step up：建立：将某物建立起来或使其开始运作。
-  - The occupying forces set up a puppet government. 占领军建立了一个傀儡政府。
 - Pack up：收拾行李，打包
   - It’s time to pack up and go home.（该收拾行李回家了。）
+
+### 建立
+- Step up：建立：将某物建立起来或使其开始运作。
+  - The occupying forces set up a puppet government. 占领军建立了一个傀儡政府。
+- put up
+  - 建造、搭建（put up a building/tent）
+  - 张贴、展示（put up a poster）
+  - 忍受（put up with something） 
 
 ### 总和，总结
 - Sum up：总结，概括
@@ -92,10 +98,6 @@
   - You can look up new words in a dictionary.（你可以在字典里查找生词。）
   - She looked up at the sky and sighed.（她抬头看着天空叹了口气。）
   - Things are finally looking up for him.（他的情况终于开始好转了。）
-- put up
-  - 建造、搭建（put up a building/tent）
-  - 张贴、展示（put up a poster）
-  - 忍受（put up with something） 
 
 # up 开头
 - **Up to**：高达；取决于  

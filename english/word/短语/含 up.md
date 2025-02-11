@@ -98,6 +98,9 @@
   - You can look up new words in a dictionary.（你可以在字典里查找生词。）
   - She looked up at the sky and sighed.（她抬头看着天空叹了口气。）
   - Things are finally looking up for him.（他的情况终于开始好转了。）
+- back up: 备份
+- take up: 占用（时间、空间等）：使用或占据（时间、空间等）
+  * I won't take up any more of your time.
 
 # up 开头
 - **Up to**：高达；取决于  

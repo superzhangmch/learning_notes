@@ -1,3 +1,7 @@
+### 0. 重要
+- consist in：在于，存在于：指将某事物作为基本或主要部分。
+  * True education does not consist in simply being taught facts. 真正的教育并不在于简单地讲授事实。
+
 ### 1. **时间/状态相关**  
 - **In time**（及时）  
   *He arrived just in time for the meeting.*（他刚好及时赶上会议。）   

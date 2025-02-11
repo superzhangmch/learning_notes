@@ -14,6 +14,10 @@
   - The company will **phase out** old models next year.（公司明年将逐步淘汰旧型号。）  
 - **Drop out**：退出，辍学  
   - He **dropped out** of college to start his own business.（他从大学退学去创业。）  
+ - **Wear out**：耗尽，使筋疲力尽  
+  - The shoes are **worn out** after years of use.（这双鞋用了多年，已经磨损了。）  
+- **Use out**：用光，用完
+  - We **used out** all the ink in the printer.（我们把打印机的墨水用完了。）   
 
 ### **表示溢出、向外扩展**  
 - **Break out**：爆发，逃脱  
@@ -65,6 +69,7 @@
   - The tsunami **wiped out** the whole village.（海啸摧毁了整个村庄。）  
 - **weed out**: 淘汰：从一组中移除不需要的人或物。
   - He is eager to weed out the many applicants he believes may be frauds. 他急于剔除那些他认为可能是行骗的申请人。
+
 ### **表示超出、胜过**  
 - **Stand out**：突出，引人注目  
   - His bright red jacket really **stands out**.（他鲜红的夹克衫很显眼。）  
@@ -73,14 +78,8 @@
 - **Turn out**：结果是，生产，出席  
   - It **turned out** to be a great idea.（结果证明这是个好主意。）  
   - A huge crowd **turned out** for the concert.（大批观众到场观看演唱会。）  
-- **Wear out**：耗尽，使筋疲力尽  
-  - The shoes are **worn out** after years of use.（这双鞋用了多年，已经磨损了。）  
 - **Fade out**：渐弱，淡出  
   - The music slowly **faded out**.（音乐慢慢淡出了。）    
-- **Use out**：用光，用完  
-  - We **used out** all the ink in the printer.（我们把打印机的墨水用完了。）  
-- Burn out：精疲力竭，烧毁
-  - Working too much can burn you out.（工作太多会让你筋疲力尽。）
 
 #### **表示排除、移除或拒绝**  
 - **Block out**：挡住，屏蔽  
@@ -109,5 +108,9 @@
 - **Start out**：开始（职业、生涯、旅程）  
   - She **started out** as a teacher before becoming a writer.（她最初是一名教师，后来成了作家。）  
 
- 
+### 小心
+- look out / watch out: 小心，当心：提醒某人注意或警惕。
 
+### other
+- throughout: 自始至终，贯穿整个时期
+  - Protests continued intermittently throughout November. 整个十一月份抗议活动此起彼落。

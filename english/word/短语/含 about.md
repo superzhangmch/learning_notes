@@ -62,3 +62,10 @@
 - **Be excited about**：对……感到兴奋  
   - They are **excited about** their upcoming trip.（他们对即将到来的旅行感到兴奋。）  
  
+#### other  
+- **About to**：即将；正要  
+  - I was **about to** leave when you called.（你打电话的时候，我正要离开。）  
+- **About average**：大致平均水平  
+  - His performance was **about average**.（他的表现大约是平均水平。）  
+- **About right**：大致正确；差不多对  
+  - Your guess is **about right**.（你的猜测大致正确。）   

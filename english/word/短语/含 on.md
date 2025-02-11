@@ -129,3 +129,5 @@
 - **Get on**（上车；进展）  
   *Get on the bus now!*（快上公交车！）  
   *How are you getting on with your project?*（你的项目进展如何？）  
+- **shed light on** 阐明，解释：揭示或解释某事物，使其更加清晰或易于理解。
+  * A new approach offers an answer, and may shed light on an even bigger question. 一种新方法提供一个答案，而且可能阐明更大的问题。

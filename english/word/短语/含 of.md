@@ -109,3 +109,15 @@
 - **Of sorts**：勉强算是；某种程度上的  
   - He is a leader **of sorts**, but not a very effective one.（他算是个领导，但不怎么有效。）  
  
+
+#### other 
+-  die of:  用于疾病、情绪、老年等内部原因 ，即导致死亡的**主要、直接原因**。
+  - die from：死于（外部因素或间接原因）
+  - He **died of** a heart attack.（他死于心脏病发作。）  
+  - The old man **died of** old age.（这位老人因年老去世。）  
+  - She almost **died of** laughter.（她几乎笑死了。）  
+- made of: 当材料的**基本形态未改变**，仍能辨认出来时，用 **make of**。
+  - make from：由……制成（原材料发生化学或物理变化）
+  - This table is **made of** wood.（这张桌子是木头做的。）  
+  - The ring is **made of** gold.（这枚戒指是金子做的。）  
+  - His jacket is **made of** leather.（他的夹克是皮革做的。）  

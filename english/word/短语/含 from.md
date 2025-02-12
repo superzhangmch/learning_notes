@@ -68,3 +68,37 @@
   - He tried to **hide from** the police.（他试图躲避警察。）  
 - Distance from 、away from  距离
   - The hotel is only 10 minutes’ distance from the airport.（这家酒店距离机场只有10分钟的路程。）
+
+
+### **die of vs. die from**  
+
+#### **1. die of：死于（直接原因）**  
+- **用于疾病、情绪、老年等内部原因**，即导致死亡的**主要、直接原因**。  
+- **例句：**  
+  - He **died of** a heart attack.（他死于心脏病发作。）  
+  - The old man **died of** old age.（这位老人因年老去世。）  
+  - She almost **died of** laughter.（她几乎笑死了。）  
+
+#### **2. die from：死于（外部因素或间接原因）**  
+- **用于事故、受伤、感染等外部原因**，即导致死亡的**间接因素**。  
+- **例句：**  
+  - He **died from** injuries sustained in the car accident.（他因车祸受伤而死亡。）  
+  - Many people **died from** starvation during the war.（战争期间，许多人因饥饿而死。）  
+  - She **died from** complications after surgery.（她因手术后的并发症去世。）  
+
+### **make of vs. make from**  
+
+#### **1. make of：由……制成（保持原材料的形态）**  
+- 当材料的**基本形态未改变**，仍能辨认出来时，用 **make of**。  
+- **例句：**  
+  - This table is **made of** wood.（这张桌子是木头做的。）  
+  - The ring is **made of** gold.（这枚戒指是金子做的。）  
+  - His jacket is **made of** leather.（他的夹克是皮革做的。）  
+
+#### **2. make from：由……制成（原材料发生化学或物理变化）**  
+- 当原材料**经过加工、变化，无法辨认原来的形态**时，用 **make from**。  
+- **例句：**  
+  - Paper is **made from** wood.（纸是由木头制成的。）  
+  - Wine is **made from** grapes.（酒是由葡萄酿成的。）  
+  - Plastic is **made from** petroleum.（塑料是由石油制成的。）  
+ 

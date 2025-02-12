@@ -47,7 +47,11 @@
 - Take down
     * **记下**：Can you take down his phone number?（你能记下他的电话号码吗？）
     * 拆除：They took down the old building last week.（他们上周拆除了那座旧楼。）
-
+- 
+- take an exam 考试
+- take  an breath 呼吸
+- take pills 吃药
+- take + 交通工具（包括电梯）
 ### other
 
 2. Take up

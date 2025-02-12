@@ -10,9 +10,9 @@
 
 
 #### **用于强调或表达对比**  
-- **No more than**：至多；仅仅  
+- **No more than**：至多；仅仅, 没有
   - It will take **no more than** 10 minutes.（这最多只需要 10 分钟。）  
-  - He is **no more than** a beginner.（他不过是个初学者。）  
+  - He is **no more than** a beginner.（他不过是个初学者。）
 - **No less than**：不少于；不亚于  
   - She spent **no less than** $500 on that dress.（她买那条裙子花了不少于 500 美元。）  
   - Winning this award means **no less than** a dream come true.（获得这个奖就像梦想成真一样。）  
@@ -37,3 +37,19 @@
 - **Know better than to**：明白不该做某事；懂得分寸  
   - You should **know better than to** lie to your parents.（你应该明白不该对父母撒谎。）  
  
+### other
+- not any more .. than ../ no more .. than ..: 都不 ..
+  - Accordingly, he believed that no unexamined idea is worth having any more than the unexamined life is worth living. 都不值得
+  - The law cannot legislate filial responsibility any more than it can legislate love. 都不能
+  - not a no more than b：a不，正如b不。
+- nothing more than ..: 仅仅, 只
+  - He dismissed Bryan as nothing more than an amateur.
+- nowhere is STH more ADJ than
+  - Nowhere is Mill’s difficulty with the problem of moral obligation and choice more apparent than when he raises the issue of “proving” utilitarianism.
+  - nowher is sth more adj than …。than后面跟的东西是哪个，弄不懂。但是理解上，可以当作什么都没跟。所以这句话可以理解成: when he raises the issue of proving utilitarianism，Mill’s difficulty with the problem of moral obligation and choice is nowhere more apparent than 实际。
+  - 再如：Nowhere is this more obvious than in science and engineering.
+- A do not .. any more than B do ..: B不能，A也不能
+  - But it is not enough simply to look at these examples of usage, any more than it is sufficient simply to look at the pieces of the jigsaw puzzle. ... 是不够的，就像仅仅...是不够的
+  - The law cannot legislate filial(孝顺) responsibility any more than it can legislate love. 法律不能给爱情制定法律，更不能为子女的孝顺而立法。
+  - the seeker of pleasure can never be satisfied any more than a leaky pail(桶) can be filled.
+  - A do not .. any more than B do .., 该句式中B ..是肯定句式，A..是否定句式，但想表达的是：B不能，A也不能。字面理解就是相比B.., A...并不更“能够".

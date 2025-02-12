@@ -1,3 +1,16 @@
+- Not so much A as B 与其说是a不如说是b
+- Not so much as … 一点儿都不，甚至不，不
+- As for xx：至于xx，引出新的活转换话题
+- as to：至于，引出话题。以及在so .. as to…中，以至于
+- as per 按照 as per our agreement
+- as with 正如，和..类似。 as with most things in life, balance is key.
+- As well 也
+- As yet 还没发生。as yet, I have not …
+- As if 好像
+- As of +时间: 表示从什么时候开始。注意并不表示截止。“从什么时间开始，某事结束。”意味着“截止此时间，此事才结束” ，从这个角度，它表示截止。比如 the offices will be closed as of 5pm. 五点开始关闭，截止五点前都开放。
+- As from 时间: 从..开始
+- As regards xx 关于xx
+
 #### as .. as 
 - **As well as**：不仅……而且……；和……一样  
   - She speaks French **as well as** English.（她不仅会说英语，还会说法语。）  

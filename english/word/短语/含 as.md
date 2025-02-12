@@ -1,0 +1,106 @@
+#### as .. as 
+- **As well as**：不仅……而且……；和……一样  
+  - She speaks French **as well as** English.（她不仅会说英语，还会说法语。）  
+- **As good as**：几乎等同于；实际上是  
+  - The project is **as good as** finished.（这个项目实际上已经完成了。）  
+- **As far as**：就……而言；尽……所能  
+  - **As far as** I know, he is not coming.（据我所知，他不会来了。）  
+  - We will walk **as far as** the river.（我们会一直走到河边。）  
+- **As much as**：尽管；虽然；和……一样多  
+  - **As much as** I like her, I can’t support her decision.（尽管我喜欢她，但我不能支持她的决定。）  
+  - He earns **as much as** his boss.（他赚的钱和他的老板一样多。）  
+- **As far as possible**：尽可能；尽量  
+  - **Try to complete the task as far as possible.**（尽可能完成这项任务。）  
+- **As far as I can see**：据我所知；在我看来  
+  - **As far as I can see, we need a new strategy.**（在我看来，我们需要新的策略。）  
+- **As soon as**：一……就……  
+  - Call me **as soon as** you arrive.（你一到就给我打电话。）  
+- **As long as**：只要；如果  
+  - You can stay here **as long as** you want.（只要你愿意，你可以一直待在这里。）  
+- **As early as**：早在……  
+  - The problem was discovered **as early as** the 1990s.（这个问题早在 20 世纪 90 年代就被发现了。）  
+- **As late as**：直到……才  
+  - They worked **as late as** midnight to finish the project.（他们工作到午夜才完成项目。）  
+
+### as 
+- **As compared with** / **As compared to**：与……相比  
+  - **As compared with last year, sales have increased significantly.**（与去年相比，销售额大幅增长。）  
+- **As distinct from**：不同于；区别于  
+  - **This rule applies to adults, as distinct from children.**（这条规则适用于成人，而不是儿童。）  
+- **As opposed to**：与……相对，而不是  
+  - **I prefer tea as opposed to coffee.**（比起咖啡，我更喜欢茶。）  
+-
+-  **As a result of**：由于……的结果  
+  - The match was canceled **as a result of** the heavy rain.（由于大雨，比赛被取消了。）  
+- **As a matter of fact**：事实上；其实  
+  - **As a matter of fact**, I have never been to Europe.（事实上，我从未去过欧洲。）  
+- **As a consequence of**：由于……的结果  
+  - **As a consequence of** his actions, he lost his job.（由于他的行为，他失去了工作。）  
+
+#### 重要
+
+- **As if**：好像；仿佛（通常用于虚拟语气）  
+  - He acts **as if** he knows everything.（他表现得好像什么都懂。）  
+- **As though**：好像；仿佛（与 "as if" 类似）  
+  - She looked **as though** she had seen a ghost.（她看起来好像见到了鬼一样。）  
+- 
+- **As of**：截至……；自……起  
+  - **As of** now, we have no further updates.（截至目前，我们没有进一步的消息。）  
+- **As from** / **As of**：自……起；从……开始  
+  - **As from** next week, our office hours will change.（从下周起，我们的办公时间将更改。）  
+  - **As of** today, we have received 100 applications.（截至今天，我们已经收到 100 份申请。） 
+-
+- **As is**：保持原样；照原样  
+  - The car is sold **as is**, with no warranty.（这辆车是按原样出售的，没有保修。）  
+- **As was**：如当时那样；保持原状（较正式）  
+  - The situation remains **as was** before.（情况仍然和以前一样。）  
+- **As it is**：就目前情况而言；照这样  
+  - Leave it **as it is** for now.（暂时就这样吧。）  
+-
+- **As before**：如从前一样  
+  - Everything continues **as before**.（一切如从前一样继续。）
+- **As usual**：像往常一样  
+  - He was late **as usual**.（他像往常一样迟到了。）    
+- **As always**：像往常一样  
+  - She arrived late, **as always**.（她像往常一样迟到了。）
+- **As well**：也；同样  
+  - He speaks Spanish, and he writes it **as well**.（他会说西班牙语，也会写。）
+- **As ever**：一如既往；照常  
+  - He was as charming **as ever**.（他一如既往地迷人。）     
+-
+- **As regards**：关于；至于  
+  - **As regards** your request, we will get back to you soon.（关于你的请求，我们很快会回复你。）  
+- **As to**：关于；至于  
+  - There is some confusion **as to** what we should do next.（关于我们接下来该做什么，还有些困惑。）  
+- **As for**：至于；关于  
+  - **As for** me, I prefer coffee over tea.（至于我，我更喜欢咖啡而不是茶。）  
+-
+- **As with**：与……一样；和……类似  
+  - **As with** most things in life, practice makes perfect.（像生活中的大多数事情一样，熟能生巧。）  
+- **As against**：相比于；相较于（用于比较两者的不同）
+  - **The company made a profit of $2 million this year, as against $1.5 million last year.**  
+  （公司今年盈利 200 万美元，而去年为 150 万美元。）  
+  - **There were 300 votes in favor, as against 100 votes against the proposal.**  
+  （有 300 票赞成，相比之下，反对票为 100 票。）  
+- 
+- **As such**：因此；就本身而言  
+  - He is a manager, and **as such**, he has many responsibilities.（他是经理，因此他有很多责任。）
+- **As yet**：至今仍然；到目前为止（通常用于否定句）  
+  - The results have not been published **as yet**.（到目前为止，结果尚未公布。）
+- **As a whole**：整体上；总的来说  
+  - The project, **as a whole**, was successful.（整体而言，这个项目是成功的。）  
+- **As per**：（正式）根据；按照  
+  - Everything was done **as per** the instructions.（一切都按照指示完成了。）   
+
+### other
+- Not so much A as B: 与其说，不如说
+  - What bothered me was not so much what he said as how he said it.
+- so .. as to / such .. as to
+  - He was so tired after the long journey as to fall asleep immediately upon reaching his hotel room. 如此超过量，以致于相比之下，微不足道。
+- A is as much a B as is C: a和c一样都是b
+  - He is as much a child as is Tom.
+- in so far as / to the extend that
+  - not in so far as we imagine Him as present, but in so far as we understand Him to be eternal;
+    - not in so far as .., but in so far as ..。二者并列
+- Regard as：视为；认为是
+- Same as：与……相同

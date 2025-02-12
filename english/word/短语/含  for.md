@@ -156,3 +156,8 @@
   - I think I’ll **go for** the blue jacket.（我想我要选那件蓝色夹克。）  
   - If you want the job, **go for** it!（如果你想要这份工作，就去争取吧！）  
 
+### other
+- account for 解释说明某事
+  - How do you account for the fact that unemployment is still rising? 你如何解释失业人数仍在增加这个现实？
+- brace for 做好准备：为应对可能发生的困难、挑战或不愉快的情况而做好心理和物质上的准备。
+  - Non-Americans must also brace for disappointment. 非美国人也一定要做好失望的准备。

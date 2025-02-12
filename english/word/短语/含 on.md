@@ -115,15 +115,18 @@
 ### **5. 其他常用表达**  
 - **Come on**（快点；加油）  
   *Come on, we’re going to be late!*（快点，我们要迟到了！）  
+- carry on: 继续
+  * carry on with your work.
+- **Read on**（继续读）  
+  *If you want to know what happens next, read on.*（如果你想知道接下来的情节，就继续读下去。）  
+- **Keep on**（继续）  
+  *He kept on talking despite the interruption.*（尽管被打断，他仍然继续说话。）  
+-
 - **Try on**（试穿）  
   *She tried on a new dress.*（她试穿了一条新裙子。）  
 - **Pass on**（传递；去世）  
   *Please pass on the message to him.*（请把消息传达给他。）  
   *His grandmother passed on last year.*（他的祖母去年去世了。）  
-- **Read on**（继续读）  
-  *If you want to know what happens next, read on.*（如果你想知道接下来的情节，就继续读下去。）  
-- **Keep on**（继续）  
-  *He kept on talking despite the interruption.*（尽管被打断，他仍然继续说话。）  
 - **Log on**（登录）  
   *You need to log on to access your account.*（你需要登录才能访问你的账户。）  
 - **Get on**（上车；进展）  
@@ -131,8 +134,6 @@
   *How are you getting on with your project?*（你的项目进展如何？）  
 - **shed light on** 阐明，解释：揭示或解释某事物，使其更加清晰或易于理解。
   * A new approach offers an answer, and may shed light on an even bigger question. 一种新方法提供一个答案，而且可能阐明更大的问题。
-
-### 6. other
 - draw on：利用，借鉴：指从某个资源或经验中获取灵感或帮助。
   * I'll have to draw on my savings. 我只得动用我的存款了。
 - on par with：与……水平相当：与某人或某物处于相同的水平或标准。

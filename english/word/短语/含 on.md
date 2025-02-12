@@ -138,3 +138,12 @@
   * I'll have to draw on my savings. 我只得动用我的存款了。
 - on par with：与……水平相当：与某人或某物处于相同的水平或标准。
   * Would they put my interests on par with their own? 会把我的利益看得和他们自己的一样重要吗？
+ 
+### other
+- Pass on：传递，转交。I’ll pass on your message to him.
+- Pass on to：传递给。Pass on my regards to your family.
+- Settle on：决定，最终选定。They settled on a blue color for the walls.
+- Get on (someone)：批评某人。Don’t get on me about that.
+- Hold on to：抓住，坚守。Hold on to your dreams.
+- put on 穿衣
+- pull on 拉. 拉住并向自己拉动（某物）：用力拉住并向自己拉动（某物）。

@@ -110,7 +110,8 @@
  - **in a hurry** —— 匆忙  
 - **in love** —— 陷入爱河  
 - **in fear** —— 处于恐惧中  
-- **in despair** —— 绝望中   
+- **in despair** —— 绝望中
+- **in my opinion** 在我看来
 -
 - **In case of**（以防）  
   *In case of emergency, call 911.*（紧急情况下，请拨打911。）   

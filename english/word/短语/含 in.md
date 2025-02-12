@@ -180,3 +180,9 @@
   *There was so much information to take in.*（有太多信息需要消化。）    
 - **Plug-in**（插件；插入）  
   *This software has many useful plug-ins.*（这款软件有很多实用的插件。）  
+
+### other
+- in spite of / despite：尽管
+- Weigh in: 参加比赛或争论前进行称重，或者在某个问题上发表意见或表态
+  - there are few who believe there would be much benefit in the president weighing in publicly.
+- Take part in: 参加

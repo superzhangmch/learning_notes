@@ -46,3 +46,5 @@
     * 例如：She always insists on having her way.（她总是坚持按自己的方式行事。）
     * 例如：You can’t always have your way in life.（生活中你不能总是随心所欲。）
 
+### other
+- have  coffee/ have tea, 喝

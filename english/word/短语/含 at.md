@@ -1,3 +1,19 @@
+- **at stake** —— 处于危险或风险中，关系到成败。表示某事物面临风险，可能会有损失或影响结果。 
+  - Thousands of jobs are **at stake** if the company goes bankrupt.（如果公司破产，成千上万的工作岗位将会受到影响。）  
+  - The future of our planet is **at stake** due to climate change.（由于气候变化，我们星球的未来岌岌可危。）  
+  - His reputation is **at stake** in this election.（他的声誉在这次选举中岌岌可危。）  
+
+- **at odds with** —— 与……不一致；与……有矛盾或争执。表示某人或某事与另一个人或事物存在分歧或矛盾。  
+  - His actions are **at odds with** his words.（他的行为和他的言辞不一致。）  
+  - The new law is **at odds with** the principles of democracy.（这项新法律与民主原则相冲突。）  
+  - She has always been **at odds with** her parents about her career choice.（她一直在职业选择上与父母意见不合。）  
+   
+- **at large** —— 逍遥法外；普遍地；整体上。可表示罪犯在逃，或者指某个群体整体上。  
+  - The escaped prisoner is still **at large**.（逃犯仍然在逃。）  
+  - The problem is not just in this city but in society **at large**.（这个问题不仅仅存在于这座城市，而是整个社会的问题。）  
+  - The suspect remained **at large** for weeks before being captured.（嫌疑人在逃了数周后才被捕。）  
+  
+ 
 ### **1. 时间相关**  
 - **At the moment**（此刻；目前）  
   *She is busy at the moment.*（她现在正忙着。）  

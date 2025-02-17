@@ -26,6 +26,8 @@
   - She **broke off** her engagement.（她取消了婚约。）  
 
 ### **表示完成、消失、剥离**  
+- dry off: （洗澡后等）擦干
+  - We went swimming then lay in the sun to dry off.
 - **Pay off**：还清（债务），取得回报  
   - He finally **paid off** his student loans.（他终于还清了助学贷款。）  
   - Hard work always **pays off**.（努力总会有回报。）  

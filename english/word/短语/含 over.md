@@ -35,9 +35,11 @@
   - Be careful not to **knock over** your coffee.（小心别把咖啡打翻了。）  
 - **Fall over**：摔倒  
   - He tripped and **fell over**.（他被绊了一下，摔倒了。）  
-- **Run over**：碾过，快速复习  
-  - She accidentally **ran over** a squirrel while driving.（她开车时不小心碾过了一只松鼠。）  
-  - Let’s **run over** the main points before the meeting.（会议前我们快速浏览一下要点。）  
+- **Run over**：
+  - 碾过，快速复习  
+    - She accidentally **ran over** a squirrel while driving.（她开车时不小心碾过了一只松鼠。）  
+    - Let’s **run over** the main points before the meeting.（会议前我们快速浏览一下要点。）
+  - run sth over sth: run water over sth, 用流水冲洗冲刷
 - **Cross over**：跨越，转换  
   - The singer **crossed over** from pop to jazz.（这位歌手从流行乐转向了爵士乐。）  
 - **Roll over**：翻滚，滚动，延期  
@@ -49,9 +51,12 @@
   - The car turned over after the accident.（事故后，车翻了。）
 
 ### **表示覆盖**  
-- **Hover over**：盘旋，徘徊  
-  - A helicopter **hovered over** the accident scene.（一架直升机在事故现场上空盘旋。）  
-  - My boss always **hovers over** me while I work.（我工作时老板总是在我旁边盯着。）  
+- **Hover over**：
+    - 盘旋，徘徊  
+    - A helicopter **hovered over** the accident scene.（一架直升机在事故现场上空盘旋。）  
+    - My boss always **hovers over** me while I work.（我工作时老板总是在我旁边盯着。）
+  - 鼠标悬停：
+    - If you hover over the icon or space to the right of the label, you will not see the disabled cursor style.
 - Rule over：统治，管理
   - The emperor ruled over a vast territory.（皇帝统治着广阔的领土。）
 

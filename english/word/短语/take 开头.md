@@ -3,7 +3,7 @@
     * 例如：She took over the family business after her father retired.（她在父亲退休后接管了家族企业。）
     * 例如：The new manager will take over next month.（新经理将在下个月接手。）
 - Take off
-    * 起飞；脱下；突然成功
+    * 起飞；**脱下衣服**(take off 具体衣服比如coat。不能用 take off your clothes, 因为这表示脱光)；突然成功
     * 例如：The plane took off on time.（飞机准时起飞。）
     * 例如：She took off her jacket because it was too hot.（她脱下了外套，因为太热了。）
     * 例如：His business really took off after the launch of the new product.（他的新产品推出后，生意突然成功了。）

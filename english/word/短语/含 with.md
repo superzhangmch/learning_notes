@@ -1,3 +1,6 @@
+- wrestle with 全力对付；努力克服
+  - This was the being he had to wrestle with in order to write poems.  这就是他为了写诗不得不与之搏斗的那个人。
+
 #### **表示伴随或一起**  
 - **Be with**：支持；在一起  
   - I **am with** you on this decision.（我支持你的这个决定。）  

@@ -30,9 +30,9 @@ User: [Current User Input]
 ### 实际应用中怎么组织 prompt
 人设、要求、输出格式等，放入 system prompt 是很自然想法。但按照上面拼接法，如果会话历史过长，sys_prompt 距离最后的用户query，以及最近的会话历史就会过远，于是 sys_prompt 的遵从就会变差。这时候可以这样组织 prompt：
 ```
-[System Prompt BEGIN
+【System Prompt BEGIN
 ...
-System Prompt end]
+System Prompt end】
 
 User: [First User Input]
 Assistant: [First Model Response]

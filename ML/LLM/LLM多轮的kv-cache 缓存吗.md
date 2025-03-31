@@ -41,3 +41,12 @@ author: chatgpt
 
  ([Prompt Caching in the API | OpenAI](https://openai.com/index/api-prompt-caching/#:~:text=API%20calls%20to%20supported%20models,changes%20to%20your%20API%20integration)) ([Prompt caching with Claude \ Anthropic](https://www.anthropic.com/news/prompt-caching#:~:text=Prompt%20caching%20can%20be%20effective,repeatedly%20in%20subsequent%20requests%2C%20including)) ([Create a context cache  |  Generative AI  |  Google Cloud](https://cloud.google.com/vertex-ai/generative-ai/docs/context-cache/context-cache-create#:~:text=You%20must%20create%20a%20context,request%20to%20create%20the%20cache)) ([Scaling ChatGPT: Five Real-World Engineering Challenges](https://newsletter.pragmaticengineer.com/p/scaling-chatgpt#:~:text=match%20at%20L351%20system%20tries,to%20work%20quadratically%2C%20not%20linearly))
 
+### other
+> **一般所说的 KV Cache，默认是指 “生成一个回答过程中，用来避免重复 attention 的 token-by-token 缓存”。**
+>
+> 多轮对话中缓存上下文（前 N 轮）的 KV 表示，也属于一种缓存，但通常会特别说明为：
+> - prefix cache
+> - prompt cache
+> - 或 context cache
+> 来与“标准的 KV cache”区分。
+ 

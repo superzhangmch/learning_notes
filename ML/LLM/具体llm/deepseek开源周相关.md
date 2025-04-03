@@ -12,7 +12,8 @@
 
 
 
-另据：https://zhuanlan.zhihu.com/p/26608701724 中图：
+另据：https://zhuanlan.zhihu.com/p/26608701724 （内也有各个项目介绍）中图：
+
 ![image](https://github.com/user-attachments/assets/0b320e79-c0c4-4c0a-a74c-6a6cf2f12163)
 
-主要关注于： moe 训练、FP8 训练、 MLA-attention、以及分布式训练方案与文件系统方案。
+这些项目主要关注于：moe 训练、FP8 训练、 MLA-attention、以及分布式训练方案与文件系统方案。

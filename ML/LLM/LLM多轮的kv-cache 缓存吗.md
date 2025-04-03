@@ -1,7 +1,23 @@
-# ChatGPT、Claude、Gemini 这类在线对话模型（官方 Web 或 App 版本）在多轮对话中是如何处理上下文的，特别是他们是否保留 KV Cache 以避免重复进行 prefill。稍后我会把他们各自的实际实现策略整理给你。
+LLM 多轮交互中，新一轮需要把过去几轮的交互也发给llm，那么llm server 端怎么处理的？会有某种 cache 吗？按说也可以有的。
+
+根据 https://api-docs.deepseek.com/zh-cn/guides/kv_cache 的 “上下文硬盘缓存”：
+
+![image](https://github.com/user-attachments/assets/2f0a5895-06c1-4ef9-bd8e-af6e7e7593f7)
+
+上图这样的，会中他的上下文硬盘缓存，这其实不就正是这里所说的多轮的前几轮的cache。且据他说，它这时全球第一家这样做的。这得益于它家的 MLA：
+
+![image](https://github.com/user-attachments/assets/736a7c05-a3ac-434b-9917-96ab86c7382c)
+
+那么也就可以推测，LLM 多轮，前几轮交互在新一轮对话中，各家目前一般是不做什么 cache的。
+
+========
+另外：下面是 chatgpt deepResearch 的结果：
+
+
+ChatGPT、Claude、Gemini 这类在线对话模型（官方 Web 或 App 版本）在多轮对话中是如何处理上下文的，特别是他们是否保留 KV Cache 以避免重复进行 prefill？ 
 
 author: chatgpt
-====
+date：2024.03
 
 # 主流对话大模型的多轮对话上下文处理策略
 

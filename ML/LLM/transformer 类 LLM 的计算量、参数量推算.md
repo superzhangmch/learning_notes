@@ -58,6 +58,8 @@ qianwen0.5b 0.493701376
 
 ![image](https://github.com/user-attachments/assets/45d15530-14dc-46a5-91bd-9efd94411474)
 
+![image](https://github.com/user-attachments/assets/3f0a35ee-a605-4750-a845-45e57421a9e6)
+
 ## 计算量
 
 **小知识**：

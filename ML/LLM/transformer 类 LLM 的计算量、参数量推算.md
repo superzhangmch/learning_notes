@@ -99,11 +99,11 @@ qianwen0.5b 0.493701376
 - 以上是 $4dN$，表示生成第 N 个 token 时的计算量。算层数l后是 $4ldN$
 
 -
-- 这样新生成一个 token 的总计算量是 $24ld^2+4ldN=4ld(6d+N)$，当生成长度超过 6d 后，attention 计算就要占据主要部分了。按一般hidden size 在 5000~10000 这个范围算，则 60k 长度后，attn 部分计算在总计算中占比就很高了。
+- 这样新生成一个 token 的总计算量是 $24ld^2+4ldN=4ld(6d+N)$，当生成长度超过 6d 后，attention 计算就要占据主要部分了。按上面 qianwen72b d=8k，则 N=48k 长度后，attn 部分计算在总计算中占比就要超一半了； 若要是 N 有百万大小（而百万长度，已经有多家在提供了），那么attn计算就是 90% 以上了。难怪要整出线性注意力之类了。
 
 ## other
 
-### 关于 inference 的 batch prefilling
+### 关于 inference 的 batch prefilling：batch 比 循环计算量更高，但是因并行所以更快
 对 tokens 数是 N 的 prompt，可以一次性用 batch prefilling 方式，也可以一个一个循环。
 
 单看理论计算量，batch prefill 甚至比一个一个循环，计算量还要多一点点。二者计算差异只在做 attention 这一步: 

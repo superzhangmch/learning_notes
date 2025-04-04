@@ -1,6 +1,6 @@
 假设都是标准 transformer：共有 l 层 transformer block，hidden dim = d， FFN 升维因子是 4.
 
-## 参数主体（不算 emb 等）：
+## 参数（不算 emb 等）：
 1. FFN：d->4d, 4d->d, 共 $8d^2$ 个
 2. ATTN: QKV投影(d 维的 hidden state 变出 d 维的QKV)，以及 attn 后的 d->d 映射，一共是 $4d^2$
 3. 这样最终参数量是： $12ld^2$
@@ -34,7 +34,7 @@
   - 每头计算量(注意 $N_q = N_{kv}$)： $2 N d_h N$，总： $2n_h d_h N^2= 2dN^2$
 - 然后对 V 根据 attn weight 做加权和(不考虑 softmax）： $[N_q, N_{kv}] \cdot [N_{kv}, d_h]\rightarrow [N_q, d_h]$。
   - 每 head 计算量： $2NNd_h$，总： $2n_h d_h N^2= 2dN^2$
-- 以上是 $4dN^2$
+- 以上是 $4dN^2$，算上层数l后是 $4ldN^2$
 
 ### attn 操作：one step inference
 同上，只是 $N_q = 1$，故把它代入即可。
@@ -43,7 +43,10 @@
   - 每头计算量： $2 d_h N$，总： $2n_h d_h N= 2dN$
 - 然后对 V 根据 attn weight 做加权和(不考虑 softmax）： $[N_q, N_{kv}] \cdot [N_{kv}, d_h]\rightarrow [N_q, d_h]$。
   - 每 head 计算量： $2Nd_h$，总： $2n_h d_h N= 2dN$
-- 以上是 $4dN$，表示生成第 N 个 token 时的计算量。
+- 以上是 $4dN$，表示生成第 N 个 token 时的计算量。算层数l后是 $4ldN$
+
+-
+- 这样新生成一个 token 的总计算量是 $24ld^2+4ldN=4ld(6d+N)$，当生成长度超过 6d 后，attention 计算就要占据主要部分了。按一般hidden size 在 5000~10000 这个范围算，则 60k 长度后，attn 部分计算在总计算中占比就很高了。
 
 ## other
 

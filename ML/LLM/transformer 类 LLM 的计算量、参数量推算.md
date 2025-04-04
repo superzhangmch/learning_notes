@@ -1,9 +1,62 @@
-假设都是标准 transformer：共有 l 层 transformer block，hidden dim = d， FFN 升维因子是 4.
+若不说明, 假设都是标准 transformer：共有 l 层 transformer block，hidden dim = d， FFN 升维因子是 4.
 
-## 参数（不算 emb 等）：
-1. FFN：d->4d, 4d->d, 共 $8d^2$ 个
+## 参数量：
+1. FFN：d->4d, 4d->d, 共 $8d^2$ 个 （假设FFN 升维因子是4）
+   - note：若 FFN 用到了 sigGLU，则 FFN 处会多用 1 个矩阵，可以选取使得计算量与参数量不变（这时候升维因子其实就由4变成了8/3)。但可能能用更大的因子，比如qianwen2
 2. ATTN: QKV投影(d 维的 hidden state 变出 d 维的QKV)，以及 attn 后的 d->d 映射，一共是 $4d^2$
-3. 这样最终参数量是： $12ld^2$
+   - note：如果用了 GQA，则KV的参数量会相应变小
+3. 词表：vocab_size * d
+4. 这样最终参数量，若不算词表 emb，则是： $12ld^2$
+
+计算脚本：
+```
+def calc(L, d_h, ffn_intermidiate_size=4, use_swiglu=False, gqa_compress=1, vocab_size=0):
+    # gqa_compress: GQA 中一个kv head 对应多少个 q head
+    # use_swiglu: FFN 中是否用swiglu激活
+    # ffn_intermidiate_size: FFN 升维后的维数，或者倍数.
+
+    assert ffn_intermidiate_size < 10 or ffn_intermidiate_size >= d_h
+
+    intermidiate_size = d_h * ffn_intermidiate_size if ffn_intermidiate_size < 10 else ffn_intermidiate_size
+    ffn_expansion_factor = intermidiate_size / d_h # FFN 升维后的倍数
+
+    ffn = 2*ffn_expansion_factor*(d_h*d_h)
+    if use_swiglu: # 若用 swiglu 激活，则FFN一共两个变换矩阵会变成三个
+        ffn = 3*ffn_expansion_factor*(d_h*d_h)
+
+    attn_proj_out = d_h*d_h
+    attn_proj_q = d_h*d_h
+    attn_proj_k = d_h*d_h / gqa_compress
+    attn_proj_v = d_h*d_h / gqa_compress
+
+    emb = vocab_size * d_h
+
+    arr_all =[attn_proj_out, attn_proj_q, attn_proj_k, attn_proj_v, ffn]
+
+    total = sum(arr_all) * L + emb
+    ret = total / 10**9
+    return ret
+
+# 测试 https://arxiv.org/pdf/2407.10671  qianwen2 的 四种模型
+print ("qianwen72b", calc(L=80, d_h=8192, ffn_intermidiate_size=29568, gqa_compress=64/8, use_swiglu=True, vocab_size=151646))
+print ("qianwen7b", calc(L=28, d_h=3584, ffn_intermidiate_size=18944,  gqa_compress=28/4, use_swiglu=True, vocab_size=151646))
+print ("qianwen1.5b", calc(L=28, d_h=1536, ffn_intermidiate_size=8960, gqa_compress=12/2, use_swiglu=True, vocab_size=151646))
+print ("qianwen0.5b", calc(L=24, d_h=896, ffn_intermidiate_size=4864,  gqa_compress=14/2, use_swiglu=True, vocab_size=151646))
+
+```
+结果如下，且符合预期：
+```
+qianwen72b 71.454932992
+qianwen7b 7.068787712
+qianwen1.5b 1.543123968
+qianwen0.5b 0.493701376
+```
+
+若按 $12ld^2$ 估算，则分别是 64B，4.3B，0.8B，0.23B。
+
+注意：他们都用了 GQA 与 swiGLU, 且 FFN 升维的 intermidiate 倍数并不是 8/3 倍，而是更大 (FFN+swiglu 的8/3倍, 对应于非 swiglu 的 FFN 的 4 倍) 
+
+![image](https://github.com/user-attachments/assets/45d15530-14dc-46a5-91bd-9efd94411474)
 
 ## 计算量
 
@@ -20,7 +73,7 @@
 2. ATTN 投影:
    - QKV 投影(d 维的 hidden state 变出 d 维的QKV):
      - Q: 矩阵运算 [1, d]x[d,d]->[1,d], 计算量 $2d^2$
-     - QKV 总共： $6d^2$
+     - KV类似，故 QKV 总共： $6d^2$
    - attn 后的 d->d 投影: 矩阵运算 [1, d]x[d,d] -> [1,d]，计算量 $2d^2$
    - 
    - 以上 $8d^2$

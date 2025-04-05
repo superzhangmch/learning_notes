@@ -1,4 +1,7 @@
-LLM基座横向对比： https://zhuanlan.zhihu.com/p/663970656 https://docs.qq.com/sheet/DYlNwWmxiSWhsT3lw?tab=BB08J2
+LLM基座横向对比： 
+  - https://zhuanlan.zhihu.com/p/663970656 
+  - https://docs.qq.com/sheet/DYlNwWmxiSWhsT3lw?tab=BB08J2
+
 按该文：现在绝大部分LLM都是 BPE(bypefallback), pre-norm, RMSNorm, SwiGLU, RoPE
 bypefallback指的是如果超出了BPE范围: to convert unk character to utf-8 bytes
 

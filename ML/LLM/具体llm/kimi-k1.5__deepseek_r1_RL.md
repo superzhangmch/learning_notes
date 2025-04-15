@@ -1,4 +1,4 @@
-openai o1出来后，表现强劲，大家猜测用了什么 PRM、MCTS 吗？无论它用了什么技术，deepseek-r1、kimi k1.5 的出现，证明了直截了当地直接用 RL 优化 long-COT（chain-of-thoughts） 就可以达到同样的效果。
+openai o1出来后，表现强劲，大家猜测用了什么 PRM、MCTS 吗？无论它用了什么技术，deepseek-r1、kimi k1.5 的出现，证明了直接用 RL 优化 long-COT（chain-of-thoughts） 就可以达到同样的效果。
 
 # kimi-k1.5
 

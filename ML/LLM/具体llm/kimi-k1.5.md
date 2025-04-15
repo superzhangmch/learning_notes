@@ -54,5 +54,6 @@ long-COT 需要作各种探索，歧途步骤不见得不好。于是抛弃了�
 如图，先 rollout结束后train。所以如果有某个prompt 正巧sample 的输出过长，那么就会导致 rollout 阶段时间太长，整体训练效率太低。partial rollout 正是为了解决这个问题。强制一轮 rollout时间只能有那么长，时间到就强制切走。下一次rollout 时间到了，把刚才没做完的继续做。如此而已。只是 rollout 到一半的不能用于训练，需要等待最终 rollout 结束。鉴于时 on-policy training, rollout 出的结果要很快用于训练，对于 partial rollout的结果，可能会前半段是老策略生成的，后半段是新策略生成的，这是有问题的，于是算loss的时候，会用 mask 把前面段mask掉（During training, certain segments can be excluded from loss computation to further optimize the learning process, making the entire system both efficient and scalable.）。
 
 ![image](https://github.com/user-attachments/assets/29e2186e-97e9-4d04-a6c5-bc01378db35f)
+（RDMA：直接存储访问）
 
 training 与 rollout 是共存的。作training的时候，需要把 rollout 杀掉。作rollout的时候， training 需要作 offload（转化速度： training->rollout, 一分钟内，反向：10秒）。为了加速采样，用的 vllm。

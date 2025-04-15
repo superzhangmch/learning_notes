@@ -70,7 +70,6 @@ deepseek-R1-zero 更激进一步，证明了 pretrain 后，不经任何 SFT，�
 所用的 GRPO，从本质上和 PPO，乃至 kimi-k1.5 的 RL 算法，无本质区别。略过不提。
 
 ### reward
-
 reward 完全靠规则（是否做对，以及格式是否正确），没用任何 reward model。
 
 ![image](https://github.com/user-attachments/assets/f0d92d5a-bf17-4742-a835-96b24623df93)
@@ -81,11 +80,11 @@ reward 完全靠规则（是否做对，以及格式是否正确），没用任�
 
 再用以上 prompt template 对每个问题采样，就可以驱动 R1-zero 的训练 run 起来了。不过这样打造的 R1-zero，强则强矣，有几个问题：（1）思考过程可读性差（2）多语言混合（3）huggingface 某处看到还有一个问题时，容易有repeat 复读机问题。
 
-### R1
-1. 显示做一个 long-COT SFT。数据收集方式是：用 few-shot prompting 生成 long COT，从 R1-zero生成的结果里挑选一些符合要求的数据。
-2. 然后是 RL。这一步和 R1-zero 一样，这是额外加了语言一致性 reward。
-3. 接下来由收集了 60万 COT 数据（从上一阶段model采样并选出），20 万普通数据（复用打造deepseekV3的sft数据， 但是要适当用model生成 COT），作 SFT。
-4. 接下来做了有用性与无害性的 RL(推理类数据仍用规则 reward，非推理类引入偏好 reward model)。
+### R1 打造四部曲
+1. 给 RL 一个好的起点：首先做一次 long-COT SFT。数据收集方式是：用 few-shot prompting 生成 long COT，从 R1-zero生成的结果里挑选一些符合要求的数据（加上人工后处理）。
+2. RL:这一步和 R1-zero 一样，这是额外加了语言一致性 reward。
+3. 补充非推理能力(写作、QA、翻译等)：接下来收集了 60万 COT 数据（从上一阶段model采样并选出），20 万普通数据（复用打造deepseekV3的sft数据， 但是要适当用model生成 COT），作 SFT。
+4. 偏好对齐：接下来做了有用性与无害性的 RL(推理类数据仍用规则 reward，非推理类引入偏好 reward model)。helpfulness: 只看最后 summary 部分；harmlessness: 审查整个输出（包括 reasoning 过程）
 
 ### 能力迁移到小模型
-通过作 SFT。
+用前述第3步的80万数据对小模型作 SFT。

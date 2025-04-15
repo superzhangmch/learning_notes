@@ -1,5 +1,7 @@
 openai o1出来后，表现强劲，大家猜测用了什么 PRM、MCTS 吗？无论它用了什么技术，deepseek-r1、kimi k1.5 的出现，证明了直截了当地直接用 RL 优化 long-COT（chain-of-thoughts） 就可以达到同样的效果。
 
+# kimi-k1.5
+
 kimi-k1.5 在 pretrain 后，仍然做了普通的 SFT，然后开启强化学习。不过在开启 RL 之前，它先构造 long-COT 数据，做了 long-cot SFT，然后才 RL。
 
 ## long-cot SFT
@@ -7,8 +9,6 @@ kimi-k1.5 在 pretrain 后，仍然做了普通的 SFT，然后开启强化学�
 先构造拟覆盖的 problem set，然后用 prompt engineering 生成含有 long-COT 的数据。最终数据集应该像人思考一样包括：planing(先规划再做事），evaluation（评价做的对不对），reflection(反思刚才思路），exploration（如果反思刚才有问题，那么应该探索新思路）。
 
 problem set：涵盖的领域要光，各种难度的题目都要有，结果可以简单清晰判答案读错，不能不经思考直接猜出答案。每一点，都是尽量用自动化的方式来处理。
-
-----
 
 ## RL
 
@@ -45,15 +45,47 @@ long-COT 需要作各种探索，歧途步骤不见得不好。于是抛弃了�
 2. 蒸馏：从 long_COT RL model, 采样出结果正确但是输出短（多次采样选最短）的数据后，作 SFT 或者做 DPO。
 3. 对业已训好的 long_COT RL model，在做作一轮 RL，但是要对“长度惩罚”做强化，强力缩短输出长度。
 
-----
-
 ## RL 底层实现
 
 ![image](https://github.com/user-attachments/assets/fae59a87-1149-4904-b665-2fbae6f39f95)
 
-如图，先 rollout结束后train。所以如果有某个prompt 正巧sample 的输出过长，那么就会导致 rollout 阶段时间太长，整体训练效率太低。partial rollout 正是为了解决这个问题。强制一轮 rollout时间只能有那么长，时间到就强制切走。下一次rollout 时间到了，把刚才没做完的继续做。如此而已。只是 rollout 到一半的不能用于训练，需要等待最终 rollout 结束。鉴于时 on-policy training, rollout 出的结果要很快用于训练，对于 partial rollout的结果，可能会前半段是老策略生成的，后半段是新策略生成的，这是有问题的，于是算loss的时候，会用 mask 把前面段mask掉（During training, certain segments can be excluded from loss computation to further optimize the learning process, making the entire system both efficient and scalable.）。
+如图，先 rollout（即完整 trajectory 的采样），结束后 train，如是往复。如果有某个 prompt 正巧 rollout 的输出过长，那么就会导致 rollout 阶段时间太长，整体训练效率太低。partial rollout 正是为了解决这个问题。强制一轮 rollout时间只能有那么长，时间到就强制切走。下一次rollout 时间到了，把刚才没做完的继续做。如此而已。只是 rollout 到一半的不能用于训练，需要等待最终 rollout 结束。鉴于时 on-policy training, rollout 出的结果要很快用于训练，对于 partial rollout的结果，可能会前半段是老策略生成的，后半段是新策略生成的，这是有问题的，于是算loss的时候，会用 mask 把前面段mask掉（During training, certain segments can be excluded from loss computation to further optimize the learning process, making the entire system both efficient and scalable.）。
 
 ![image](https://github.com/user-attachments/assets/29e2186e-97e9-4d04-a6c5-bc01378db35f)
 （RDMA：直接存储访问）
 
 training 与 rollout 是共存的。作training的时候，需要把 rollout 杀掉。作rollout的时候， training 需要作 offload（转化速度： training->rollout, 一分钟内，反向：10秒）。为了加速采样，用的 vllm。
+
+----
+
+# deepseek-R1
+
+deepseek-R1-zero 更激进一步，证明了 pretrain 后，不经任何 SFT，直接做 RL，所得到的 model 虽然有多个问题，但是在数学难题上，是真的做的出来，得分还很高。
+
+![image](https://github.com/user-attachments/assets/3201dd41-cc0c-4ddb-8126-4336f7b542fd)
+
+当然实用化的 R1，仍然是先做 SFT，再 RL。《deepseek-R1》paper 中对于细节没有《kimi-k1.5》那么细，但就大体而言，两者可以说一模一样。
+
+### RL 算法
+所用的 GRPO，从本质上和 PPO，乃至 kimi-k1.5 的 RL 算法，无本质区别。略过不提。
+
+### reward
+
+reward 完全靠规则（是否做对，以及格式是否正确），没用任何 reward model。
+
+![image](https://github.com/user-attachments/assets/f0d92d5a-bf17-4742-a835-96b24623df93)
+
+### rollout 采样的 prompt 模版
+
+![image](https://github.com/user-attachments/assets/136d7747-9865-46e9-8cc9-03933ff0588a)
+
+再用以上 prompt template 对每个问题采样，就可以驱动 R1-zero 的训练 run 起来了。不过这样打造的 R1-zero，强则强矣，有几个问题：（1）思考过程可读性差（2）多语言混合（3）huggingface 某处看到还有一个问题时，容易有repeat 复读机问题。
+
+### R1
+1. 显示做一个 long-COT SFT。数据收集方式是：用 few-shot prompting 生成 long COT，从 R1-zero生成的结果里挑选一些符合要求的数据。
+2. 然后是 RL。这一步和 R1-zero 一样，这是额外加了语言一致性 reward。
+3. 接下来由收集了 60万 COT 数据（从上一阶段model采样并选出），20 万普通数据（复用打造deepseekV3的sft数据， 但是要适当用model生成 COT），作 SFT。
+4. 接下来做了有用性与无害性的 RL(推理类数据仍用规则 reward，非推理类引入偏好 reward model)。
+
+### 能力迁移到小模型
+通过作 SFT。

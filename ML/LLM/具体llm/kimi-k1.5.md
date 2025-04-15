@@ -27,7 +27,7 @@ problem set：涵盖的领域要光，各种难度的题目都要有，结果可
 下面是它的 RL 的一些细节。
 
 #### RL 算法本身
-long-COT 需要作各种探索，歧途步骤不见得不好。于是抛弃了每个 token 位置都需算一次的 value model——否则会打压误入歧途的探索。整体上就是把整个生成过程当做一个 RL step。
+long-COT 需要作各种探索，歧途步骤不见得不好。于是抛弃了每个 token 位置都需算一次的 value model——否则会打压误入歧途的探索。整体上就是把整个生成过程当做一个 RL step。它还不需要 sft reference model 作 KL 计算。所以可以说比 GRPO 还简单。
 
 #### 题目的采样策略
 每次迭代，选择训哪些题目呢？整个训练过程中，先训简单的题目，慢慢增加难度。题目本身有难度值，可以按此调整采样比例。训练时要跟踪每个题目的正确率，从而动态调整采样概率。
@@ -49,6 +49,10 @@ long-COT 需要作各种探索，歧途步骤不见得不好。于是抛弃了�
 
 ## RL 底层实现
 
+![image](https://github.com/user-attachments/assets/fae59a87-1149-4904-b665-2fbae6f39f95)
 
+如图，先 rollout结束后train。所以如果有某个prompt 正巧sample 的输出过长，那么就会导致 rollout 阶段时间太长，整体训练效率太低。partial rollout 正是为了解决这个问题。强制一轮 rollout时间只能有那么长，时间到就强制切走。下一次rollout 时间到了，把刚才没做完的继续做。如此而已。只是 rollout 到一半的不能用于训练，需要等待最终 rollout 结束。鉴于时 on-policy training, rollout 出的结果要很快用于训练，对于 partial rollout的结果，可能会前半段是老策略生成的，后半段是新策略生成的，这是有问题的，于是算loss的时候，会用 mask 把前面段mask掉（During training, certain segments can be excluded from loss computation to further optimize the learning process, making the entire system both efficient and scalable.）。
 
+![image](https://github.com/user-attachments/assets/29e2186e-97e9-4d04-a6c5-bc01378db35f)
 
+training 与 rollout 是共存的。作training的时候，需要把 rollout 杀掉。作rollout的时候， training 需要作 offload（转化速度： training->rollout, 一分钟内，反向：10秒）。为了加速采样，用的 vllm。

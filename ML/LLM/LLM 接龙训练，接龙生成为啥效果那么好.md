@@ -4,7 +4,7 @@ transformer 之 LLM，生成无疑是接龙方式的。
 
 为什么接龙训，却能有奇效呢？
 
-claude 有对他的解释： https://www.anthropic.com/research/tracing-thoughts-language-model。大体上说，生成时并不是生成下一个token，而是已经想好了接下来怎么做，生成的token不过对提纲的落笔第一字而已。
+claude 有对他的解释： https://www.anthropic.com/research/tracing-thoughts-language-model 。大体上说，生成时并不是生成下一个token，而是已经想好了接下来怎么做，生成的token不过对提纲的落笔第一字而已。
 
 为啥这样？我觉得首先，它的训练其实并不是独立训的。虽然大家都说是并行，其实不是真的并行，同一个数据的多个token耦合在一起一次训，一定有某种协同作用，使得训第i个token的时候，看似在拟合它，其实暗地里考虑到了后面的token。如果完全不考虑成本，我这样训练：
 ```

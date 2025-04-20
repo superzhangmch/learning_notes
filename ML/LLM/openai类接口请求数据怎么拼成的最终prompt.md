@@ -48,3 +48,34 @@ user_query: 请问。。。
 】
 ```
 也就是把prompt 拆分成两份。实际中，有时会很有效。
+
+----
+
+### 追加：
+
+另外后来了解到： chatML 格式，就是干这个的。最后就是转成了该格式。
+
+比如：
+
+```
+[
+  {"role": "system", "content": "You are a helpful assistant."},
+  {"role": "user", "content": "Who won the world cup in 2018?"},
+  {"role": "assistant", "content": "France won the 2018 FIFA World Cup."}
+]
+```
+
+转化成了
+```
+<|im_start|>system
+You are a helpful assistant.
+<|im_end|>
+<|im_start|>user
+Who won the world cup in 2018?
+<|im_end|>
+<|im_start|>assistant
+France won the 2018 FIFA World Cup.
+<|im_end|>
+```
+
+transformers 库里的 text = processor.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt") 就是作这样的转化的。

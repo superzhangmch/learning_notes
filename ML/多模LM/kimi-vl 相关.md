@@ -1,6 +1,6 @@
 ## paper 《Kimi-VL Technical Report》 https://arxiv.org/abs/2504.07491》 -- 2025
 
-乃一只激活 2.8B 参数的 MOE VL thinking 模型。
+乃一只激活 2.8B 参数的 MOE VL thinking 小钢炮模型。
 
 ![image](https://github.com/user-attachments/assets/25597b0f-df89-471f-ad51-4d25de90f94c)
 
@@ -11,8 +11,8 @@
 
 ### 主体 model 部分
 1. 用了 MOE。代码上就是引用到了 deepseekV3, 所以就是 deepseek 版本的 MOE。
-2. 图文二模态的关联，自从 llava 之后都用 MLP，它也不例外。
-3. 图文二模态并存，位置编码怎么处理的：没有给 vision 模态 token 特别设计位置编码（这和 qianwen2-vl 是不同的），是当做 text token 一样处理的。vision token 的行列位置关系，靠 vision encoder 编码到 token emb 里。
+2. 图文两模态的关联，自从 llava 之后都用 MLP，它也不例外。
+3. 图文两模态并存，位置编码怎么处理的：没有给 vision 模态 token 特别设计位置编码（这和 qianwen2-vl 是不同的），是当做 text token 一样处理的。vision token 的行列位置关系，靠 vision encoder 编码到 token emb 里。
 
 ### 所用强化学习
 和 《Mkimi k1.5》中方法简直一模一样。

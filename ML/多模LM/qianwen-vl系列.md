@@ -163,13 +163,14 @@ messages = [
 
 ![image](https://github.com/user-attachments/assets/6bedc332-b487-42ec-bd5b-55e36e2c97e0)
 
-**注：**上面这样的位置编码的一般性形式：sujianlin https://spaces.ac.cn/archives/10352 ，它强调了 3D repo 应该满足的 3 个属性：
+**上面这样的位置编码的一般性形式**：sujianlin https://spaces.ac.cn/archives/10352 ，该文强调了 3D repo 应该满足的 3 个属性：
 - 兼容性：如果input只有text，应该退化成 1d-RoPE
 - 对称性：两段文字text1, text2 中间夹一个img(或video). 则对于(t,h,w) 三个维度id都应该满足：img.first_token - text1.last_token == text2.first_token - img.last_token
   - 也就是说前后两段文字和图片的距离应该一样
 - 等价性：两段文字text1, text2 中间夹一个img. 应该：text2.first_token - text1.last_token == img.token_cnt
-  - 也就是说，
+  - 也就是说，两段text之间的距离，应该正好等于 img.token_cnt
 
+以上三点甚为有理。而qianwen-vl 的 M-Rope 只保留了兼容性。
 
 ### 视频支持动态帧率与帧绝对时间编码
 

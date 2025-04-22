@@ -1,11 +1,11 @@
 ## paper 《Kimi-VL Technical Report》 https://arxiv.org/abs/2504.07491》 -- 2025
 
-乃一只激活 2.8B 参数的 MOE VL thinking 小钢炮模型。
+乃一只激活 2.8B 参数(总十几B)的 MOE VL thinking 小钢炮模型。
 
 ![image](https://github.com/user-attachments/assets/25597b0f-df89-471f-ad51-4d25de90f94c)
 
 ### vision encoder 
-支持**任意**分辨率的图片与视频。所用 vision encoder 为 ViT 结构，从已有的 SigLIP-SO-400M 预训练 model 上扩展来的（用它初始化参数并继续 pretrain）。原 SigLIP 没用 2D rope 位置编码而是用了绝对位置编码，为此 kimi 把它插值化，从而能支持可变的图片分辨率。另外，还补充了 2D rope 位置编码。所以一共用了两种位置编码。
+支持**任意**分辨率的图片与视频。所用 vision encoder 为 ViT 结构，从已有的 SigLIP-SO-400M 预训练 model 上扩展来的（用它初始化参数并继续 pretrain）。原 SigLIP 没用 2D rope 位置编码而是用了绝对位置编码，为此 kimi 把它插值化，从而能支持可变的图片分辨率。另外，还补充了 2D rope 位置编码(从左上角开始排布位置，自然一路延伸，从而它也支持图片变分辨率)。所以一共用了两种位置编码。
    
 ![image](https://github.com/user-attachments/assets/02d2d8cc-8ae9-4e8d-9b19-49bd5f3ab149)
 

@@ -77,7 +77,7 @@ messages = [
 1 [30, 30, 30]
 1 [31, 31, 31]
 1 [32, 32, 32]
-
+-----
 # img: img1.png
 1 [33, 33, 33] # 统一加了前面的32
 2 [33, 33, 34]
@@ -88,11 +88,11 @@ messages = [
 3575 [33, 81, 103]
 3576 [33, 81, 104]
 3577 [33, 81, 105]
-
+----
 # text
-1 [106, 106, 106] # 从 前面105开始
-1 [107, 107, 107]
-
+1 [106, 106, 106] #<vision_end> token# 从 前面105开始
+1 [107, 107, 107] # <vision_start> token 
+----
 # img: img2.png
 1 [108, 108, 108] # 从前面107开始。统一加了107得到img2.png 的 位置编码 id
 2 [108, 108, 109]
@@ -104,7 +104,7 @@ messages = [
 886 [108, 144, 129]
 887 [108, 144, 130]
 888 [108, 144, 131]
-
+-----
 # text: what do you see in the picture?
 1 [145, 145, 145]
 1 [146, 146, 146]
@@ -112,7 +112,7 @@ messages = [
 ...
 1 [153, 153, 153]
 1 [154, 154, 154]
-
+------
 # video： video1.mov
 # - frame 1
 1 [155, 155, 155]
@@ -148,7 +148,7 @@ messages = [
 718 [159, 190, 172]
 719 [159, 190, 173]
 720 [159, 190, 174]
-
+-----
 # text: what text do you see in the movie?
 1 [191, 191, 191]
 1 [192, 192, 192]
@@ -162,6 +162,14 @@ messages = [
 一般感觉中，横竖坐标都应该是从0或者1开始，如果从某一个随机的值开始，当做左上角坐标起点（正如上面 m-rope），还有意义吗？因为rope其实起作用的时候，使用的位置差，所以加这样的偏移是没问题的。上面这样，反而能刻画出这个img/video/text 三者之间的前后顺序。
 
 ![image](https://github.com/user-attachments/assets/6bedc332-b487-42ec-bd5b-55e36e2c97e0)
+
+**注：**上面这样的位置编码的一般性形式：sujianlin https://spaces.ac.cn/archives/10352 ，它强调了 3D repo 应该满足的 3 个属性：
+- 兼容性：如果input只有text，应该退化成 1d-RoPE
+- 对称性：两段文字text1, text2 中间夹一个img(或video). 则对于(t,h,w) 三个维度id都应该满足：img.first_token - text1.last_token == text2.first_token - img.last_token
+  - 也就是说前后两段文字和图片的距离应该一样
+- 等价性：两段文字text1, text2 中间夹一个img. 应该：text2.first_token - text1.last_token == img.token_cnt
+  - 也就是说，
+
 
 ### 视频支持动态帧率与帧绝对时间编码
 

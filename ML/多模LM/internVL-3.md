@@ -9,7 +9,7 @@ https://arxiv.org/pdf/2504.10479, 《internVL-3》，上海AI实验室
 ![image](https://github.com/user-attachments/assets/f23cbbee-8f6a-4f38-ac24-5488e41c63ee)
 
 ### 是否只能固定分辨率
-从它所用的 vision encoder （https://huggingface.co/OpenGVLab/InternViT-6B-448px-V2_5）看：
+从它所用的 vision encoder （ https://huggingface.co/OpenGVLab/InternViT-6B-448px-V2_5 ） 看：
 > As in the previous version, we applied a pixel unshuffle operation, reducing the number of visual tokens to one-quarter of the original. Besides, we adopted a similar **dynamic resolution** strategy as InternVL 1.5, **dividing images into tiles** of 448×448 pixels. The key difference, starting from InternVL 2.0, is that we additionally introduced support for multi-image and video data.
 
 也就是大图切分成多个448x448 的固定图的方式，支持了任意大小的图。所用 vision encoder 内部应该有（不确，未考） 2d 位置编码。否则LLM中的 1d位置编码怎么区分出img tokens 的位置坐标呢？

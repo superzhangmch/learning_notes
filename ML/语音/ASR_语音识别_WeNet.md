@@ -13,6 +13,8 @@ loss: $L_{combined}(x, y) = λ\cdot L_{CTC}(x, y) + (1 − λ)\cdot L_{AED}(x, y
 
 ![image](https://github.com/user-attachments/assets/074c3eb9-7025-4f8b-a8a5-f5bf487d2fbd)
 
+另外，这几种解码方式，虽然效果有差异，但是只是细微差异：大部分时候，几者的结果是一样的。
+
 # weNet-v2 https://arxiv.org/pdf/2203.15455
 
 相比 wenet-v1，transformer decoder 新增了 R2L=right2left，也就是用到了两个 decoder，从左往右，从右边往左两个方向都可用来优选 CTC 所给出的候选集。如下图：

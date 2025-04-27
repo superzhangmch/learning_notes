@@ -13,6 +13,8 @@ loss: $L_{combined}(x, y) = λ\cdot L_{CTC}(x, y) + (1 − λ)\cdot L_{AED}(x, y
 
 ![image](https://github.com/user-attachments/assets/074c3eb9-7025-4f8b-a8a5-f5bf487d2fbd)
 
+另外，这几种解码方式，虽然效果有差异，但是只是细微差异：大部分时候，几者的结果是一样的。
+
 # weNet-v2 https://arxiv.org/pdf/2203.15455
 
 相比 wenet-v1，transformer decoder 新增了 R2L=right2left，也就是用到了两个 decoder，从左往右，从右边往左两个方向都可用来优选 CTC 所给出的候选集。如下图：
@@ -49,7 +51,15 @@ loss: $L_{combined}(x, y) = λ\cdot L_{CTC}(x, y) + (1 − λ)\cdot L_{AED}(x, y
 ### 流式怎么支持的：dynamic chunk
 用于加速CTC的解码。不用等语音完全结束才开始CTC解码，而是随着chunk推进就可以做 CTC 解码。CTC 全解完后，开始做 R2L/L2R 的 rescore 优选。而后者并非流式的。
 
-一个 chunk 一般几百毫秒到一两秒。越大的chunk，asr 效果更好（但是实时性会降低）。为了支持不同chunk大小，training时就要sample 各种长度的chunk。
+一个 chunk 一般几百毫秒到一两秒。越大的chunk，asr 效果更好（但是实时性会降低）。
+
+encoder 用的是 conformer / transformer，内部有 attention。为了适应chunk机制，training时就要sample 各种长度的chunk来训练。而且attention 也要分块做：chunk 内部，作全 attention，跨越不同的 chunk，则是causal attention。
+
+decoder 也用到了 transformer，但是到它这步，已经见到了全部的序列，所以就不用管chunk的存在了。【weNet2中说：
+> And then, the input is split into several chunks with the chosen chunk size. At last, the current chunk does bidirectional chunk-level attention to itself and **previous/following** chunks in **L2R/R2L** attention decoder respectively in training.
+
+看代码，并没体现这一点。】
+
 
 ### VAD 怎么处理的？
 wenet 内基于一些规则判断语音开始结束。

@@ -32,7 +32,7 @@ loss: $L_{combined}(x, y) = λ\cdot L_{CTC}(x, y) + (1 − λ)\cdot L_{AED}(x, y
 
 既然是端到端 asr model，那就是解出是啥算啥。如果只是用 transformer decoder，那真是没办法了。还好 weNet 的两阶段解码第一阶段是 CTC，它是可以被干预的。
 
-实际上 CTC 解码，可以用一个语言模型 LM 来加强，并用一个叫 CTC WFST beam search 的解码法。细节未深究。
+实际上 CTC 解码，可以用一个语言模型 LM （文中所用为 n-gram）来加强，并用一个叫 CTC WFST beam search 的解码法。细节未深究。
 
 此外，用户如果有自己的私有词表，WFST 正巧也能支持。对用户custom 词，实时创建出一种干预图，如下图这样作解码干预即可（）：
 
@@ -49,7 +49,7 @@ loss: $L_{combined}(x, y) = λ\cdot L_{CTC}(x, y) + (1 − λ)\cdot L_{AED}(x, y
 ### 流式怎么支持的：dynamic chunk
 用于加速CTC的解码。不用等语音完全结束才开始CTC解码，而是随着chunk推进就可以做 CTC 解码。CTC 全解完后，开始做 R2L/L2R 的 rescore 优选。而后者并非流式的。
 
-一个 chunk 一般几百毫秒到一两秒。
+一个 chunk 一般几百毫秒到一两秒。越大的chunk，asr 效果更好（但是实时性会降低）。为了支持不同chunk大小，training时就要sample 各种长度的chunk。
 
 ### VAD 怎么处理的？
 wenet 内基于一些规则判断语音开始结束。

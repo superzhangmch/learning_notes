@@ -20,7 +20,7 @@ audio-encoder：基于 Whisperlarge-v3，并用它初始化。
 
 ### encoder
 - audio-encoder：和 qianwen-2-audio 一样。
-- vision-encoder：和 qianwen-2.5-VL 一样， 0.675B。
+- vision-encoder：和 qianwen-2.5-VL 一样， Whisper-large-v3 based, 0.675B。
 
 ### 位置编码
 

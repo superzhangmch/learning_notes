@@ -144,12 +144,17 @@ video 可能带声音。这时才体现出 TMRoPE 和 M-RoPE 的区别。video �
 
 或者对原图作一些变动后：
 
-![image](https://github.com/user-attachments/assets/d4b12f13-8a67-4084-9fe5-1ba75a89586e)
+![image](https://github.com/user-attachments/assets/d7493bda-0e41-48fa-b691-d3a8037c5fce)
 
 thinker 没啥特别。talker 的 input embs 由三种 embs 求和得到：
-1. thinker 的 input token 的 embs
-2. thinker 的 input token 的最后一层的 hidden state 
-3. talker 的自回归 speech token 的 emb.
+- thinker 的 token （包括 input tokens 与自回归采样出的 tokens） 的 embs
+- thinker 的 token 的最后一层的 hidden state 
+- talker 的自回归 speech token 的 emb.
 
-解释：三者求和后当做 speech token 的新 emb 传给 talker transformer。talker 生成的token 数量可能远多余 thinker 的生成token。当前者超过后者后，所拼的thinker 的两项内容就不存在了，这时候只能取一个 padding token 的 emb（即图中白色块的 pad token）。talker 的 "prompt" input 部分并没有speech token 可以对应，这时候 speech token emb 也是取某一特殊 token 的 emb。
+解释：这三者求和后当做 speech token 的新 emb 传给 talker transformer。talker 生成的token 数量可能远多余 thinker 的生成token。当前者超过后者后，所拼的thinker 的两项内容就不存在了，这时候只能取一个 padding token 的 emb（即图中白色块的 pad token）。talker 的 "prompt" input 部分并没有speech token 可以对应，这时候 speech token emb 也是取某一特殊 token 的 emb。
 
+为什么 talker 同时需要 thinker 的 token embs 与 token hidden state：
+- 有后者，talker 才能及时掌握真正语义，从而知道生成的 audio 应该是怎样的语气语调（tone and attitude）。若只靠 token embs，则只有 thinker 生成结束后才能获得这种信息，那么时延太大。
+- 若只用 hidden，不用 token embs 呢？作者说，hidden 只有语义，没有语音，所以需要用 token embs 来确定同一个语义到底用的哪个读音的词（按说 hidden 也蕴含了这点，相比作者试验了这点蕴含还不够？）
+
+### 流式解码

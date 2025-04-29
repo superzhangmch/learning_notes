@@ -123,6 +123,8 @@ video 可能带声音。这时才体现出 TMRoPE 和 M-RoPE 的区别。video �
 # >>>
 ```
 
+以上位置编码方式在 thinker、 talker 上都有应用。
+
 ### thinker-talker 两阶段生成
 
 （1）、 当生成 audio output 时，一共需要 4 个 model 参与：
@@ -144,6 +146,10 @@ video 可能带声音。这时才体现出 TMRoPE 和 M-RoPE 的区别。video �
 
 ![image](https://github.com/user-attachments/assets/d4b12f13-8a67-4084-9fe5-1ba75a89586e)
 
-thinker 没啥特别。talker 的 input embs 由三种 embs 求和得到：（1）、thinker 的 input token 的 embs （2）、 thinker 的 input token 的最后一层的 hidden state （3）、 talker 的自回归 speech token 的 emb.
+thinker 没啥特别。talker 的 input embs 由三种 embs 求和得到：
+1. thinker 的 input token 的 embs
+2. thinker 的 input token 的最后一层的 hidden state 
+3. talker 的自回归 speech token 的 emb.
 
-三者求和后当做 speech token 的新 emb 传给 talker transformer。
+解释：三者求和后当做 speech token 的新 emb 传给 talker transformer。talker 生成的token 数量可能远多余 thinker 的生成token。当前者超过后者后，所拼的thinker 的两项内容就不存在了，这时候只能取一个 padding token 的 emb（即图中白色块的 pad token）。talker 的 "prompt" input 部分并没有speech token 可以对应，这时候 speech token emb 也是取某一特殊 token 的 emb。
+

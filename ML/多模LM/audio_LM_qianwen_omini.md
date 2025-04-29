@@ -1,13 +1,14 @@
 # qianwen-2-audio https://arxiv.org/pdf/2407.10759 2024.07
-更早的 qianwen-1-audio 就不论了。qianwen-2-audio 相比一般 LLM，只是 input 增加了 audio， output 只有 text。
+更早的 qianwen-1-audio 就不论了。qianwen-2-audio 相比一般 LLM，只是 input 增加了 audio（不支持 image)， output 只有 text。
 
 ### 参数量: 
 基于 qwen-7B, 总参数量 8.2B
 
 ### audio-encoder
+
 audio-encoder：基于 Whisperlarge-v3，并用它初始化。 
 
-音频处理：音频先整成 16kHz，再转成 128-channel mel-spectrogram（25ms窗，10ms hop），最终每帧 40ms
+音频处理：音频先整成 16kHz，再转成 128-channel mel-spectrogram（25ms窗，10ms hop），再经某些操作，最终每帧 40ms
 
 ![image](https://github.com/user-attachments/assets/58693b8e-3125-4755-8267-15d8ecaf7b35)
 
@@ -124,3 +125,25 @@ video 可能带声音。这时才体现出 TMRoPE 和 M-RoPE 的区别。video �
 
 ### thinker-talker 两阶段生成
 
+（1）、 当生成 audio output 时，一共需要 4 个 model 参与：
+- thinker：transformer结构。用于根据用户的多模态输入生成 text output
+- talker：transformer结构。 基于原始 user input 以及 thinker output，生成 speech token ids
+- 语音解码：用 flow matching model （类扩散模型）把 speech token ids 转成 mel 谱，再经一个 gan 模型（bigGAN) 把 mel-spectrogram 生成声波。这一步需要两个 model。
+
+关于 talker：除了 user 的原始多模态 input 作为输入，还要把 thinker 的 hidden state 以及据之而得的 sample text 都作为 input。这样看 "talker + 语音解码" 二者大体上就是个 tts 文字转语音的模块。它所生成的语音，和 thinker 的 text output 会基本一致。
+
+不同说话人身份怎么设定的：作为 flow matching model 的一个生成 condition。
+
+（2）、当只需要生成 text output时，只需要 thinker 一个 model 即可
+
+### thinker-talker 实现细节
+
+![image](https://github.com/user-attachments/assets/133b0778-9844-4c8c-a136-95729fe7b1a8)
+
+或者对原图作一些变动后：
+
+![image](https://github.com/user-attachments/assets/d4b12f13-8a67-4084-9fe5-1ba75a89586e)
+
+thinker 没啥特别。talker 的 input embs 由三种 embs 求和得到：（1）、thinker 的 input token 的 embs （2）、 thinker 的 input token 的最后一层的 hidden state （3）、 talker 的自回归 speech token 的 emb.
+
+三者求和后当做 speech token 的新 emb 传给 talker transformer。

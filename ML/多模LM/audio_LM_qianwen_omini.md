@@ -177,3 +177,6 @@ post-training：对于 talker，三阶段训练：
 - In-Context Learning (ICL) to learn context continuation：除了 speech token 接龙，还要有 text supervision（这个是说text token 接龙训练吗？这这点对应图中 talker 的 text output 吗？pretraiing 的时候，是否要训 talker？从这里看，感觉不！）
 - 类 RLHF 的 DPO 算法来提升 speech generation 稳定性
 - multi-speaker instruction fine-tuning 提升自然度与可控性。
+
+### 关于 token id
+text 自然有 text token id。作为 input 的 audio、vision，并没用先离散出 token id，然后 token id => embedding 后才feed LLM，而是提取的特征向量直接 feed LLM。但是在输出 audio 的时候，是经过了 audio token id 一步的。

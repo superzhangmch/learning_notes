@@ -1,5 +1,7 @@
 # qianwen-2-audio https://arxiv.org/pdf/2407.10759 2024.07
-更早的 qianwen-1-audio 就不论了。qianwen-2-audio 相比一般 LLM，只是 input 增加了 audio（不支持 image)， output 只有 text。
+qianwen-2-audio 相比一般 LLM，只是 input 增加了 audio（不支持 image)， output 只有 text。
+
+qianwen-2-audio 相比 qianwen-1-audio，在于把固定格式的训练 sequence 数据，变成了自然语言描述。
 
 ### 参数量: 
 基于 qwen-7B, 总参数量 8.2B
@@ -144,17 +146,34 @@ video 可能带声音。这时才体现出 TMRoPE 和 M-RoPE 的区别。video �
 
 或者对原图作一些变动后：
 
-![image](https://github.com/user-attachments/assets/d7493bda-0e41-48fa-b691-d3a8037c5fce)
+![image](https://github.com/user-attachments/assets/02b42d17-0b87-4e30-a4a8-1e4450806e68)
 
 thinker 没啥特别。talker 的 input embs 由三种 embs 求和得到：
-- thinker 的 token （包括 input tokens 与自回归采样出的 tokens） 的 embs
+- thinker 的 token （包括 user input tokens 与自回归采样出的 tokens） 的 embs
 - thinker 的 token 的最后一层的 hidden state 
 - talker 的自回归 speech token 的 emb.
 
 解释：这三者求和后当做 speech token 的新 emb 传给 talker transformer。talker 生成的token 数量可能远多余 thinker 的生成token。当前者超过后者后，所拼的thinker 的两项内容就不存在了，这时候只能取一个 padding token 的 emb（即图中白色块的 pad token）。talker 的 "prompt" input 部分并没有speech token 可以对应，这时候 speech token emb 也是取某一特殊 token 的 emb。
 
+二者怎么配合：thinker 与 talker 是在用户input 处理结束后，同步开始生成的：thinker 生成 text，talker 生成 audio，但是 audio 结果的token 数比 text 结果的 token 多，所以 talker 虽然要用到thinker 的tex他output，但基本上不用等待。
+
 为什么 talker 同时需要 thinker 的 token embs 与 token hidden state：
 - 有后者，talker 才能及时掌握真正语义，从而知道生成的 audio 应该是怎样的语气语调（tone and attitude）。若只靠 token embs，则只有 thinker 生成结束后才能获得这种信息，那么时延太大。
 - 若只用 hidden，不用 token embs 呢？作者说，hidden 只有语义，没有语音，所以需要用 token embs 来确定同一个语义到底用的哪个读音的词（按说 hidden 也蕴含了这点，相比作者试验了这点蕴含还不够？）
 
-### 流式解码
+### 流式支持
+
+audio encoder：改造成了分块渐进处理音频（这样才不会你巴拉巴拉说一通，等到最后才 encode）。2 秒一个块。
+
+从 speech token 到语音生成（codec generation）：DiT 结构的 flow-matching model 内，有沿时间维度的 transformer(DiT=Diffusion Transformer)。对时间切分block后，以滑窗方式，只关注当前时间邻域内的几个block。attention mask 如下图：
+
+![image](https://github.com/user-attachments/assets/7cdd9c6d-ec28-46fb-abe7-b33b33232858)
+
+### 怎么训练的
+
+pretraining：先有有训好的 LLM，先冻结 LLM 训练 vision、audio encoder，然后解冻 LLM 后在 大规模 text+vision + audio 数据上继续训。这时候，训 talker 吗（文中所 qw2.5-omini 是一个 unified end-to-end model）？
+
+post-training：对于 talker，三阶段训练：
+- In-Context Learning (ICL) to learn context continuation：除了 speech token 接龙，还要有 text supervision（这个是说text token 接龙训练吗？这这点对应图中 talker 的 text output 吗？pretraiing 的时候，是否要训 talker？从这里看，感觉不！）
+- 类 RLHF 的 DPO 算法来提升 speech generation 稳定性
+- multi-speaker instruction fine-tuning 提升自然度与可控性。

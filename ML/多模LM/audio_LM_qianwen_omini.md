@@ -179,4 +179,4 @@ post-training：对于 talker，三阶段训练：
 - multi-speaker instruction fine-tuning 提升自然度与可控性。
 
 ### 关于 token id
-text 自然有 text token id。作为 input 的 audio、vision，并没用先离散出 token id，然后 token id => embedding 后才feed LLM，而是提取的特征向量直接 feed LLM。但是在输出 audio 的时候，是经过了 audio token id 一步的。
+text 自然有 text token id。作为 input 的 audio、vision，并没用先离散出 token id，然后 token id => embedding 后才feed LLM，而是提取的特征向量直接 feed LLM。但是在输出 audio 的时候，是经过了 audio token id 一步的。也就是说 input audio 和 output audio 并没共享同样的 token id 空间。

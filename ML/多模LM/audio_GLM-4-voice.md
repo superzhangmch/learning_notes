@@ -30,6 +30,8 @@ audio input + audio output，不支持 vision。
 
 上面的 tokenizer 方法，据作者讲，受到了 cosyvoice 的 tokenizer 所启发。而 flow_matching + GAN 的 decoder，模型架构直接借自 cosyvoice。
 
+为了低延迟，speech decoder（flowMatching+GAN）是需要分块（block）进行的。作者选用了每 10 个 speech tokens 为一个 block。10 个 tokens=0.8秒（12.5 HZ 的 audio 帧率，12.5*0.8=10）。训练 decoder 时，要把训练数据整成不同的整数个 blocks，以便与 inference 对齐。
+
 ### 整体怎样工作
 
 最理想状态，当然是 model 直接接龙输出 speech tokens。但作者说，鉴于 text 能表达出语音想表达的大部分东西（当然语气、速度之类不行，否则直接 tts=Text-to-Speech 得了），而 text 的 LLM 已被证明很成功，所以还是要用 text 来中转一下——也就是为了生成 audio output，还是要先生成 text，然后让 model 把 text 读出来。但是读 text 的时候，毕竟 model能看到 audio input 以及整个 context，所以能把语速语气之类的说出来。（也就是，这就是一种高级的 tts 而已。另外，当前多个开源 audio output 的 model，比如 qianwen-2.5-omini，都也是这样操作的。）
@@ -38,7 +40,7 @@ audio input + audio output，不支持 vision。
 
 glm-4-voice 的解法是：让 text 和 audio 的生成交错进行，首先生成一定数量 text tokens，一旦数量够（13个），哪怕一句话只说了一半，也要切换成生成 audio tokens（这时候audio 就可以参考前面的text了）。audio token 生成数量够限额（26个），则马上开始继续生成 text tokens，如此交错往复。13 个 text tokens，足足够 26个 audio tokens 来读，所以 audio 总是慢 text 一拍，不用怕读着读着没东西了。当 text 想表达的内容结束了， audio tokens 的生成就不用再和 text 来交错了，而是可以一股脑儿把余下的都生成了。
 
-如下图，text 和 speech 的交错，并不是说一次输出既支持 text，又支持 speech，而是二者在内容上是一致的。speech 是把 text 念了一下而已。
+如下图，text 和 speech 的交错，并不是说一次输出既支持 text，又支持 speech，而是二者在内容上是一致的。speech 是把 text 念了一下而已。【为了吐出第一个audio，需要等待生成13个text token + 10个speech token（10个为一个decoder block）共23个token后，decoder 才能开始工作。所以下图说latency 是大约 20 个 LLM output tokens】
 
 ![image](https://github.com/user-attachments/assets/0c31d54f-bd49-41b2-ab2a-6e2f7f322214)
 
@@ -65,3 +67,9 @@ assistant 的回复的一个例子：
 我的小世界..."                                    # 13 个 text token
 <|audio_3938|>...多于26个  .. <|audio_11940|>    # text token 已经生成完了。接下来的 audio token就要超过26个了
 ```
+
+### 训练
+
+分两阶段：（1）、包含 audio 的大规模 pretrain （2）、跟着text 读的交错数据上的训练（与 inference 对齐）
+
+![image](https://github.com/user-attachments/assets/936170bd-e843-4e7c-af78-a694eaf61d8b)

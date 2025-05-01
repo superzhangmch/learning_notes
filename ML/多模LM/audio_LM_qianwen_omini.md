@@ -8,7 +8,7 @@ qianwen-2-audio 相比 qianwen-1-audio，在于把固定格式的训练 sequence
 
 ### audio-encoder
 
-audio-encoder：基于 Whisperlarge-v3，并用它初始化。 
+audio-encoder：基于 Whisperlarge-v3，并用它初始化。注意 audio encoder 并不同于 audio tokenizer，后者是把语音离散成 token id list，然后再作 embedding。
 
 音频处理：音频先整成 16kHz，再转成 128-channel mel-spectrogram（25ms窗，10ms hop），再经某些操作，最终每帧 40ms
 

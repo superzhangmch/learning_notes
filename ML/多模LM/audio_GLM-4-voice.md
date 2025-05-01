@@ -10,7 +10,7 @@ audio input + audio output，不支持 vision。
 
 **（1）、audio tokenizer**
 
-不像 qianwen-2.5-omini 用了 audio-encoder，glm-voice 是用的 tokenizer——也就是把 audio 离散 token 化，然后 embedding。
+不像 qianwen-2.5-omni 用了 audio-encoder，glm-voice 是用的 tokenizer——也就是把 audio 离散 token 化，然后 embedding。
 
 如下图，在 whisper-large-v3（encoder-decoder 架构的） 的 encoder 的中间插入 vector 量化层，然后作一定 fine tune。最后取 encoder 的一半（截止到量化层），作为 tokenizer。
 
@@ -30,13 +30,13 @@ audio input + audio output，不支持 vision。
 
 上面的 tokenizer 方法，据作者讲，受到了 cosyvoice 的 tokenizer 所启发。而 flow_matching + GAN 的 decoder，模型架构直接借自 cosyvoice。
 
-为了低延迟，speech decoder（flowMatching+GAN）是需要分块（block）进行的。作者选用了每 10 个 speech tokens 为一个 block。10 个 tokens=0.8秒（12.5 HZ 的 audio 帧率，12.5*0.8=10）。训练 decoder 时，要把训练数据整成不同的整数个 blocks，以便与 inference 对齐。在qianwen-2.5-omini中，是分块后滑窗方式处理的，flow matching 只关注临近 block，而 glm-4-voice 看起来是关注了整个前序序列。
+为了低延迟，speech decoder（flowMatching+GAN）是需要分块（block）进行的。作者选用了每 10 个 speech tokens 为一个 block。10 个 tokens=0.8秒（12.5 HZ 的 audio 帧率，12.5*0.8=10）。训练 decoder 时，要把训练数据整成不同的整数个 blocks，以便与 inference 对齐。在qianwen-2.5-omni中，是分块后滑窗方式处理的，flow matching 只关注临近 block，而 glm-4-voice 看起来是关注了整个前序序列。
 
 ### 整体怎样工作
 
-最理想状态，当然是 model 直接接龙输出 speech tokens。但作者说，鉴于 text 能表达出语音想表达的大部分东西（当然语气、速度之类不行，否则直接 tts=Text-to-Speech 得了），而 text 的 LLM 已被证明很成功，所以还是要用 text 来中转一下——也就是为了生成 audio output，还是要先生成 text，然后让 model 把 text 读出来。但是读 text 的时候，毕竟 model能看到 audio input 以及整个 context，所以能把语速语气之类的说出来。（也就是，这就是一种高级的 tts 而已。另外，当前多个开源 audio output 的 model，比如 qianwen-2.5-omini，都也是这样操作的。）
+最理想状态，当然是 model 直接接龙输出 speech tokens。但作者说，鉴于 text 能表达出语音想表达的大部分东西（当然语气、速度之类不行，否则直接 tts=Text-to-Speech 得了），而 text 的 LLM 已被证明很成功，所以还是要用 text 来中转一下——也就是为了生成 audio output，还是要先生成 text，然后让 model 把 text 读出来。但是读 text 的时候，毕竟 model能看到 audio input 以及整个 context，所以能把语速语气之类的说出来。（也就是，这就是一种高级的 tts 而已。另外，当前多个开源 audio output 的 model，比如 qianwen-2.5-omni，都也是这样操作的。）
 
-一旦最终还是变成了 tts 问题，不可避免的事情是时延：总不能等 text 全生成了才开始"读"。这也是各家 audio-model 处理各不相同的地方。qianwen-2.5-omini 的思路是另外搞出一个talker model，每新看到一个 text output就赶紧念，从而化解了时延问题。
+一旦最终还是变成了 tts 问题，不可避免的事情是时延：总不能等 text 全生成了才开始"读"。这也是各家 audio-model 处理各不相同的地方。qianwen-2.5-omni 的思路是另外搞出一个talker model，每新看到一个 text output就赶紧念，从而化解了时延问题。
 
 glm-4-voice 的解法是：让 text 和 audio 的生成交错进行，首先生成一定数量 text tokens，一旦数量够（13个），哪怕一句话只说了一半，也要切换成生成 audio tokens（这时候audio 就可以参考前面的text了）。audio token 生成数量够限额（26个），则马上开始继续生成 text tokens，如此交错往复。13 个 text tokens，足足够 26个 audio tokens 来读，所以 audio 总是慢 text 一拍，不用怕读着读着没东西了。当 text 想表达的内容结束了， audio tokens 的生成就不用再和 text 来交错了，而是可以一股脑儿把余下的都生成了。
 

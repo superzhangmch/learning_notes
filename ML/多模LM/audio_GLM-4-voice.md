@@ -30,7 +30,7 @@ audio input + audio output，不支持 vision。
 
 上面的 tokenizer 方法，据作者讲，受到了 cosyvoice 的 tokenizer 所启发。而 flow_matching + GAN 的 decoder，模型架构直接借自 cosyvoice。
 
-为了低延迟，speech decoder（flowMatching+GAN）是需要分块（block）进行的。作者选用了每 10 个 speech tokens 为一个 block。10 个 tokens=0.8秒（12.5 HZ 的 audio 帧率，12.5*0.8=10）。训练 decoder 时，要把训练数据整成不同的整数个 blocks，以便与 inference 对齐。
+为了低延迟，speech decoder（flowMatching+GAN）是需要分块（block）进行的。作者选用了每 10 个 speech tokens 为一个 block。10 个 tokens=0.8秒（12.5 HZ 的 audio 帧率，12.5*0.8=10）。训练 decoder 时，要把训练数据整成不同的整数个 blocks，以便与 inference 对齐。在qianwen-2.5-omini中，是分块后滑窗方式处理的，flow matching 只关注临近 block，而 glm-4-voice 看起来是关注了整个前序序列。
 
 ### 整体怎样工作
 

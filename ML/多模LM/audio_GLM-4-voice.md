@@ -66,7 +66,7 @@ assistant 的回复的一个例子：
 <|audio_14343|> ... 共 26个 ... <|audio_16065|>  # 26 个 speech token
 "小猫旅店，小猫旅店，欢迎来到                        # 又是 13 个 text token
 <|audio_12076|> ... 共 26个 ... <|audio_14102|>  # 26 个 speech token
-我的小世界..."                                    # 13 个 text token
+我的小世界..."                                    # 最后一次的 text tokens。可能不足 13 个
 <|audio_3938|>...多于26个  .. <|audio_11940|>    # text token 已经生成完了。接下来的 audio token就要超过26个了
 ```
 

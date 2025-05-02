@@ -16,7 +16,7 @@ audio-encoder：基于 Whisperlarge-v3，并用它初始化。注意 audio encod
 
 # qianwen-2.5-omni https://arxiv.org/pdf/2503.20215 2025.03
 
-全模态，支持 image、video、audio 作为 input，还支持 audio 作为 output。不过还不能像最新的 gpt-4o 那样支持输出图片。相关代码：https://github.com/superzhangmch/learn_transformers/edit/main/src/transformers/models/qwen2_5_omni/modeling_qwen2_5_omni.py
+全模态，支持 image、video、audio 作为 input，还支持 audio 作为 output。不过还不能像最新的 gpt-4o 那样支持输出图片。我给加了更多注释的相关代码：https://github.com/superzhangmch/learn_transformers/edit/main/src/transformers/models/qwen2_5_omni/modeling_qwen2_5_omni.py
 
 
 ### 参数量：

@@ -12,13 +12,15 @@ audio input + audio output，不支持 vision。
 
 不像 qianwen-2.5-omni 用了 audio-encoder，glm-voice 是用的 tokenizer——也就是把 audio 离散 token 化，然后 embedding。
 
-如下图，在 whisper-large-v3（encoder-decoder 架构的） 的 encoder 的中间插入 vector 量化层，然后作一定 fine tune。最后取 encoder 的一半（截止到量化层），作为 tokenizer。
+如下图，在 whisper-large-v3（encoder-decoder 架构的） 的 encoder 的中间插入 vector 量化层（VQ)，然后作一定 fine tune。最后取 encoder 的一半（截止到量化层），作为 tokenizer。
 
 ![image](https://github.com/user-attachments/assets/25c239e5-fd5c-449f-a631-6a12bc6bf1e2)
 
 最终的 tokenizer 对一秒 audio 编码出 12.5 个 token (12.5HZ)。根据 glm-4-voice 所依赖的前作 https://arxiv.org/pdf/2411.17607 (也是他们团队的），codebook 大小是 2^14=16384, 即一个 token 占用 14个bit。14*12.5=175，所以文中说，他们的 tokenizer 是 175 bits/sec 的超高压缩率的。
 
 为支持流式 encoding，也有相应改造（卷积以及双向 attention，都变成了 causal 风格的）。
+
+为什么要在 whisper encoder 的中间插入 VQ 层，而不是末尾？大概是这样：原文提到，一般的 audio tokenizer 可以分为两类：声学型（acoustic tokenizer） 和 语义型（semantic tokenizer）。前者能重建高质量音频，但语义信息保留不足，除非以高采样率（高 token/s）或堆叠 codebook；而后者重在压缩语义内容，但牺牲了语音的音质与细节。whisper encoder 的输出是高度语义化的东西，为了兼顾 acoustic & Semantic，于是就用了 encoder 的中间层来提 speech token 化。
 
 **（2）、audio decoder**
 

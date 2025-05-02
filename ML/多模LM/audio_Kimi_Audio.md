@@ -30,6 +30,8 @@ whisper 本身是 encoder-decoder 结构的，encoder 的输出是高度语义�
 
 它和 glm-4-voice， qianwen-2.5-omni 一样，也是先生成text，然后跟读出 audio。它是在LLM 的 28层的 transformer block 的第 22 层位置引出了 6 层的 audio 分支，这个分支预测 audio token。audio 与 text 在分叉后独立预测下一token，但是它们的 input 是一样的， audio 分支能看到 text 分支的 input，所以它生成的语音中的文字并不会和 text output 不一致（而且会先等 text infer 出 6 个 token 后才开始 audio + text 同步生成）。当 text 生成结束，text input 补 blank 特殊 token，而 audio 持续到生成结束。
 
+它的延迟：6 个 token 是 6/12.5 = 0.48秒。
+
 ![image](https://github.com/user-attachments/assets/fc5d1d08-0b6a-4769-b22c-07338ff7b87c)
 
 ### 训练

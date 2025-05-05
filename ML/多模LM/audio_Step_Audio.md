@@ -18,9 +18,12 @@ glm-4-voice 中就提到 audio 的声学(acoustic)与语义(sementic)特征的�
 - linguistic tokenization（编码语音phonemic、语言结构等）：Paraformer encoder 结果量化成 16.7 Hz token 率，codebook size=1024。
 - semantic tokenization（编码语义与粗粒度声学特征）：直接用 CosyVoice 的 tokenizer，25 Hz 的 token 率。codebook size=4096。
 
-16.7:25 = 2:3, 为了平衡两者不同的每秒token数，于是按 2:3 的比例把两种 tokens 交错混合。在生成 audio 的时候，也是从交错的 audio tokens 中解码出音波（ audio tokens => wave, 经过 flow_matching 等，和别家 model 方式就是一样的了）。
+16.7 HZ : 25 HZ = 2:3, 为了平衡两者 tokenizer 不同的每秒token数，于是按 2:3 的比例把两种 tokens 交错混合。在生成 audio 的时候，也是从交错的 audio tokens 中解码出音波（ audio tokens => wave, 经过 flow_matching 等，和别家 model 方式就是一样的了）。
 
 ### 整体怎样工作
 
+还是比较直接的：
+
 ![image](https://github.com/user-attachments/assets/e8756678-78d2-43f9-8751-e7869bd48f88)
 
+### paper 和开源版的区别

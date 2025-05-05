@@ -30,4 +30,17 @@ glm-4-voice 中就提到 audio 的声学(acoustic)与语义(sementic)特征的�
 
 它这样选择，paper中说是高质训练数据稀缺，以及独立tts的生成可控性高。但是原则上，是可以不用外接 tts 而直接完成audio 生成的。
 
-### paper 和开源版的区别
+### 开源出的 model 和 paper 差异
+
+**（1）、130B model 能不能直接生成 audio tokens**
+
+paper 中提到，他们用 130B model 蒸馏出了的 3B 的 Step-Audio-TTS-3B。但是开源出的 130B model 本身只能生成 text，后面接的 tts 所用的 model 反而正好是这个 Step-Audio-TTS-3B。且 130B model 与 3B model 网络结构一样（只是层数等超参数不同），经实验把作 tts 的 3b model 换成 130B model，并不能作 tts。那么这个 130B model，到底能不能直接生成 audio tokens？
+
+- https://github.com/stepfun-ai/Step-Audio/issues/114
+- https://github.com/stepfun-ai/Step-Audio/issues/104
+- https://github.com/stepfun-ai/Step-Audio/issues/55 （这里有 stepFunc 的人的回复：如果是 130B model 直接输出 audio tokens，则 16.7+25=41.7Hz 的token率生成，没法实时完成）
+
+从以上几个看，130B 是可以直接生成 audio tokens。但是大概故意微调屏蔽了这个功能，或者需要恰当 prompt 激活。
+
+
+

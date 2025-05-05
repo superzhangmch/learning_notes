@@ -22,8 +22,12 @@ glm-4-voice 中就提到 audio 的声学(acoustic)与语义(sementic)特征的�
 
 ### 整体怎样工作
 
-还是比较直接的：
+理想情况下的流程还是比较直接的：
 
 ![image](https://github.com/user-attachments/assets/e8756678-78d2-43f9-8751-e7869bd48f88)
+
+但是，实际采用的是 130B 大模型 audio/text => text, 再由 3B 的 tts model 把 text => audio 的流程。别家 audio model，也是跟着 text 读，照读的时候 model 会看到 audio 特征，step-audio 的最终方案是完全独立的 tts。
+
+它这样选择，paper中说是高质训练数据稀缺，以及独立tts的生成可控性高。但是原则上，是可以不用外接 tts 而直接完成audio 生成的。
 
 ### paper 和开源版的区别

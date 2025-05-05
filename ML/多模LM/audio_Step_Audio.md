@@ -42,5 +42,9 @@ paper 中提到，他们用 130B model 蒸馏出了的 3B 的 Step-Audio-TTS-3B�
 
 从以上几个看，130B 是可以直接生成 audio tokens。但是大概故意微调屏蔽了这个功能，或者需要恰当 prompt 激活。
 
+**（2）、3B 的 model，怎么做 tts 生成的？**
 
+3B 的 Step-Audio-TTS-3B，内部也有一个 LM——且就是 130B 缩小版而已。所以做tts 生成时，是像使用一个小型的 audio-LLM 一样的方式：直接用 prompt（text + audio prompt）驱动。具体说它的prompt长这样：
+```
 
+```

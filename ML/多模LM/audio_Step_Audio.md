@@ -1,4 +1,4 @@
-# [《Step-Audio: Unified Understanding and Generation in Intelligent Speech Interaction》](https://arxiv.org/pdf/2502.11946)
+# 《Step-Audio: Unified Understanding and Generation in Intelligent Speech Interaction》 https://arxiv.org/pdf/2502.11946
 
 ### 参数量
 LLM 部分是 130B。比其他各家的不到 10B 大很多。
@@ -29,6 +29,8 @@ glm-4-voice 中就提到 audio 的声学(acoustic)与语义(sementic)特征的�
 但是，实际采用的是 130B 大模型 audio/text => text, 再由 3B 的 tts model 把 text => audio 的流程。别家 audio model，也是跟着 text 读，照读的时候 model 会看到 audio 特征，step-audio 的最终方案是完全独立的 tts。
 
 它这样选择，paper中说是高质训练数据稀缺，以及独立tts的生成可控性高。但是原则上，是可以不用外接 tts 而直接完成audio 生成的。
+
+另外，虽然支持 audio 作为input，但是只有当前轮的语音是原始 audio，历史轮用的是 asr 的 text。
 
 ### 开源出的 model 和 paper 差异
 
@@ -87,3 +89,5 @@ xxxx.wav                                 # 示例 text="那等我们到海洋馆
 我有一座房子面朝大海春暖花开                  #  希望作 tts 生成的 text
 [assistant]
 ```
+
+如此看 130B model 的 text 结果里，会有语种，速度等等标记了吧——实测发现并没。

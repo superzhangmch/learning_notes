@@ -25,4 +25,4 @@ Greedy / Beam Search 解码为文本
 ```
 
 ### whisper
-transformer encoder-decoder 结构。不需要 CTC。直接回归做 asr
+transformer encoder-decoder 结构。不需要 CTC。直接回归做 asr。另外，whisper 支持识别出的文字的时间戳（在原音频中的时间offset）。

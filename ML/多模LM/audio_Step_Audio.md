@@ -30,6 +30,8 @@ glm-4-voice 中就提到 audio 的声学(acoustic)与语义(sementic)特征的�
 
 它这样选择，paper中说是高质训练数据稀缺，以及独立tts的生成可控性高。但是原则上，是可以不用外接 tts 而直接完成audio 生成的。
 
+另外，虽然支持 audio 作为input，但是只有当前轮的语音是原始 audio，历史轮用的是 asr 的 text。
+
 ### 开源出的 model 和 paper 差异
 
 **（1）、130B model 能不能直接生成 audio tokens**

@@ -1,4 +1,4 @@
-# [《Step-Audio: Unified Understanding and Generation in Intelligent Speech Interaction》](https://arxiv.org/pdf/2502.11946)
+# 《Step-Audio: Unified Understanding and Generation in Intelligent Speech Interaction》 https://arxiv.org/pdf/2502.11946
 
 ### 参数量
 LLM 部分是 130B。比其他各家的不到 10B 大很多。
@@ -89,3 +89,5 @@ xxxx.wav                                 # 示例 text="那等我们到海洋馆
 我有一座房子面朝大海春暖花开                  #  希望作 tts 生成的 text
 [assistant]
 ```
+
+如此看 130B model 的 text 结果里，会有语种，速度等等标记了吧——实测发现并没。

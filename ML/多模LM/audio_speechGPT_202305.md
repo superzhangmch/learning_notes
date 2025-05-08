@@ -13,7 +13,9 @@
 
 ![image](https://github.com/user-attachments/assets/94af0198-5bbb-4147-8b50-a4e45307cf4c)
 
-知否直接生成 audio：不能。即使语音问，语音回答，也是要一次model交互内部，先生成 text output，然后再读出。后来的 glm-4-voice，qw-2.5-omni，都也类似。下面这种情况的 prompt：
+知否直接生成 audio：虽然上图看是直接生成，其实不能。生成语音回答，也是要再 一次model交互内部，先生成 text tokens，然后再读出(即紧接着输出 speech tokens)。后来的 glm-4-voice，qw-2.5-omni，都也类似。
+
+paper 中对于语音问，语音回答的 prompt 长这样：
 
 ![image](https://github.com/user-attachments/assets/c9ba0a3b-078a-4050-9576-33ed070ca743)
 

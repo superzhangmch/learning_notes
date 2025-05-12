@@ -85,20 +85,6 @@ $$score = α ⋅ \log(P_{CTC}(Y)​) + β ⋅ \log(P_{LM}(Y)​)$$
 
 再仔细看下 CTC loss 所训出的 model 到底学了个啥：理想情况下，正是学会了 input 的 每个 step 在 output 字符集上的分类。如果数据集一开始就标注了这点，也就不用 CTC 了。鉴于此，解码时当然不是非要用 CTC 的理想解码方式了。
 
-### 其他：transducer
-----
-
-见这里 https://lorenlugosch.github.io/posts/2020/11/transducer/ ， 简称 RNN-T 的模型，可以作 CTC 同样的事（自动对齐），但是不走 CTC 的方式。
-
-![image](https://github.com/user-attachments/assets/47ece88c-b1b7-48f4-9443-6a37e9ba3361)
-
-它的思路是先用 input encoder 把 input 的表示学出来， 而 predictor 相当于是 output 的 decoder，把这两者的表示 join 后，joiner 作 next_token 的预测：如果预测为有效输出字符，则拼给 output 作为 "output encoder" 输入，从而 output 加1， input 不动。如果 joiner 预测为 null，则 output 不动，而 input 位置移动一格。如是或移input或移output，从而实现了动态自定对齐（有如 CTC）：
-
-![image](https://github.com/user-attachments/assets/4349a7a9-30c9-46cf-85d5-4f5906bba865)
-
-训练时，需要和 CTC 一样遍历所有的有效对齐路径，把所有对齐路径概率之和，当做 loss。为实现有效遍历，仍然要用动态规划。
-
-transformer 后面固然也可以接 CTC。若用 transformer 的 cross-attention 实现的 encoder-decoder 模式（乃至更进一步 LLM 的纯 decoder 方式，把 input 作为 prompt 拼入），则 decode时，就不需什么 CTC 之类了。
 
 ### 参考
 - https://distill.pub/2017/ctc/ （很好）
@@ -107,3 +93,33 @@ transformer 后面固然也可以接 CTC。若用 transformer 的 cross-attentio
 - http://m.blog.csdn.net/article/details?id=48526479
 - https://zhuanlan.zhihu.com/p/21344595
 - http://blog.csdn.net/xmdxcsj/article/details/51763886 系列
+
+---
+
+# transducer
+
+见这里 https://lorenlugosch.github.io/posts/2020/11/transducer/ ， 简称 RNN-T 的模型，可以作 CTC 同样的事（自动对齐），但是不走 CTC 的方式。
+
+![image](https://github.com/user-attachments/assets/47ece88c-b1b7-48f4-9443-6a37e9ba3361)
+
+它的思路是先用 input encoder 把 input 的表示学出来， 而 predictor 相当于是 output 的 decoder，把这两者的表示 join 后，joiner 作 next_token 的预测：如果预测为有效输出字符，则拼给 output 作为 "output encoder" 输入，从而 output 加 1， input 不动。如果 joiner 预测为 null，则 output 不动，而 input 位置移动一格。如是或移input或移output，从而实现了动态自定对齐（有如 CTC）：
+
+![image](https://github.com/user-attachments/assets/4349a7a9-30c9-46cf-85d5-4f5906bba865)
+
+训练时，需要和 CTC 一样遍历所有的有效对齐路径，把所有对齐路径概率之和，当做 loss。为实现有效遍历，仍然要用动态规划。
+
+transformer 后面固然也可以接 CTC。若用 transformer 的 cross-attention 实现的 encoder-decoder 模式（乃至更进一步 LLM 的纯 decoder 方式，把 input 作为 prompt 拼入），则 decode时，就不需什么 CTC 之类了。
+
+---
+
+# CIF
+
+来自 2019.05 paper 《CIF: CONTINUOUS INTEGRATE-AND-FIRE FOR END-TO-END SPEECH RECOGNITION》， https://arxiv.org/pdf/1905.11235 。
+
+假设是要做和 CTC 类似的某种事，比如语音识别从audio识别文字 tokens。那么 input 就是audio frames。那么判断每一个 frame 到底属于哪个被识别出的文字就是个问题——怎么对齐？CTC 的方法就是上面所讲那样。而 CIF 呢，则是预测单个 frame 属于一个token 的概率/权重/weight, 不用管到底属于哪个token。这样对于序列的所有 frame，都可以有这样的预测。
+
+然后从左往右扫描weight，并作累加，每累加够一定阈值，比如 1，就认为是一个完整的 token 边界识别出来了（累加就是所谓的CONTINUOUS INTEGRATE=连续积分。而阈值达到，则是所谓的FIRE，而分界点，就是 fire point）。一直扫描到尾部，就识别出了所有的token 边界：还不知道有哪些文字，但是一共有多少字，以及每个字的位置，都是知道的了。扫描的时候，还要构建每个待识别 token 的 hidden 表示，方法也是累加：不过是带权求和，而权重正式求边界点的 weight。
+
+一旦 token 的 hidden 表示有了，那么用它直接来做预测就可以了。 而 funASR 正是用的这样的思路。
+
+![image](https://github.com/user-attachments/assets/8129a84a-41ea-4461-89c9-06a5f087c6c3)

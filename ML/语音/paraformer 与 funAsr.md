@@ -29,6 +29,7 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 ![image](https://github.com/user-attachments/assets/11d48860-62df-4ed9-a408-ff3167fe4a46)
 
+该机制叫 GLM=glancing language model。之所以叫 glancing，指的是在训练遇到困难的时候，偷看下答案。训练后期效果较好后，偷看的也就更少。
 
 ---
 

@@ -42,7 +42,7 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 **hotwords**: 对 hotwords 处理获得 embedding 后给到 decoder 参与 cross attn。不过要decoder内部要独立分支处理之。
 
-**后处理**: 作为序列标注问题。
+**后处理**: 作为序列标注问题。(图中 B-RM，I-RM，E-RM 正是model的指示信息)
 
 ![image](https://github.com/user-attachments/assets/0a5b71cf-6327-469c-a97f-1a81052f4702)
 

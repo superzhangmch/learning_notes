@@ -1,7 +1,9 @@
 ## CIF (CONTINUOUS INTEGRATE-AND-FIRE)
-类似 CTC 作序列对齐的一种技术。paraformer 基础就在于此。参 https://github.com/superzhangmch/learning_notes/blob/main/ML/%E7%90%86%E8%AE%BA/CTC%E3%80%81transducer%E3%80%81CIF.md#cif 
+乃类似 CTC 作序列对齐的一种技术。paraformer/funAsr 基础就在于它。参 https://github.com/superzhangmch/learning_notes/blob/main/ML/%E7%90%86%E8%AE%BA/CTC%E3%80%81transducer%E3%80%81CIF.md#cif 
 
 ![image](https://github.com/user-attachments/assets/ebf189d7-5706-417b-ba9f-02d1cd68edae)
+
+核心在于对于没有对齐的每一个frame，预测一个属于某一 token 的 weight $\alpha_i$ ，最终他会属于某个结果token，但是正巧只占据该token的比例是 $\alpha_i$. 若干个相邻的 weight 和达阈值的 frame 拼起来就是一个 token 的范围了。从左到右依次scan & integrate & fire，如果某个地方的token边界错位，那么会一路能导致余下的所有 token 都错位了。
 
 ---
 ## paraformer
@@ -21,7 +23,7 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 在某一个 train step，先 inference 一步，看看和 ground  truth 的差异：根据差异率把 CIF 的 embds 中的一些随机替换成 ground-truth token 的 embds。差异率越大，替换的越多。替换后做预测计算loss，而第一次的预测并不用于梯度回传。
 
-这样容易最终学到 output tokens 之间的依赖关系。
+这样容易最终学到 output tokens 之间的依赖关系。infer 时流程只需要 pass-1。
 
 这样分两步的训练方式，正如 paraformer 文中指出，来自 https://arxiv.org/pdf/2008.07905 《Glancing Transformer for Non-Autoregressive Neural Machine Translation》。只是那里是翻译问题，二者手法如出一辙：
 
@@ -34,9 +36,15 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 ![image](https://github.com/user-attachments/assets/a08e6216-165b-4dcc-9a5e-56ee8ad5e276)
 
-《funASR》主要是《paraformer》基础上的改进。新增了时间戳（每个字在原始audio中的时间offset）预测，支持用户自定义词。
+《funASR》主要是《paraformer》基础上的改进。新增了时间戳（每个字在原始audio中的时间offset）预测，支持用户自定义词，支持加标点等后处理。
 
-loss 变动：去掉了 MWER loss，对 pass-1 也变得计算梯度（pass-1 结果接 CE-loss）.
+**loss 变动**: 去掉了 MWER loss，对 pass-1 也变得计算梯度（pass-1 结果接 CE-loss）.
+
+**hotwords**: 对 hotwords 处理获得 embedding 后给到 decoder 参与 cross attn。不过要decoder内部要独立分支处理之。
+
+**后处理**: 作为序列标注问题。
+
+![image](https://github.com/user-attachments/assets/0a5b71cf-6327-469c-a97f-1a81052f4702)
 
 ---
 ### 相关 paper

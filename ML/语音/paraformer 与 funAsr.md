@@ -25,11 +25,19 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 这样容易最终学到 output tokens 之间的依赖关系。infer 时流程只需要 pass-1。
 
-这样分两步的训练方式，正如 paraformer 文中指出，来自 https://arxiv.org/pdf/2008.07905 《Glancing Transformer for Non-Autoregressive Neural Machine Translation》。只是那里是翻译问题，二者手法如出一辙：
+这样分两步的训练方式，正如 paraformer 文中指出，来自 https://arxiv.org/pdf/2008.07905 《Glancing Transformer for Non-Autoregressive Neural Machine Translation》。只是那里是翻译问题（但也是要非自回归并行解码），二者手法如出一辙：
 
 ![image](https://github.com/user-attachments/assets/11d48860-62df-4ed9-a408-ff3167fe4a46)
 
 该机制叫 GLM=glancing language model。之所以叫 glancing，指的是在训练遇到困难的时候，偷看下答案。训练后期效果较好后，偷看的也就更少。
+
+为啥work：
+(1). 按原文：
+> Generally, GLM is quite similar to curriculum learning (Bengio et al., 2009) in spirit, namely first learning to generate some fragments and gradually moving to learn the whole sentences (from easy to hard). 
+
+(2). 在训练的早期，预测的基本都不对，这时候，encoder output embeddings 绝大部分被替换，这时候的训练，就约等于是在训练一个双向 transformer 语言模型。把 encoder output embds 与 target token embds 能互换，说明是把他们等价看待的, 隐式地把两者视为了“在某种语义空间中等价可交换的表示”。这种操作迫使模型把 acoustic 表达和语义 token embedding 对齐到某个“共享空间”中。
+
+(3). 训练中 decoder 的输入中，有些来自 acoustic（预测的），有些是“偷看的” ground-truth（embedding lookup）。decoder 要做到：不管来源是哪种，它都要能利用这些 embedding 来建模 token 之间的上下文关系并生成正确的输出。
 
 ---
 

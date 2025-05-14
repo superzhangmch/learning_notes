@@ -50,6 +50,6 @@ librosa 中如 librosa.feature.inverse.mfcc_to_audio 等函数，既可以从这
             concat_reconstructed_wav = self.vocoder.decode_mel(concat_mel) # vocoder 生成音频
             ...
 ```
-griffinlim 的音质差很多（有毛刺，不光滑），但是能听出是什么。
+griffinlim 的音质差很多（有毛刺，不光滑），但是能听出是什么: 两个 audio 见： ./reconstructed_griffinlim.wav,  ./audio_file/reconstructed_vocoder.wav。
 
 

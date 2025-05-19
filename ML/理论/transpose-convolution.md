@@ -22,9 +22,7 @@ output =
 | **d**  |           |             |                   | d×w1              | d×w2              | d×w3        |           |
 | **e**  |           |             |                   |                   | e×w1              | e×w2        | e×w3      |
 
----
-
-**每一列竖着加，就是对应的 output 元素：**
+每一列竖着加，就是对应的 output 元素：
 
 - output[0] = a×w1
 - output[1] = a×w2 + b×w1
@@ -35,3 +33,11 @@ output =
 - output[6] = e×w3
 
 也就是说对于 input 的一个元素和 conv kernel 的所有元素相乘(即 $a_{ij} \cdot M_{kernel}$ ), 把乘积结果和最终结果矩阵找好对应关系，往结果矩阵上累加即可。
+
+----
+
+既然 transpose-conv 就是单点乘kernel，**恰当**散布到结果矩阵后累加。那么怎么恰当散布呢？ 可以参  https://arxiv.org/pdf/1603.07285 ， P25：
+
+![image](https://github.com/user-attachments/assets/591aeb5d-0654-4df7-bd43-3d89382acd8c)
+
+![image](https://github.com/user-attachments/assets/21b80db1-98bf-4823-932f-ce27bbf345e9)

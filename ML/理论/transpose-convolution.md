@@ -32,12 +32,30 @@ output =
 - output[5] = d×w3 + e×w2
 - output[6] = e×w3
 
-也就是说对于 input 的一个元素和 conv kernel 的所有元素相乘(即 $a_{ij} \cdot M_{kernel}$ ), 把乘积结果和最终结果矩阵找好对应关系，往结果矩阵上累加即可。
+也就是说对于 input 的一个元素和 conv kernel 的所有元素相乘(即 $a_{ij} \cdot M_{kernel}$ ，数字乘矩阵), 把乘积结果和最终结果矩阵找好对应关系，往结果矩阵上累加即可。
 
 ----
 
 既然 transpose-conv 就是单点乘kernel，**恰当**散布到结果矩阵后累加。那么怎么恰当散布呢？ 可以参  https://arxiv.org/pdf/1603.07285 ， P25：
 
+stride=1：
+
 ![image](https://github.com/user-attachments/assets/591aeb5d-0654-4df7-bd43-3d89382acd8c)
 
+如果 stride > 1, 则 $a_{ij} \cdot M_{kernel}$ 要按 stride 跳着移动。
+
 ![image](https://github.com/user-attachments/assets/21b80db1-98bf-4823-932f-ce27bbf345e9)
+
+----
+
+### 为什么称为 transpose?
+
+根据 https://zhuanlan.zhihu.com/p/549164774 ，实际操作的时候：
+
+（1）、如果是普通卷积，则展开成：
+
+![image](https://github.com/user-attachments/assets/87046d79-ec50-4c0a-8525-a40d501795a5)
+
+（2）、如果是transpose 卷积，则展开后是（kernel 展开矩阵正巧是普通conv 的转置）：
+
+![image](https://github.com/user-attachments/assets/928f05bb-8c0d-433a-aec4-ad19cee71966)

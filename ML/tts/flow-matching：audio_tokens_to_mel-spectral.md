@@ -56,6 +56,12 @@ class DiTBlock(nn.Module): ## 乃 transformer 结构
 ```
 block 其实就是一个 transformer block：有 attn，有 ffn。且input x.shape = [bs, seq_len, dim], 所以像 LLM 一样作 attn 即可。
 
+![image](https://github.com/user-attachments/assets/cb6e6ebe-07f8-4531-a7fb-d3b53c81ad5b)
+
+图中：
+- FiLM： x_new = x * (1 + scale_c) + shift_c
+- gate: x_new = x * gate_c
+
 ### model 主体：
 
 ```

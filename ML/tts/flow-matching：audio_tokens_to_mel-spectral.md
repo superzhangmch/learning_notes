@@ -7,7 +7,7 @@ tts 生成的一种方式是先生成离散的 audio token ids，再用 flow-mat
 model 由多个 DiT（diffusion transformer） block 组成：
 ```
 # 我加了注释的： https://github.com/superzhangmch/learn_Kimi-Audio/edit/master/kimia_infer/models/detokenizer/flow_matching/dit_block.py
-class DiTBlock(nn.Module):
+class DiTBlock(nn.Module): ## 乃 transformer 结构
     def __init__(...):
         super().__init__()
         self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
@@ -27,7 +27,8 @@ class DiTBlock(nn.Module):
 
         ############ 1. ATTN ##############
         
-        x_ = modulate(self.norm1(x), shift_msa, scale_msa)  # => x * (1 + scale) + shift， scale shift 来自 c
+        x_ = modulate(self.norm1(x), shift_msa, scale_msa)  # => x * (1 + scale) + shift， scale shift 来自 c.
+                                                            # 这种特征融合方式叫 FiLM 
 
         ...
 

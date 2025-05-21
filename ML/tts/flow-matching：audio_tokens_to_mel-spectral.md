@@ -1,6 +1,8 @@
 tts 生成的一种方式是先生成离散的 audio token ids，再用 flow-matching model 转为 mel谱，再用 gan model 转为 audio wave。
 
-这里考察下 kimi-audio 中的 flow-matching。
+这里考察下 kimi-audio 中的 flow-matching。flow-matching 本身不作记述。
+
+### DiT block
 
 model 由多个 DiT（diffusion transformer） block 组成：
 ```
@@ -53,7 +55,7 @@ class DiTBlock(nn.Module):
 ```
 block 其实就是一个 transformer block：有 attn，有 ffn。且input x.shape = [bs, seq_len, dim], 所以像 LLM 一样作 attn 即可。
 
-model 主体：
+### model 主体：
 
 ```
 我加了注释的： https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/flow_matching/model.py
@@ -83,7 +85,7 @@ class DiTPrefix(nn.Module):
         )
         self.final_layer = FinalLayer(hidden_size, output_size) 
  
-    def forward(self, x,
+    def forward(self, x,   # input: x_t.shape = [bs, seq_len, 80(维的mel谱)]
                 position_ids,
                 t,
                 condition, # audio-tokens-id-list
@@ -120,10 +122,32 @@ class DiTPrefix(nn.Module):
 
         # x.shape = torch.Size([1, 120, 2304]) c.shape = torch.Size([1, 120, 2304])
         x = self.final_layer(x, c)  # (N, T, C)。 final_layer 内部： c 转化成 "x * (1 + scale) + shift" 里的 scale、shift，从而参与进 model
-        # x.shape = torch.Size([1, 100, 80]) # 已经变回 mel 谱的 shape 了
+        # x.shape = torch.Size([1, 120, 80]) # 已经变回 mel 谱的 shape 了
+
+        # output.x_{t_1}.shape = [bs, seq_len, 80(维的mel谱)]
         return x
 ```
+
 model 内部： input x_t.shape [ bs, N, mel谱80]，最终output 也需要这样shape。dim 先由 input_linear 把 80 升到 2304，按 2304 一路操作，最后经过 final_layer 又降到了 80.
+
+condition 为整数类型的tokens id。它需要先作 embedding。
 
 condition 和 timestep 的 embedding 加起来，然后作为 modulate 方式给到 transformer，而非经过 cross attn。
 
+上面 model 只是基于 $x_t$ 预测怎样得到 $x_{t-1}$ 的 v，只负责生成过程中的一步。按 flow-matching 的这是，该model只是列出了 ODE 常微分方程 $\frac {dx} {dt} = v$
+
+### 整体
+
+首先是生成随机噪声(它会作为 ODE 方程的初始状态)：
+
+```
+x_t = torch.randn(semantic_tokens.shape[0], 80).to(self.device).to(self.dtype) # [seq_len,  mel-80-维]
+```
+
+然后就是用标准 ODE 的方程解法来解方程即可了。它默认用了 `from torchdyn.core import NeuralODE` 来解的方程，30 步完成。且没有用 classfier guidance 技术。
+
+### 其他
+
+1. mel-谱是二维图片，那么容易觉得用文生图那样的方式就行了，毕竟后者也是图。但是 mel-谱的二维img，其中一条边是不定长的。如何理解此差异？
+
+其实文生图的 out.shape = [BS, H，W， RGB三通道], H*W 相当于是  seq_len, mel-谱的二维图片，out.shape = [BS, seq_len, mel-80维]. 也就是 H x W 对应的是 seq_len, RGB3 通道对应 mel-80维（或者说80通道）

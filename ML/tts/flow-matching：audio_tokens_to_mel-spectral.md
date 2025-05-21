@@ -59,8 +59,10 @@ block 其实就是一个 transformer block：有 attn，有 ffn。且input x.sha
 ![image](https://github.com/user-attachments/assets/cb6e6ebe-07f8-4531-a7fb-d3b53c81ad5b)
 
 图中：
-- FiLM： x_new = x * (1 + scale_c) + shift_c
+- FiLM: x_new = x * (1 + scale_c) + shift_c
 - gate: x_new = x * gate_c
+- attn: 乃沿着时间(seq_len)做的。
+- 多个该block stack起来，就是整个model。
 
 ### model 主体：
 

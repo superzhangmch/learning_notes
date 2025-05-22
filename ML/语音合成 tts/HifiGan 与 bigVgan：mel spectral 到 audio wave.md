@@ -19,9 +19,59 @@ generator 展开是这样的：
 
 ![image](https://github.com/user-attachments/assets/f94f60f4-a9fa-4b7f-8b55-79ac2bff7789)
 
-snake 结果的图像如下图样子（斜着的正弦图的样子)：
+snake 激活函数 $f(x) = x + \frac 1 \alpha \sin^2(\alpha x)$ 的图像如下图样子（有如斜着的正弦函数)：
 ![image](https://github.com/user-attachments/assets/1af63980-0740-4495-85f7-52e7c9e97d25)
 
-### 具体例子（用 kimi-audio 用的 hifi-gan）
+### 具体
 
-代码见我加注释的 https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/vocoder/bigvgan.py 。
+用 kimi-audio 中的 hifi-gan来看（代码见我加注释的 https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/vocoder/bigvgan.py ）
+
+```
+
+input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
+
+[1, 80, 136] => [1, 1024, 136] # 扩充 mel维 80 到 1024  
+
+# 经过 7 次 transposeConv-1d 上采样：
+1：[1, 1024, 136] => [1, 1024, 680] # seq_len * 5, chanel_num / 1
+2：[1, 1024, 680] => [1, 512, 1360] # seq_len * 2, chanel_num / 2
+3：[1, 512, 1360] => [1, 256, 2720] # seq_len * 2, chanel_num / 2
+4：[1, 256, 2720] => [1, 128, 5440] # seq_len * 2, chanel_num / 2
+5：[1, 128, 5440] => [1, 64, 10880] # seq_len * 2, chanel_num / 2
+6：[1, 64, 10880] => [1, 32, 32640] # seq_len * 3, chanel_num / 2
+7：[1, 32, 32640] => [1, 16, 65280] # seq_len * 2, chanel_num / 2
+
+每次 transposeConv-1d 上采样后都是4个 AMP block，每个 AMP-block 执行不同的卷积核，分别是 3,5,7,11.
+每个AMP block内部：
+
+# AMP blocks
+            xs = None
+            for j in range(self.num_kernels): # 实际这里循环 4 次：每一次的 kernel_size 分别是 3， 5， 7， 11. 
+                if xs is None:
+                    xs = self.resblocks[i * self.num_kernels + j](x) # 每个 resblocks，也就是每个 AMPBlock 内部，会有 1,3 5 三种 dilation
+                else:
+                    xs += self.resblocks[i * self.num_kernels + j](x)
+            x = xs / self.num_kernels 
+
+        # Post-conv
+        # input_x.shape = torch.Size([1, 16, 65280])
+        x = self.activation_post(x)
+        
+        # input_x.shape = torch.Size([1, 16, 65280])
+        x = self.conv_post(x)
+        
+        # Final tanh activation
+        # input_x.shape = torch.Size([1, 1, 65280])
+        if self.use_tanh_at_final:
+            x = torch.tanh(x)
+        else:
+            x = torch.clamp(x, min=-1.0, max=1.0)  # Bound the output to [-1, 1]
+
+        # x.shape = torch.Size([1, 1, 65280])
+        return x
+
+input_mel_spectral x.shape = [1, 80, 136] = [bs, mel_dim_80, seq_len]。
+
+conv: [1, 1024, 136]
+for 
+```

@@ -87,7 +87,13 @@ low-pass-filter 为 "low-pass filter using a windowed sinc filter with a Kaiser 
 
 # hifi-gan https://arxiv.org/pdf/2010.05646 《HiFi-GAN: Generative Adversarial Networks for Efficient and High Fidelity Speech Synthesis》
 
-bigv-gan 乃对 hifi-gan 的升级。从代码上（hifi-gan：我fork后加注释 https://github.com/superzhangmch/learn_hifi-gan/blob/master/models.py），和 kimi-audio中集成的 bigv-gan 代码很像。
+bigv-gan 乃对 hifi-gan 的升级。
+
+### [generator
+
+从代码上（hifi-gan：我fork后加注释 https://github.com/superzhangmch/learn_hifi-gan/blob/master/models.py ），和 kimi-audio中集成的 bigv-gan 代码很像。
+
+![image](https://github.com/user-attachments/assets/0fb67f42-c690-451b-8023-3f7c82a62f9d)
 
 最大区别应该是bigv-gan 用 ”低通上采样 + snake + 低通下采样“ 的 snake 激活替换了 hifi-gan 的  leaky-ReLU 激活。看看 generator 代码（原始paper中有 v1, v2, v3三种配置，这里看 v1）：
 
@@ -129,4 +135,12 @@ x = xt + x
 
 依次是 (1). leaky-ReLU act,  (2). conv: 多通道转 audio wave 的 1 通道,  (3). tanh 激活(output范围 -1~1)
 
-![image](https://github.com/user-attachments/assets/0fb67f42-c690-451b-8023-3f7c82a62f9d)
+### [判别器]
+
+![image](https://github.com/user-attachments/assets/261b929e-870a-4b14-84aa-754c83438a96)
+
+两种。一种是 1d audio wav 折叠成不同 height 的 2d data（MPD），另一种是 1d audio wav 作 avg-pooling。
+
+### [loss]
+
+![image](https://github.com/user-attachments/assets/edbbdd0e-88a6-4d52-b6fb-637e60613c77)

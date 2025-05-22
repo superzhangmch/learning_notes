@@ -11,7 +11,7 @@ input mel 谱的 shape是 [bs, seq_len, 80维mel谱], output 声波的 shape 是
 generator 主要用的是 1d 转置卷积来逐次增加序列长度。在这个过程中，卷积通道数可以自由变化。
 
 而判别器，都用的是二维卷积。也就是把声波设法转二维图后，用 2d conv。
-- MRD：1d audio wave 经过 stft 后得到的是 [seq_len, feature_dim] shape 的 2d tensor。
+- MRD：1d audio wave 经过 stft 后得到的是 [seq_len, feature_dim] shape 的 2d tensor。取代了 hifi-gan 中的 MSD，变成了这里的 MRD。
   - stft 结果和 mel谱区别：stft结果，再经过 mel 滤波器，就得到了 mel谱。二者结果数据的 shape 不一样，但是都是 [seq_len, feature_dim] 形式的。
 - MPD：1d audio wave 有如一根绳子按固定长度折叠出的 2d tensor。
   - 怎样折叠成 2d的：
@@ -23,6 +23,8 @@ generator 展开是这样的（作为 gan model 的 generator，可以看到**�
 
 snake 激活函数 $f(x) = x + \frac 1 \alpha \sin^2(\alpha x)$ 的图像如下图样子（有如斜着的正弦函数)：
 ![image](https://github.com/user-attachments/assets/1af63980-0740-4495-85f7-52e7c9e97d25)
+
+bigv-gan 的loss 和 hifi-gan 一致，见下面 hifi-gan 部分。
 
 ### 具体实现
 
@@ -139,8 +141,12 @@ x = xt + x
 
 ![image](https://github.com/user-attachments/assets/261b929e-870a-4b14-84aa-754c83438a96)
 
-两种。一种是 1d audio wav 折叠成不同 height 的 2d data（MPD），另一种是 1d audio wav 作 avg-pooling。
+两种。一种是 1d audio wav 折叠成不同 height 的 2d data（MPD），另一种是 1d audio wav 作 avg-pooling（MSD)。
+
+在 bigv-gan 中，只有 MPD 保留，另外一个变成了 MRD。
 
 ### [loss]
 
 ![image](https://github.com/user-attachments/assets/edbbdd0e-88a6-4d52-b6fb-637e60613c77)
+
+bigv-gan 的loss 和这里 hifi gan 一致。

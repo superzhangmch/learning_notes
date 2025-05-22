@@ -22,22 +22,24 @@ generator 展开是这样的：
 snake 激活函数 $f(x) = x + \frac 1 \alpha \sin^2(\alpha x)$ 的图像如下图样子（有如斜着的正弦函数)：
 ![image](https://github.com/user-attachments/assets/1af63980-0740-4495-85f7-52e7c9e97d25)
 
-### 具体
+### 具体实现
 
-用 kimi-audio 中的 hifi-gan来看（代码见我加注释的 https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/vocoder/bigvgan.py ）
+这里用 kimi-audio 中的 hifi-gan 来看看 generator 网络结构（代码见我加注释的 https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/vocoder/bigvgan.py ）：
+
+（1）、原始 mel谱 input，先扩充通道维数(即扩充 mel谱对应的维数)
 
 ```
-
 input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
-
 [1, 80, 136] => [1, 1024, 136] # 先经conv_1d(kernel=7)，扩充 mel维 80 到 1024  
+```
 
-# 经过 7 次 transposeConv-1d 上采样(conv-kernel 分别是 9 4 4 4 4 5 4, stride分别是 5 2 2 2 2 3 2)：
+(2)、经过 7 次 transposeConv-1d 上采样(conv-kernel 分别是 9 4 4 4 4 5 4, stride分别是 5 2 2 2 2 3 2)：
+```
 1：[1, 1024, 136] => [1, 1024, 680] # seq_len * 5, chanel_num / 1
 2：[1, 1024, 680] => [1, 512, 1360] # seq_len * 2, chanel_num / 2
 3：[1, 512, 1360] => [1, 256, 2720] # seq_len * 2, chanel_num / 2
   AMP-block:
-    AMP-resnet-unit(kernel_size=3, dilation=1)
+    AMP-resnet-unit(kernel_size=3, dilation=1) # 每个 AMP-resnet-unit 的 output.shape = input.shape
     AMP-resnet-unit(kernel_size=3, dilation=3)
     AMP-resnet-unit(kernel_size=3, dilation=5)
   AMP-block:
@@ -56,16 +58,24 @@ input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
 5：[1, 128, 5440] => [1, 64, 10880] # seq_len * 2, chanel_num / 2
 6：[1, 64, 10880] => [1, 32, 32640] # seq_len * 3, chanel_num / 2
 7：[1, 32, 32640] => [1, 16, 65280] # seq_len * 2, chanel_num / 2
-
+```
 
 每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-resnet-unit，共 12 个对应不同卷积核与卷积 dilation。上面只是在3和4之间示意了下，每两个之间都有。
 
-每个 AMP-resnet-unit(kernel_size=KK, dilation=DD)：
+每个 AMP-resnet-unit(kernel_size=KK, dilation=DD) 结构如下：
+
+```
 xt = snake_act(x)                          # = 低通上采样 + snake + 低通下采样
 xt = Conv1d(kernel_size=KK, dilation=DD),  # out_channel=in_channel, stride=1,
 xt = snake_act(xt)                         # = 低通上采样 + snake + 低通下采样
 xt = Conv1d(kernel_size=KK),               # out_channel=in_channel, stride=1, dilation=1
 x = xt + x
-
-然后依次是 (1). snake act,  (2). conv: [1, 16, 65280] => [1, 1, 65280],  (3). tanh 激活(output范围 -1~1)
 ```
+这里的 snake_act 正是：
+
+![image](https://github.com/user-attachments/assets/fb5a47c2-2824-4d6e-924a-f2cad6d32c38)
+
+(3)、后处理
+
+依次是 (1). snake act,  (2). conv: [1, 16, 65280] => [1, 1, 65280],  (3). tanh 激活(output范围 -1~1)
+

@@ -30,48 +30,36 @@ snake 激活函数 $f(x) = x + \frac 1 \alpha \sin^2(\alpha x)$ 的图像如下�
 
 input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
 
-[1, 80, 136] => [1, 1024, 136] # 扩充 mel维 80 到 1024  
+[1, 80, 136] => [1, 1024, 136] # 先经conv_1d(kernel=7)，扩充 mel维 80 到 1024  
 
-# 经过 7 次 transposeConv-1d 上采样：
+# 经过 7 次 transposeConv-1d 上采样(conv-kernel 分别是 9 4 4 4 4 5 4, stride分别是 5 2 2 2 2 3 2)：
 1：[1, 1024, 136] => [1, 1024, 680] # seq_len * 5, chanel_num / 1
 2：[1, 1024, 680] => [1, 512, 1360] # seq_len * 2, chanel_num / 2
 3：[1, 512, 1360] => [1, 256, 2720] # seq_len * 2, chanel_num / 2
+  AMP-block:
+    AMP-unit(kernel_size=3, dilation=1) 
+    AMP-unit(kernel_size=3, dilation=3)
+    AMP-unit(kernel_size=3, dilation=5)
+  AMP-block:
+    AMP-unit(kernel_size=5, dilation=1)
+    AMP-unit(kernel_size=5, dilation=3)
+    AMP-unit(kernel_size=5, dilation=5)
+  AMP-block:
+    AMP-unit(kernel_size=7, dilation=1)
+    AMP-unit(kernel_size=7, dilation=3)
+    AMP-unit(kernel_size=7, dilation=5)
+  AMP-block:
+    AMP-unit(kernel_size=11, dilation=1)
+    AMP-unit(kernel_size=11, dilation=3)
+    AMP-unit(kernel_size=11, dilation=5)
 4：[1, 256, 2720] => [1, 128, 5440] # seq_len * 2, chanel_num / 2
 5：[1, 128, 5440] => [1, 64, 10880] # seq_len * 2, chanel_num / 2
 6：[1, 64, 10880] => [1, 32, 32640] # seq_len * 3, chanel_num / 2
 7：[1, 32, 32640] => [1, 16, 65280] # seq_len * 2, chanel_num / 2
 
-每次 transposeConv-1d 上采样后都是4个 AMP block，每个 AMP-block 执行不同的卷积核，分别是 3,5,7,11.
-每个AMP block内部：
 
-# AMP blocks
-            xs = None
-            for j in range(self.num_kernels): # 实际这里循环 4 次：每一次的 kernel_size 分别是 3， 5， 7， 11. 
-                if xs is None:
-                    xs = self.resblocks[i * self.num_kernels + j](x) # 每个 resblocks，也就是每个 AMPBlock 内部，会有 1,3 5 三种 dilation
-                else:
-                    xs += self.resblocks[i * self.num_kernels + j](x)
-            x = xs / self.num_kernels 
+每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-unit，共 12 个对应不同卷积核与卷积 dilation。上面只是在3和4之间示意了下，每两个之间都有。
 
-        # Post-conv
-        # input_x.shape = torch.Size([1, 16, 65280])
-        x = self.activation_post(x)
-        
-        # input_x.shape = torch.Size([1, 16, 65280])
-        x = self.conv_post(x)
-        
-        # Final tanh activation
-        # input_x.shape = torch.Size([1, 1, 65280])
-        if self.use_tanh_at_final:
-            x = torch.tanh(x)
-        else:
-            x = torch.clamp(x, min=-1.0, max=1.0)  # Bound the output to [-1, 1]
 
-        # x.shape = torch.Size([1, 1, 65280])
-        return x
-
-input_mel_spectral x.shape = [1, 80, 136] = [bs, mel_dim_80, seq_len]。
-
-conv: [1, 1024, 136]
-for 
+然后依次是 (1). snake act,  (2). conv: [1, 16, 65280] => [1, 1, 65280],  (3). tanh 激活(output范围 -1~1)
 ```

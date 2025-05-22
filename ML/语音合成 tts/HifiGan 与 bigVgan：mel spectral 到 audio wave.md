@@ -37,29 +37,35 @@ input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
 2：[1, 1024, 680] => [1, 512, 1360] # seq_len * 2, chanel_num / 2
 3：[1, 512, 1360] => [1, 256, 2720] # seq_len * 2, chanel_num / 2
   AMP-block:
-    AMP-unit(kernel_size=3, dilation=1) 
-    AMP-unit(kernel_size=3, dilation=3)
-    AMP-unit(kernel_size=3, dilation=5)
+    AMP-resnet-unit(kernel_size=3, dilation=1)
+    AMP-resnet-unit(kernel_size=3, dilation=3)
+    AMP-resnet-unit(kernel_size=3, dilation=5)
   AMP-block:
-    AMP-unit(kernel_size=5, dilation=1)
-    AMP-unit(kernel_size=5, dilation=3)
-    AMP-unit(kernel_size=5, dilation=5)
+    AMP-resnet-unit(kernel_size=5, dilation=1)
+    AMP-resnet-unit(kernel_size=5, dilation=3)
+    AMP-resnet-unit(kernel_size=5, dilation=5)
   AMP-block:
-    AMP-unit(kernel_size=7, dilation=1)
-    AMP-unit(kernel_size=7, dilation=3)
-    AMP-unit(kernel_size=7, dilation=5)
+    AMP-resnet-unit(kernel_size=7, dilation=1)
+    AMP-resnet-unit(kernel_size=7, dilation=3)
+    AMP-resnet-unit(kernel_size=7, dilation=5)
   AMP-block:
-    AMP-unit(kernel_size=11, dilation=1)
-    AMP-unit(kernel_size=11, dilation=3)
-    AMP-unit(kernel_size=11, dilation=5)
+    AMP-resnet-unit(kernel_size=11, dilation=1)
+    AMP-resnet-unit(kernel_size=11, dilation=3)
+    AMP-resnet-unit(kernel_size=11, dilation=5)
 4：[1, 256, 2720] => [1, 128, 5440] # seq_len * 2, chanel_num / 2
 5：[1, 128, 5440] => [1, 64, 10880] # seq_len * 2, chanel_num / 2
 6：[1, 64, 10880] => [1, 32, 32640] # seq_len * 3, chanel_num / 2
 7：[1, 32, 32640] => [1, 16, 65280] # seq_len * 2, chanel_num / 2
 
 
-每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-unit，共 12 个对应不同卷积核与卷积 dilation。上面只是在3和4之间示意了下，每两个之间都有。
+每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-resnet-unit，共 12 个对应不同卷积核与卷积 dilation。上面只是在3和4之间示意了下，每两个之间都有。
 
+每个 AMP-resnet-unit(kernel_size=KK, dilation=DD)：
+xt = snake_act(x)                          # = 低通上采样 + snake + 低通下采样
+xt = Conv1d(kernel_size=KK, dilation=DD),  # out_channel=in_channel, stride=1,
+xt = snake_act(xt)                         # = 低通上采样 + snake + 低通下采样
+xt = Conv1d(kernel_size=KK),               # out_channel=in_channel, stride=1, dilation=1
+x = xt + x
 
 然后依次是 (1). snake act,  (2). conv: [1, 16, 65280] => [1, 1, 65280],  (3). tanh 激活(output范围 -1~1)
 ```

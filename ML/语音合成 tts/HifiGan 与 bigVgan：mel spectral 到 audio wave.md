@@ -15,7 +15,7 @@ generator 主要用的是 1d 转置卷积来逐次增加序列长度。在这个
   - stft 结果和 mel谱区别：stft结果，再经过 mel 滤波器，就得到了 mel谱。二者结果数据的 shape 不一样，但是都是 [seq_len, feature_dim] 形式的。
 - MPD：1d audio wave 有如一根绳子按固定长度折叠出的 2d tensor。
 
-generator 展开是这样的：
+generator 展开是这样的（作为 gan model 的 generator，可以看到并没用 latent z 出现。原来 gan 还可以这样！）：
 
 ![image](https://github.com/user-attachments/assets/f94f60f4-a9fa-4b7f-8b55-79ac2bff7789)
 
@@ -62,11 +62,11 @@ input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
 
 每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-resnet-unit，共 12 个对应不同卷积核与卷积 dilation。上面只是在3和4之间示意了下，每两个之间都有。
 
-每个 AMP-resnet-unit(kernel_size=KK, dilation=DD) 结构如下：
+每个 AMP-resnet-unit(kernel_size=KK, dilation=DD) 结构如下（和paper中有所出入）：
 
 ```
-xt = snake_act(x)                          # = 低通上采样 + snake + 低通下采样
-xt = Conv1d(kernel_size=KK, dilation=DD),  # out_channel=in_channel, stride=1,
+xt = snake_act(x)                          # = 低通上采样(transpose_conv_1d) + snake + 低通下采样(conv_1d)
+xt = Conv1d(kernel_size=KK, dilation=DD),  # out_channel=in_channel, stride=1。KK=3,5,7,11; DD=1,3,5
 xt = snake_act(xt)                         # = 低通上采样 + snake + 低通下采样
 xt = Conv1d(kernel_size=KK),               # out_channel=in_channel, stride=1, dilation=1
 x = xt + x
@@ -74,6 +74,10 @@ x = xt + x
 这里的 snake_act 正是：
 
 ![image](https://github.com/user-attachments/assets/fb5a47c2-2824-4d6e-924a-f2cad6d32c38)
+
+low-pass-filter 为 "low-pass filter using a windowed sinc filter with a Kaiser window"，实际上是设法构造的一个具体的常数（而非 learnt) 的卷积核矩阵。所以低通上下采样，就是transpose_conv_1d 与 conv_1d 分别用相应constant 卷积核作卷积。
+
+具体 kaiser_sinc_filter1d 是什么，待究。
 
 (3)、后处理
 

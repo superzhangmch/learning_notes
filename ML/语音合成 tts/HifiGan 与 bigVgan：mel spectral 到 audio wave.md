@@ -17,7 +17,7 @@ generator 主要用的是 1d 转置卷积来逐次增加序列长度。在这个
   - 怎样折叠成 2d的：
     - ![image](https://github.com/user-attachments/assets/7750997c-104c-4bd9-b619-aaca04c6b148)
 
-generator 展开是这样的（作为 gan model 的 generator，可以看到并没用 latent z 出现。原来 gan 还可以这样！）：
+generator 展开是这样的（作为 gan model 的 generator，可以看到**并没有 latent z 出现**。原来 gan 还可以这样！对于没有 noise z 的gan，也可以看作 z ~ dirac单点分布——这样的分布意味着 mode 非常单一）：
 
 ![image](https://github.com/user-attachments/assets/f94f60f4-a9fa-4b7f-8b55-79ac2bff7789)
 

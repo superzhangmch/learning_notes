@@ -2,7 +2,7 @@ HifiGan 与 bigVgan：后者在前者的基础上改进而来。它们都是要�
 
 input mel谱的 shape 是 [bs, seq_len, 80维mel谱], 它们的基本思路都是通过一系列的 1d 的transposeConv（转置卷积）层层升维拉长 seq_len, 直到拉长到最终的 audio wave 的 22k HZ 那么长。卷积过程中，通道数先由 80 升到一个较高维，然后逐步降直到最后一次变为单通道——这时候结果就是声波了。
 
-# hifi-gan https://arxiv.org/pdf/2206.04658 
+# bigv-gan https://arxiv.org/pdf/2206.04658 《BIGVGAN: A UNIVERSAL NEURAL VOCODER WITH LARGE-SCALE TRAINING》
 
 ![image](https://github.com/user-attachments/assets/8552b6be-7d26-4c9a-91f3-569d744dc1dd)
 
@@ -14,6 +14,8 @@ generator 主要用的是 1d 转置卷积来逐次增加序列长度。在这个
 - MRD：1d audio wave 经过 stft 后得到的是 [seq_len, feature_dim] shape 的 2d tensor。
   - stft 结果和 mel谱区别：stft结果，再经过 mel 滤波器，就得到了 mel谱。二者结果数据的 shape 不一样，但是都是 [seq_len, feature_dim] 形式的。
 - MPD：1d audio wave 有如一根绳子按固定长度折叠出的 2d tensor。
+  - 怎样折叠成 2d的：
+    - ![image](https://github.com/user-attachments/assets/7750997c-104c-4bd9-b619-aaca04c6b148)
 
 generator 展开是这样的（作为 gan model 的 generator，可以看到并没用 latent z 出现。原来 gan 还可以这样！）：
 
@@ -24,7 +26,7 @@ snake 激活函数 $f(x) = x + \frac 1 \alpha \sin^2(\alpha x)$ 的图像如下�
 
 ### 具体实现
 
-这里用 kimi-audio 中的 hifi-gan 来看看 generator 网络结构（代码见我加注释的 https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/vocoder/bigvgan.py ）：
+这里用 kimi-audio 中的 bigv-gan 来看看 generator 网络结构（代码见我 fork 后加注释的 https://github.com/superzhangmch/learn_Kimi-Audio/blob/master/kimia_infer/models/detokenizer/vocoder/bigvgan.py ）：
 
 （1）、原始 mel谱 input，先扩充通道维数(即扩充 mel谱对应的维数)
 
@@ -60,7 +62,7 @@ input_x.shape = [1, 80, 136] = [bs, dim_of_mel=80, seq_len=136]
 7：[1, 32, 32640] => [1, 16, 65280] # seq_len * 2, chanel_num / 2
 ```
 
-每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-resnet-unit，共 12 个对应不同卷积核与卷积 dilation。上面只是在3和4之间示意了下，每两个之间都有。
+每次 transposeConv-1d 上采样后都是 4 个 AMP block, 每个内部 3 个 AMP-resnet-unit，共 12 个对应不同卷积核（3,5,7,11）与卷积 dilation（1,3,5）。上面只是在3和4之间示意了下，每两个之间都有。
 
 每个 AMP-resnet-unit(kernel_size=KK, dilation=DD) 结构如下（和paper中有所出入）：
 
@@ -83,3 +85,48 @@ low-pass-filter 为 "low-pass filter using a windowed sinc filter with a Kaiser 
 
 依次是 (1). snake act,  (2). conv: [1, 16, 65280] => [1, 1, 65280],  (3). tanh 激活(output范围 -1~1)
 
+# hifi-gan https://arxiv.org/pdf/2010.05646 《HiFi-GAN: Generative Adversarial Networks for Efficient and High Fidelity Speech Synthesis》
+
+bigv-gan 乃对 hifi-gan 的升级。从代码上（hifi-gan：我fork后加注释 https://github.com/superzhangmch/learn_hifi-gan/blob/master/models.py），和 kimi-audio中集成的 bigv-gan 代码很像。
+
+最大区别应该是bigv-gan 用 ”低通上采样 + snake + 低通下采样“ 的 snake 激活替换了 hifi-gan 的  leaky-ReLU 激活。看看 generator 代码（原始paper中有 v1, v2, v3三种配置，这里看 v1）：
+
+（1）、原始 mel谱 input，先扩充通道维数(即扩充 mel谱对应的维数)
+
+（2)、经过 4 次 transposeConv-1d 上采样(conv-kernel 分别是 16, 16, 4, 4, stride分别是 8,  8, 2, 2)【注意 big-vgan 和它很像的】：
+```
+1：seq_len * 8, chanel_num / 2 减半
+2：seq_len * 8, chanel_num / 2 减半
+3：seq_len * 2, chanel_num / 2 减半
+  block: kernel_size=3
+    resnet-unit(kernel_size=3, dilation=1) # 每个 resnet-unit 的 output.shape = input.shape
+    resnet-unit(kernel_size=3, dilation=3)
+    resnet-unit(kernel_size=3, dilation=5)
+  block: kernel_size=7
+    resnet-unit(kernel_size=7, dilation=1)
+    resnet-unit(kernel_size=7, dilation=3)
+    resnet-unit(kernel_size=7, dilation=5)
+  block: kernel_size=11
+    resnet-unit(kernel_size=11, dilation=1)
+    resnet-unit(kernel_size=11, dilation=3)
+    resnet-unit(kernel_size=11, dilation=5)
+4：seq_len * 2, chanel_num / 2 减半
+```
+
+每次 transposeConv-1d 上采样后都是 3 个 resnet-blocks, 每个内部 3 个 resnet-unit，共 9 个对应不同卷积核(3, 7, 11)与卷积 dilation(1, 3, 5)。上面只是在3和4之间示意了下，其实每两个之间都有。
+
+每个 resnet-unit(kernel_size=KK, dilation=DD) 结构如下（big-vgan 和它很像的）：
+
+```
+xt = F.leaky_relu(x, LRELU_SLOPE)          # bigv-gan中把它升级成了 snake 激活，且激活前后有 up-sample / down-sample
+xt = Conv1d(kernel_size=KK, dilation=DD),  # out_channel=in_channel, stride=1。KK=3, 7,11; DD=1,3,5。bigv-gan在这里仍然保持了和这里的一致
+xt = F.leaky_relu(xt, LRELU_SLOPE)         # bigv-gan中把它升级成了 snake 激活
+xt = Conv1d(kernel_size=KK),               # out_channel=in_channel, stride=1, dilation=1。bigv-gan在这里仍然保持了和这里的一致
+x = xt + x
+```
+
+(3)、后处理
+
+依次是 (1). leaky-ReLU act,  (2). conv: 多通道转 audio wave 的 1 通道,  (3). tanh 激活(output范围 -1~1)
+
+![image](https://github.com/user-attachments/assets/0fb67f42-c690-451b-8023-3f7c82a62f9d)

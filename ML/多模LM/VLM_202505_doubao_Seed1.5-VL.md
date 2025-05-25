@@ -33,7 +33,7 @@ paper 中说它支持 Dynamic Frame-Resolution Sampling，但并不是一个视�
 
 图片、video 的空间位置关系，是通过 2d-rope 在 vit-encoder 捕获的。在 LLM 层面，只用了 1D 位置编码。
 
-### 支持的比较特殊的任务（一般任务比如 ocr 之类比列）
+### 支持的比较特殊的任务（一般任务比如 ocr 之类就不列了）
 
 1. 物体位置定位（识别出物体的 Bounding Box、识别出中心点坐标）、物体计数（因物体定位而带来的能力）
    - 会把坐标归一到 （1~1000）

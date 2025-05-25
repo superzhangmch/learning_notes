@@ -9,7 +9,9 @@
 ### 语音处理：
 用 huBERT（hubert 内用 k-means 方式聚合出离散 tokens）把 audio 转 speech token。model 对 speech tokens 作自回归后，用 GAN model 还原出语音。会把 speech token 扩充 LLM（LLaMa） 的 text token 表。
 
-语音生成：speech tokens 生成语音用 HiFi-GAN vocoder（speech token ids=> embds, 然后..），而非后来的 qianwen-2.5-omni, glm-4-voice 等所用的 flow-matching。
+语音生成：speech tokens 生成语音用 unit HiFi-GAN vocoder（speech token ids=> embds, 然后..），而非后来的 qianwen-2.5-omni, glm-4-voice 等所用的 flow-matching。
+
+unit-hifi-gan vocoder: 来自 paper [Speech Resynthesis from Discrete Disentangled Self-Supervised Representations](https://arxiv.org/pdf/2104.00355), 它就是用 hubert 得到的离散语音 tokens 直接跳过 mel-谱得到语音的（用了 hifi-gan 结构。hifi-gan 本来 input 是 mel-谱，shape=[bs, seq_len, 80]。现在用 shape=[bs, seq_len] 的 speech tokens 作为input，经过 embedding 后，shape=[bs, seq_len, emb_dim]， 正好满足 hifi-gan 的 input 要求。但这篇paper 中没提到 duration predictor）。
 
 ![image](https://github.com/user-attachments/assets/94af0198-5bbb-4147-8b50-a4e45307cf4c)
 

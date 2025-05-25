@@ -1,4 +1,4 @@
-当前的 audio LM，生成语音最后都是 speech tokens id list => mel谱 => audio wave。而在 zhihu 文章 https://www.zhihu.com/question/793458414 中：可以根据一张频谱图照片还原出语音。
+当前的 audio LM，生成语音最后都是 speech tokens id list => mel谱 => audio wave【也有不这样的，比如《LLaMa-omni》，直接 speech tokens 直接到 audio wave，方法来自  [Speech Resynthesis from Discrete Disentangled Self-Supervised Representations](https://arxiv.org/pdf/2104.00355)】。而在 zhihu 文章 https://www.zhihu.com/question/793458414 中：可以根据一张频谱图照片还原出语音。
 
 也就是说，只是根据 mel 谱，就差不多可以还原语音的。作语音合成也正是这么做的。
 

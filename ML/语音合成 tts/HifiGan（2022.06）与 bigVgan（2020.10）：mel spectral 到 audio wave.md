@@ -87,6 +87,8 @@ low-pass-filter 为 "low-pass filter using a windowed sinc filter with a Kaiser 
 
 依次是 (1). snake act,  (2). conv: [1, 16, 65280] => [1, 1, 65280],  (3). tanh 激活(output范围 -1~1)
 
+---
+
 # hifi-gan https://arxiv.org/pdf/2010.05646 《HiFi-GAN: Generative Adversarial Networks for Efficient and High Fidelity Speech Synthesis》
 
 bigv-gan 乃对 hifi-gan 的升级。

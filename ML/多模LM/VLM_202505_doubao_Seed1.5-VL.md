@@ -49,6 +49,8 @@ SFT 数据中就包括 LongCoT 数据。 RL 包含格式 reward：`<think>{thoug
 
 它不是 pre-training => SFT => RL 线性流程。而是 SFT 与 RL会交叠多次：RL 阶段帮助发现更好的 Chain-of-Thought（CoT）数据，然后这些被选中的高质量输出重新用于 SFT，更新基础模型，再进行下一轮 RL。
 
+另外，它的 RL 乃某一 PPO 变种，同时有 RLHF（人反馈RL） 与 RLVR（最终答案是否正确的 verified reward 的 RL），即同时有 model based reward 与 rule based reward。
+
 ![image](https://github.com/user-attachments/assets/8681d9f1-e0f4-49ff-8b5e-762f19456ca9)
 
 

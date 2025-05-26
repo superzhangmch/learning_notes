@@ -13,7 +13,7 @@ seed-tts 用了两种方式来做的 tts：
 
 ### （2）、不经 speech tokens(名之为 seed_TTS_DiT)：text => mel谱 => audio_wave
 
-![image](https://github.com/user-attachments/assets/d6239dfc-63ae-4dbd-b5b1-5a2f75c10d74)
+![image](https://github.com/user-attachments/assets/cf39c671-dfb3-41c5-80d4-9e7f021239d3)
 
 对于一句希望作 tts 的 text，最终的 audio 时间长度可长可短。怎么决定呢？如果是"经过speech tokens"的方式，speech token 就自带了每个字读出来的长度了。对于不经 speech token直接 text => mel谱的方法，就需要方式来决定每个text token 应该读多长时间了。
 

@@ -2,16 +2,26 @@
 
 seed-tts 用了两种方式来做的 tts：
 - 经过 speech tokens：text ==(自回归)=> speech_tokens ==(扩散模型)=> mel谱 ==(vocoder)=> audio_wave
-- 不经 speech tokens：text ==（扩散模型) => mel谱 ==(vocoder)=> audio_wave
+  - 更早的《TorToise-tts》就是差不多这样做的
+- 不经 speech tokens（seed-TTS_DiT)：text ==（扩散模型) => mel谱 ==(vocoder)=> audio_wave
 
 ### 经过 speech tokens：text => speech tokens => mel 谱 => audio
 
 ![image](https://github.com/user-attachments/assets/361e6275-85b1-4953-be0b-98222c677414)
 
-### 不经 speech tokens：text => mel谱 => audio_wave
+### 不经 speech tokens(名之为 seed_TTS_DiT)：text => mel谱 => audio_wave
 
+![image](https://github.com/user-attachments/assets/d6239dfc-63ae-4dbd-b5b1-5a2f75c10d74)
 
-参考：https://www.zhihu.com/question/26815523/answer/64177908707
+对于一句希望作 tts 的 text，最终的 audio 时间长度可长可短。怎么决定呢？如果是"经过speech tokens"的方式，speech token 就自带了每个字读出来的长度了。对于不经 speech token直接 text => mel谱的方法，就需要方式来决定每个text token 应该读多长时间了。
+
+一种方式是有专门 model 或 model 的组件来预测每一个 token或音素的时长。 seed-tts 的方法是，只给一个 tts 结果总时长 T。由 model 来决定时间 T 内怎么把待念的 tokens 布局。时长 T 怎么给到 diffusion model？用 T 来决定出 input_noise.shape 的方式决定出： input_noise = [bs, seq_len=T, 80=mel谱维度]。
+
+### 两种方法的对比
+
+![image](https://github.com/user-attachments/assets/bfd1549d-29b1-4b9b-8fdd-c1d204183726)
+
+稳定性与相似度，都是 seed_TTS_DiT 占优。但是经 speech tokens 的版本，更适合流式推理、语音助手等低延迟场景（因为 DiT 只能一次性生成，而不能自回归逐步生成）。
 
 ---
 

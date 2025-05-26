@@ -5,6 +5,7 @@ seed-tts 用了两种方式来做的 tts：
   - 更早的《TorToise-tts》就是差不多这样做的
   - 当前主流 audio_LLM 基本都是这样方式生成的 audio
 - 不经 speech tokens（seed-TTS_DiT)：text ==（扩散模型) => mel谱 ==(vocoder)=> audio_wave
+  - 该文内作语音转换（voice conversion），差不多也是用的该思路
 
 ### （1）、经过 speech tokens：text => speech tokens => mel 谱 => audio
 

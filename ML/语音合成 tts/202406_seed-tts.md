@@ -19,6 +19,10 @@ seed-tts 用了两种方式来做的 tts：
 
 一种方式是有专门 model 或 model 的组件来预测每一个 token或音素的时长。 seed-tts 的方法是，只给一个 tts 结果总时长 T。由 model 来决定时间 T 内怎么把待念的 tokens 布局。时长 T 怎么给到 diffusion model？用 T 来决定出 input_noise.shape 的方式决定出： input_noise = [bs, seq_len=T, 80=mel谱维度]。
 
+它支持语音编辑：
+
+![image](https://github.com/user-attachments/assets/f5cf6b93-aff1-4dbe-bbf7-996b700c0a11)
+
 ### 两种方法的对比
 
 ![image](https://github.com/user-attachments/assets/bfd1549d-29b1-4b9b-8fdd-c1d204183726)

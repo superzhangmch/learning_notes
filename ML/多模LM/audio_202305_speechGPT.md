@@ -21,7 +21,24 @@ paper 中对于语音问，语音回答的 prompt 长这样：
 
 ![image](https://github.com/user-attachments/assets/c9ba0a3b-078a-4050-9576-33ed070ca743)
 
+### 训练
+
+三阶段：
+1. pre-training: 在 LLM 上只训语音，不训文字
+2. instruction SFT: 语音-asr, tts-语音等pair数据上训
+3. instruction SFT: LORA方式，在混杂text与audio的多轮数据上训
+
+所训论述并不多(但是所需的机器可不少）：
+
+![image](https://github.com/user-attachments/assets/92e56078-2d4b-46e8-9d66-5a5d4612b2e8)
+
 ### 不足
 1. 生成audio的 emotional tones 不足
-2. 必须先生成 text，才能生成相应语音
+2. 必须先生成 text，才能生成相应语音（其他 audio-LM 都也这样）
 3. 因为 context length 限制，不支持多轮
+
+### 其他： huBERT 怎么得到的离散 token
+
+见 https://arxiv.org/pdf/2106.07447 《HuBERT: Self-Supervised Speech Representation Learning by Masked Prediction of Hidden Units》
+
+![image](https://github.com/user-attachments/assets/4e37ef75-dba8-413e-b11b-621bef008180)

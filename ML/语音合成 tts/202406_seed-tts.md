@@ -3,13 +3,14 @@
 seed-tts 用了两种方式来做的 tts：
 - 经过 speech tokens：text ==(自回归)=> speech_tokens ==(扩散模型)=> mel谱 ==(vocoder)=> audio_wave
   - 更早的《TorToise-tts》就是差不多这样做的
+  - 当前主流 audio_LLM 基本都是这样方式生成的 audio
 - 不经 speech tokens（seed-TTS_DiT)：text ==（扩散模型) => mel谱 ==(vocoder)=> audio_wave
 
-### 经过 speech tokens：text => speech tokens => mel 谱 => audio
+### （1）、经过 speech tokens：text => speech tokens => mel 谱 => audio
 
 ![image](https://github.com/user-attachments/assets/361e6275-85b1-4953-be0b-98222c677414)
 
-### 不经 speech tokens(名之为 seed_TTS_DiT)：text => mel谱 => audio_wave
+### （2）、不经 speech tokens(名之为 seed_TTS_DiT)：text => mel谱 => audio_wave
 
 ![image](https://github.com/user-attachments/assets/d6239dfc-63ae-4dbd-b5b1-5a2f75c10d74)
 

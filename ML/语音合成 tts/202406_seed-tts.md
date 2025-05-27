@@ -9,6 +9,8 @@ seed-tts 用了两种方式来做的 tts：
 
 ### （1）、经过 speech tokens：text => speech tokens => mel 谱 => audio
 
+这一步用到了自回归model。但是不像 cosyvoice2：后者直接用的预训练的通用 LM qianwen-0.5B。
+
 ![image](https://github.com/user-attachments/assets/361e6275-85b1-4953-be0b-98222c677414)
 
 ### （2）、不经 speech tokens(名之为 seed_TTS_DiT)：text => mel谱 => audio_wave

@@ -18,12 +18,21 @@
 它还可以跳过 mel-谱 阶段，直接生成 audio wave。
 
 ![image](https://github.com/user-attachments/assets/2b522d53-2b30-4f77-a6de-817cf8783f6f)
+该分支的 waveform decoder 是通过 multi-resolution STFT loss 与 gan loss(LSGAN discriminator loss following Parallel WaveGAN) 训练的。
 
 该方式效果还可以（比 tacotron2 还要好些。 而 FastSpeech 2s 运行速度很快）：
 
 ![image](https://github.com/user-attachments/assets/8fe7a18c-f84a-48ba-abf5-804efbe6ca27)
 
-### 关于 text frontend
+---
+
+### fastspeech v1: https://arxiv.org/pdf/1905.09263
+
+![image](https://github.com/user-attachments/assets/5c02a376-4be5-4975-ab4f-190fb1ad0761)
+
+---
+
+### 其他：关于 text frontend
 
 可以参考： https://github.com/PaddlePaddle/PaddleSpeech/blob/develop/docs/source/tts/zh_text_frontend.md
 

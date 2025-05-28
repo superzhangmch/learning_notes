@@ -8,8 +8,6 @@ character list => mel谱 => audio_wave
 
 ![image](https://github.com/user-attachments/assets/404d1e84-d92a-4003-8aaf-ecad8f1368bc)
 
-### 中英文分别怎么处理的？
-它假设有了 text token list 了。所以各种语音都应该设法转为一种 token list。
+### 中文怎么处理的？
 
-- 英文
-- 中文
+它假设有了 text token list 了。所以各种语音都应该设法转为一种 token list。放 2025 年的现在看，原始语音直接 tokenize 就是了。但是在当时似乎还不是这样。看一些资料，中文需要先转为带声调拼音，然后再作 tacotron2。

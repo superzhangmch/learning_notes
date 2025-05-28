@@ -7,7 +7,7 @@
 
 它用到了 transformer，但是并不是**自回归方式**生成 mel-谱的帧的。而 Phoneme token 的发音长度不一，这就有问题是：怎么决定最终 result audio 的时长，以及每个 Phoneme token 的时长问题。
 
-它所用的方法是（继承自 fastspeech_v1)，预测出每个 Phoneme token 时长，然后根据这个时长，把序列展开。展开结束后，序列长度就和 result mel-谱 seq_len 一样了。见下图：LR 负责音素与mel帧：
+它所用的方法是（继承自 fastspeech_v1)，预测出每个 Phoneme token 时长，然后根据这个时长，把序列展开。展开结束后，序列长度就和 result mel-谱 seq_len 一样了。见下图：LR 的详细图，负责音素与mel帧的对齐：
 
 ![image](https://github.com/user-attachments/assets/018b02f7-22ea-43e2-a71b-4ed122ad9591)
 
@@ -19,6 +19,6 @@
 
 ![image](https://github.com/user-attachments/assets/2b522d53-2b30-4f77-a6de-817cf8783f6f)
 
-该方式效果还可以（比 tacotron2 还要好些）：
+该方式效果还可以（比 tacotron2 还要好些。 而 FastSpeech 2s 运行速度很快）：
 
 ![image](https://github.com/user-attachments/assets/8fe7a18c-f84a-48ba-abf5-804efbe6ca27)

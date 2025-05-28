@@ -1,7 +1,7 @@
 # fastspeech2 《FASTSPEECH 2: FAST AND HIGH-QUALITY END-TOEND TEXT TO SPEECH》 https://arxiv.org/pdf/2006.04558
 
 ### 原理
-首先对于原始 text 序列，要经过 text-frontend 转化为 Phoneme（音素） tokens 序列，然后才开始展开工作。
+首先对于原始 text 序列，要经过 text-frontend 转化为 Phoneme（音素） tokens 序列，然后才开始展开工作。乃非自回归的。
 
 ![image](https://github.com/user-attachments/assets/6c56557b-b6fb-4d84-9c3b-8942013b4ca5)
 
@@ -11,7 +11,10 @@
 
 ![image](https://github.com/user-attachments/assets/018b02f7-22ea-43e2-a71b-4ed122ad9591)
 
-它用到了 Energy、pitch、duration 等特征，这些都是要用专门工具抽取出来的，并且会有监督 MSE loss 来学习它们。最终是多 loss 学习。model main 部分是预测 mel 谱，loss 是??
+#### loss
+它用到了 Energy、pitch、duration 等特征，这些都是要用专门工具抽取出来的，并且会有监督 MSE loss 来学习它们。最终是多 loss 学习。model main 部分是预测 mel 谱，所用 loss 是 MAE【3.1节， The output linear layer
+in the decoder converts the hidden states into 80-dimensional mel-spectrograms and our model is
+optimized with mean absolute error (MAE)】。
 
 ### FastSpeech 2s
 
@@ -36,7 +39,7 @@
 
 可以参考： https://github.com/PaddlePaddle/PaddleSpeech/blob/develop/docs/source/tts/zh_text_frontend.md
 
-![image](https://github.com/user-attachments/assets/8872d189-840b-4f2f-a1e1-4872fc5c4ca5)
+![image](https://github.com/user-attachments/assets/6d3634c1-2cb9-4131-bd49-0dd76c218dc9)
 
 用 AI 给的一个例子：
 - “我爱北京” => “wo3 ai4 bei3 jing1”

@@ -8,6 +8,8 @@ character list => mel谱 => audio_wave
 
 ![image](https://github.com/user-attachments/assets/31a96dce-8454-4b8c-b827-95433895ea48)
 
+loss：MSE【We minimize the summed mean squared error (MSE) from before and after the post-net to aid convergence】。
+
 ### 中文怎么处理的？
 
 它假设有了 text token list 了。所以各种语音都应该设法转为一种 token list。放 2025 年的现在看，原始语音直接 tokenize 就是了。但是在当时似乎还不是这样。看一些资料，中文需要先转为带声调拼音，然后再作 tacotron2。

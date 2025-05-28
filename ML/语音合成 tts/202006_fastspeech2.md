@@ -1,0 +1,2 @@
+# fastspeech2 《FASTSPEECH 2: FAST AND HIGH-QUALITY END-TOEND TEXT TO SPEECH》 https://arxiv.org/pdf/2006.04558
+

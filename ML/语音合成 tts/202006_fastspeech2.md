@@ -22,3 +22,13 @@
 该方式效果还可以（比 tacotron2 还要好些。 而 FastSpeech 2s 运行速度很快）：
 
 ![image](https://github.com/user-attachments/assets/8fe7a18c-f84a-48ba-abf5-804efbe6ca27)
+
+### 关于 text frontend
+
+可以参考： https://github.com/PaddlePaddle/PaddleSpeech/blob/develop/docs/source/tts/zh_text_frontend.md
+
+![image](https://github.com/user-attachments/assets/8872d189-840b-4f2f-a1e1-4872fc5c4ca5)
+
+用 AI 给的一个例子：
+- “我爱北京” => “wo3 ai4 bei3 jing1”
+- “I read a book” => “AY R EH1 D AH B UH1 K”

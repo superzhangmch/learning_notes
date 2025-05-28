@@ -11,7 +11,7 @@
 
 ![image](https://github.com/user-attachments/assets/018b02f7-22ea-43e2-a71b-4ed122ad9591)
 
-它用到了 Energy、pitch、duration 等特征，这些都是要用专门工具抽取出来的，并且会有监督 MSE loss 来学习它们。最终是多 loss 学习。
+它用到了 Energy、pitch、duration 等特征，这些都是要用专门工具抽取出来的，并且会有监督 MSE loss 来学习它们。最终是多 loss 学习。model main 部分是预测 mel 谱，loss 是??
 
 ### FastSpeech 2s
 

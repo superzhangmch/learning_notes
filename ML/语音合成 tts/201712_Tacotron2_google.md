@@ -8,7 +8,7 @@ character list => mel谱 => audio_wave
 
 ![image](https://github.com/user-attachments/assets/31a96dce-8454-4b8c-b827-95433895ea48)
 
-loss：MSE【We minimize the summed mean squared error (MSE) from before and after the post-net to aid convergence】。
+loss：MSE【We minimize the summed mean squared error (MSE) from before and after the post-net to aid convergence】。另外，按说也可以接一个对抗 gan loss 啊，但是看包括 fastspeech 在内，都没这样做。
 
 ### 中文怎么处理的？
 

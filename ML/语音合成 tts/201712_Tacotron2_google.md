@@ -6,7 +6,7 @@ character list => mel谱 => audio_wave
   - ```Char List → Embedding → CNN（提取局部上下文） → Bi-LSTM → Attention → Decoder（RNN） → Mel Spectrogram```
 - mel => audio: 用的 WaveNet 改进版
 
-![image](https://github.com/user-attachments/assets/404d1e84-d92a-4003-8aaf-ecad8f1368bc)
+![image](https://github.com/user-attachments/assets/31a96dce-8454-4b8c-b827-95433895ea48)
 
 ### 中文怎么处理的？
 

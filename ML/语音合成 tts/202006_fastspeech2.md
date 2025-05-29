@@ -1,7 +1,9 @@
 # fastspeech2 《FASTSPEECH 2: FAST AND HIGH-QUALITY END-TOEND TEXT TO SPEECH》 https://arxiv.org/pdf/2006.04558
 
+乃非自回归的 tts model。相比直线， Deep Voice（v1/v2) 等是自回归的。非自回归好处是可以并行，速度快。
+
 ### 原理
-首先对于原始 text 序列，要经过 text-frontend 转化为 Phoneme（音素） tokens 序列，然后才开始展开工作。乃非自回归的。
+首先对于原始 text 序列，要经过 text-frontend 转化为 Phoneme（音素） tokens 序列，然后才开始展开工作。
 
 ![image](https://github.com/user-attachments/assets/6c56557b-b6fb-4d84-9c3b-8942013b4ca5)
 
@@ -21,7 +23,7 @@ optimized with mean absolute error (MAE)】。
 它还可以跳过 mel-谱 阶段，直接生成 audio wave。
 
 ![image](https://github.com/user-attachments/assets/2b522d53-2b30-4f77-a6de-817cf8783f6f)
-该分支的 waveform decoder 是通过 multi-resolution STFT loss 与 gan loss(LSGAN discriminator loss following Parallel WaveGAN) 训练的。
+该分支的 waveform decoder 是通过 multi-resolution STFT loss 与 adversarial loss(LSGAN discriminator loss following Parallel WaveGAN) 训练的。
 
 该方式效果还可以（比 tacotron2 还要好些。 而 FastSpeech 2s 运行速度很快）：
 

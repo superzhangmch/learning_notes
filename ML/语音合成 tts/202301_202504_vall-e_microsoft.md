@@ -23,4 +23,6 @@
 
 ![image](https://github.com/user-attachments/assets/9452b08f-80a1-4d07-a09b-c25b8cf23435)
 
+vall-e V2 等，见下：
+
 ![image](https://github.com/user-attachments/assets/e37ef113-1c4b-4b4e-8ead-7de9b6999172)

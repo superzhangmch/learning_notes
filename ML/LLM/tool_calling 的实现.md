@@ -8,6 +8,8 @@
 - 用户调用 tool，并再次向 LLM 发起带 tool_result 的请求
 - LLM 返回最终结果
 
+豆包的 coze.cn 上，好多操作就是直接用的 tool call / function call 来实现的额。
+
 ---
 
 非常详细的实现，也就是 chatML，发现一个 qianwen 2.5 的

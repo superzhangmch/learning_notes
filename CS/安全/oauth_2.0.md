@@ -1,5 +1,134 @@
+oauth-2.0 授权登录，有两种使用场景：
+- server 请求 server
+- 客户端用户直接请求 server：OAuth2 的用户授权模式
+  
+| 场景                        | 说明                                                        | 示例                        |
+| ------------------------- | --------------------------------------------------------- | ------------------------- |
+| **Server to Server 鉴权** | 不涉及用户，服务 A 用 client\_id + client\_secret 获取 token 来调用服务 B | 微服务 A ➜ 微服务 B             |
+| **用户授权登录**              | 涉及用户，用户授权给小网站使用其大平台身份                                     | “用微信/Google 登录” 某个网站或 App |
+ 
+可以这样理解 OAuth2 的两个方向：
+
+| 类型                              | 鉴权对象 | 使用方式                      | 是否涉及用户   |
+| ------------------------------- | ---- | ------------------------- | -------- |
+| 🟩 **Client Credentials Grant** | 机器身份 | A ➜ C 获取 token ➜ B        | ❌ 不涉及用户  |
+| 🟦 **Authorization Code Grant** | 用户身份 | 用户授权 C ➜ A 拿到 token ➜ 调 B | ✅ 涉及用户登录 |
+
+例子对比：
+
+| 用途                   | 举例                          |
+| -------------------- | --------------------------- |
+| Server A 要访问 B 的 API | OAuth2 + Client Credentials |
+| 用户点“用微信登录”注册账号       | OAuth2 + Authorization Code |
+
+----
+
+# server 请求 server
+
+用 oauth-2 作 server A=> server B 的通信，那就是A=> C 发送 用户名与密码，然后拿到 token，和 B 的通信只需要 token。这样在A或者 B的日志中，只有 token，不会有其他。只要 A=>C 过程中不泄露密码，则就是安全的。 
+
+目标：A 要访问 B 的受保护接口，用 OAuth2 的方式完成认证和授权。
+
+整个过程为： 
+
+### Step 1️⃣：A ➜ 授权服务器（C）发送 **客户端凭证**（client\_id 和 client\_secret）
+
+这个过程使用 HTTPS，保护凭证传输安全。
+
+```http
+POST https://auth-server.com/oauth/token
+
+grant_type=client_credentials
+client_id=service-a
+client_secret=abc123
+```
+
+> 🔒 注意：这里发送的是 **服务 A 的身份信息（而不是用户的）**，用于 server-to-server 授权。
+ 
+### Step 2️⃣：C 返回一个 **access\_token（通常是 JWT）**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+```
+ 
+### Step 3️⃣：A ➜ B 发起请求，带上 token
+
+```http
+GET /api/resource
+Host: service-b.com
+Authorization: Bearer eyJhbGciOi...
+```
+
+### Step 4️⃣：B 验证 token（本地或向 C 验证），确认是否有效、是否有权限 ➜ 放行或拒绝请求
+
+服务 B 校验 token 的两种主流方式：
+- 本地验证 JWT（高性能，最常用）
+- 远程 introspection（适合可吊销的 opaque token）
+
+安全分析总结：
+
+| 项目                  | 是否安全                | 原因                                      |
+| ------------------- | ------------------- | --------------------------------------- |
+| client\_secret 是否暴露 | ❌ 一旦泄露，攻击者可假冒 A     | 所以应当只在服务 A 内安全存储                        |
+| access\_token 是否泄露  | ⚠️ 有时泄露也危险（但影响较小）   | 因为 token 有时效和 scope 限制，可追踪              |
+| B 的日志中是否有密码？        | ✅ 没有                | 只有 token，client\_secret 不会出现在服务 B 日志中   |
+| A 的日志中是否有密码？        | ⚠️ 取决于你是否打印请求体      | 应避免记录 client\_secret 相关内容               |
+| token 被攻击者拿到怎么办？    | 🚨 攻击者可伪造请求，但只在有效期内 | 所以建议 access\_token 设置较短有效期（如 10\~30 分钟） |
+ 
+## 🎯 结论
+
+> 是的，只要：
+>
+> * A ➜ C 过程加密且 A 不泄露密码（client\_secret）；
+> * B 只用 token 认证访问；
+>
+> 那么整个 Server A ➜ Server B 的通信路径就是**安全、可控、可审计的**。这正是 OAuth2 被广泛采用的原因。
+ 
+如果是用一般的方式，则是 server A 直接拿密码请求 B，则是：
+
+## 一般“直接拿密码请求 B”的方式（也就是你说的“传统做法”）的问题如下：
+
+### 示例请求（不安全示范）：
+
+```http
+POST /api/do_something
+Host: service-b.com
+Authorization: Basic base64(username:password)
+```
+
+或
+
+```http
+GET /api?access_key=xxx&secret=yyy
+```
+显然不如 OAuth-2.0 的安全性好。
+
+### 总结：
+
+> **传统密码方式就像把钥匙送到每一扇门前，还要求门自己判断你是不是主人。**
+>
+> **OAuth2 则是集中把钥匙交给“门卫（授权服务器）”统一认证，然后只发临时出入证（token）给你。门只需要查这个证就行了。**
+
+----
+
+# 客户端用户直接请求 server
+
 其实就是：不用注册新账号，直接用大网站（如微信、Google、Apple）的账号登录小网站。
 
+用户授权登录的 OAuth2 流程：
+
+```text
+用户 ──点击“用 Google 登录”──▶ 小网站（Client）
+        └─▶ 跳转到 Google（Auth Server） 登录
+            └─▶ 用户在 Google 授权
+                └─▶ Google 回调到小网站，附带 auth code
+                    └─▶ 小网站用 auth code 向 Google 换 access_token
+                        └─▶ 小网站获取用户信息（如 email, name 等）
+```
 
 一些详情： by chatgpt
 ---------

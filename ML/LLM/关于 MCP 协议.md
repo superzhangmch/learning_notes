@@ -1,3 +1,5 @@
+官网文档： https://modelcontextprotocol.io/
+
 一说到 MCP，就会说它有 host、client、server 三部分。其实它只是定义了 client 与 server 之间的交互协议，这部分是死的。其他部分并没严格规定，具体怎么实现无一定之规。
 
 ----
@@ -8,13 +10,39 @@
 
 MCP Server 内部通常不包含 LLM 的使用。server 是一个轻量级的接口层（对接文件系统、数据库等），而不是智能处理层。
 
-## mcp server 的 prompts 接口
+如果 mcp server 要请求 LLM，固然可以直接请求某一个 LLM，但是按 mcp 的做法，是 server 向 client 发起 sampling 请求（LLM调用请求），让 client 把 LLM 结果返回给自己。
 
-对于上游来说，server 就是具体的 tools。既然是工具，就有工具怎么更好使用的问题。所以 prompt 接口返回的 LLM prompt，是用来指示 LLM 怎么用好 server 提供的工具的。
+这样做让 server 和 LLM 调用解耦， client 可以控制 LLM 的调用：一个是 LLM api 的选择与鉴权问题，还有是可以给用户以安全性控制（human-in-the-loop)）：用户可以检查 server 的 prompt 以及 LLM 的 结果，用户觉得有问题可以阻止。
 
-LLM 使用工具时，需要经过多个工具中选择最优这一步。server.prompts 并不是作为额外的 prompt 用来指导某一环节的工具选择。而是针对一个具体的任务，它提供给了 LLM 解决这个任务的最佳执行指南与执行路径，LLM根据这个指示来拆解任务，决定怎么使用server 提供的工具集。
 
-### （1）、数据交互
+## mcp server 的 tools 功能
+
+- https://modelcontextprotocol.io/docs/concepts/tools
+- https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+
+这是最基本功能。server 需要能让 client 查询有哪些 tools（每个工具有详细描述），这样具体任务来了，上游才能知道使用哪个工具。
+
+上游可能发现有很多 tools，怎么选择本次请求用哪一个呢？
+- function calling
+  - 按官网例子 https://modelcontextprotocol.io/quickstart/client ：
+  - <img width="946" height="1560" alt="image" src="https://github.com/user-attachments/assets/cd8eda51-1290-4e16-8445-56bb15e61224" />
+- tools 描述拼到 prompt 里, 由 LLM 来选
+  - 按官网例子 https://github.com/modelcontextprotocol/python-sdk/blob/main/examples/clients/simple-chatbot/mcp_simple_chatbot/main.py
+  - <img width="1178" height="1266" alt="image" src="https://github.com/user-attachments/assets/1201bd32-90ef-47ca-9887-049da49eb2f0" />
+- 如果 tools 非常多，乃至于几十上百，全部给到 LLM 就不太现实了。这时候可能就需要一个额外的工具选择步骤，把精选的几个候选工具给到 LLM
+  - 比如 https://arxiv.org/pdf/2505.03275 （RAG-MCP）提供的方式，对工具建索引作检索，优选出 top-k 个。
+
+## mcp server 的 prompts 功能
+
+mcp server 的 tool 功能是执行、干完一件事，而 prompts 功能也可以说是干一件事，只是不像 tool 调用后就干完了。prompts 只是返回了怎么做——具体还需 client 拿到结果后调用下 LLM，LLM 结果才算是这次任务的执行结果。
+
+按官网文档，prompts 应该是用户可控的，需要暴漏给用户，由用户选择执行；典型使用场景是 UI 界面上由用户触发。
+
+- https://www.speakeasy.com/mcp/building-servers/advanced-concepts/prompts
+- https://modelcontextprotocol.io/specification/2025-06-18/server/prompts
+- https://modelcontextprotocol.io/docs/concepts/prompts
+
+### （1）、client-server 的数据交互
 
 **client 询问 server 有哪些 prompt 可使用：**
 - client 请求： client发起 method=`prompts/list` 的请求。
@@ -37,7 +65,7 @@ prompts_arr = [
       {...}, ... 其他 prompts ..., {...},
 ]
 ```
-**针对具体任务，请求获得具体的 LLM prompt：**
+**针对具体任务，请求获得响应的 LLM prompt：**
 - client 请求： client发起 method=`prompts/get` 的请求。承上例子，要提供 `name=code_review`， 并提供参数: `param.code=具体的一段代码`。提供的参数用于让 server 拼出恰当的 prompt。
   - 为啥 client 知道在这个场景下正好该请求 prompt_get 获得某个name=xx 的具体 prompt，而非其他？这个属于决策选择问题，下面讲。
 - server 返回：可以供 LLM 用 role=user 使用的一段 prompt: `Please review this Python code:\n{{code}}"`， code=请求时提供的代码
@@ -72,7 +100,7 @@ prompts_arr = [
 
 （上面例见 https://modelcontextprotocol.io/specification/2025-06-18/server/prompts ）
 
-### （2）、具体任务的 prompt 选择问题
+### （2）、prompt 选择
 
 server 的 prompts 使用的流程为：
 - Discovery 阶段：Client 通过 prompts/list 获取所有可用的 prompts
@@ -93,7 +121,17 @@ server 的 prompts 使用的流程为：
 
 ----
 
-mcp 工具选择：mcp 协议并没规定工具怎么选定。如果工具有几十一百，怎么选择？ https://arxiv.org/pdf/2505.03275 提供的方式是，对 工具作 RAG 方式的筛选。
+# mcp-client
+
+### sampling
+
+client 给 server 提供了 LLM 代理访问能力。
+
+用户的任务，下发到 server 后，如果 server 发现需要借助于 LLM，就会向 client 发起 sampling，拿到结果后，再发给用户。
+ 
+- https://www.speakeasy.com/mcp/building-servers/advanced-concepts/sampling
+- https://modelcontextprotocol.io/docs/concepts/sampling
+- https://modelcontextprotocol.io/specification/2025-06-18/client/sampling
 
 ----
 

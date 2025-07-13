@@ -124,6 +124,9 @@ server 支持 client 查询它有哪些资源（resources/list），这样client
 
 上游怎么知道当前场景用哪个 resource？按 https://modelcontextprotocol.io/specification/2025-06-18/server/resources ，或者靠 UI 界面展示让用户点选，或者靠 ai 模型自动选择。
 
+tools、prompts、resources 区别： https://www.speakeasy.com/mcp/building-servers/advanced-concepts/prompts ： 
+<img width="1952" height="1102" alt="image" src="https://github.com/user-attachments/assets/0727d19a-0cb2-4827-8717-3f883e8758c2" />
+
 ----
 
 # mcp-client

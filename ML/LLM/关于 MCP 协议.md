@@ -14,27 +14,26 @@ MCP Server 内部通常不包含 LLM 的使用。server 是一个轻量级的接
 
 这样做让 server 和 LLM 调用解耦， client 可以控制 LLM 的调用：一个是 LLM api 的选择与鉴权问题，还有是可以给用户以安全性控制（human-in-the-loop)）：用户可以检查 server 的 prompt 以及 LLM 的 结果，用户觉得有问题可以阻止。
 
-
 ## mcp server 的 tools 功能
 
 - https://modelcontextprotocol.io/docs/concepts/tools
 - https://modelcontextprotocol.io/specification/2025-06-18/server/tools
 
-这是最基本功能。server 需要能让 client 查询有哪些 tools（每个工具有详细描述），这样具体任务来了，上游才能知道使用哪个工具。
+这是最基本功能。server 需要有接口跟能让 client 查询有哪些 tools（每个工具有详细描述），这样具体任务来了，上游才能知道使用哪个工具。
 
 上游可能发现有很多 tools，怎么选择本次请求用哪一个呢？
 - function calling
   - 按官网例子 https://modelcontextprotocol.io/quickstart/client ：
-  - <img width="946" height="1560" alt="image" src="https://github.com/user-attachments/assets/cd8eda51-1290-4e16-8445-56bb15e61224" />
+  - <img height="700" alt="image" src="https://github.com/user-attachments/assets/cd8eda51-1290-4e16-8445-56bb15e61224" />
 - tools 描述拼到 prompt 里, 由 LLM 来选
   - 按官网例子 https://github.com/modelcontextprotocol/python-sdk/blob/main/examples/clients/simple-chatbot/mcp_simple_chatbot/main.py
-  - <img width="1178" height="1266" alt="image" src="https://github.com/user-attachments/assets/1201bd32-90ef-47ca-9887-049da49eb2f0" />
+  - <img height="600" alt="image" src="https://github.com/user-attachments/assets/1201bd32-90ef-47ca-9887-049da49eb2f0" />
 - 如果 tools 非常多，乃至于几十上百，全部给到 LLM 就不太现实了。这时候可能就需要一个额外的工具选择步骤，把精选的几个候选工具给到 LLM
   - 比如 https://arxiv.org/pdf/2505.03275 （RAG-MCP）提供的方式，对工具建索引作检索，优选出 top-k 个。
 
 ## mcp server 的 prompts 功能
 
-mcp server 的 tool 功能是执行、干完一件事，而 prompts 功能也可以说是干一件事，只是不像 tool 调用后就干完了。prompts 只是返回了怎么做——具体还需 client 拿到结果后调用下 LLM，LLM 结果才算是这次任务的执行结果。
+mcp server 的 tool 功能是直接执行、干 "完" 一件事，而 prompts 功能也可以说是干一件事，只是不像 tool 调用后就干完了。prompts 只是返回了怎么做——具体还需 client 拿到结果后调用下 LLM，LLM 结果才算是这次任务的执行结果。
 
 按官网文档，prompts 应该是用户可控的，需要暴漏给用户，由用户选择执行；典型使用场景是 UI 界面上由用户触发。
 
@@ -118,6 +117,12 @@ server 的 prompts 使用的流程为：
   - 比如用户说“帮我分析这段代码的质量”， 就像工具的动态选择一样，由 LLM 自动选择 prompt.name = code_review.
 
 不过当前多用静态绑定的方法。
+
+## mcp server 的 resources
+
+server 支持 client 查询它有哪些资源（resources/list），这样client 才知道怎么用。resources 都是通过 URI 形式指定的。
+
+上游怎么知道当前场景用哪个 resource？按 https://modelcontextprotocol.io/specification/2025-06-18/server/resources ，或者靠 UI 界面展示让用户点选，或者靠 ai 模型自动选择。
 
 ----
 

@@ -128,7 +128,9 @@ server 支持 client 查询它有哪些资源（resources/list），这样client
 
 # mcp-client
 
-### sampling
+client 除了被 host 使用，还需要提供 sampling、roots、elicitation 等接口供 mcp server 调用。
+
+### mcp client 的 sampling
 
 client 给 server 提供了 LLM 代理访问能力。
 
@@ -137,6 +139,41 @@ client 给 server 提供了 LLM 代理访问能力。
 - https://www.speakeasy.com/mcp/building-servers/advanced-concepts/sampling
 - https://modelcontextprotocol.io/docs/concepts/sampling
 - https://modelcontextprotocol.io/specification/2025-06-18/client/sampling
+
+### mcp client 的 roots、elicitation
+
+**（1）、elicitation：**
+
+https://modelcontextprotocol.io/specification/2025-06-18/client/elicitation
+
+在 client 调用某个 server tool 的时候，server 不知道某些信息，需要向 server 发起 elicitation 请求，以便获得这些信息。
+
+那么，为什么 server 不在定义它的 tool 参数的时候，就把这些信息定位必须呢？这可能因为 server 内处理逻辑复杂，不方便 client 一下子把参数都提供，或者是为了安全和隐私考虑。
+
+**（2）、roots：**
+
+- https://modelcontextprotocol.io/specification/2025-06-18/client/roots
+- https://modelcontextprotocol.io/docs/concepts/roots
+
+roots 返回给 server 一个或多个 URI 的 base 地址（不只限于文件系统）：
+```
+{
+  "roots": [
+    {
+      "uri": "file:///home/user/projects/frontend",
+      "name": "Frontend Repository"
+    },
+    {
+      "uri": "https://api.example.com/v1",
+      "name": "API Endpoint"
+    }
+  ]
+}
+```
+
+有问题是，为啥不放到 client 请求 server 的参数里，而要让 server 主动问？
+
+按 https://modelcontextprotocol.io/specification/2025-06-18/client/roots ， Roots 定义的是 整个 Server 的工作边界，不是某个具体工具的参数, 而且一次获取就把各种类型资源的 roots 指定了。
 
 ----
 

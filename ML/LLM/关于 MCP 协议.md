@@ -1,5 +1,7 @@
 
-一说到 MCP，就会说它有 host、client、server 三部分。其实它只是定义了 client 与 server 之间的交互协议，这部分是死的。其他部分并没严格规定，具体怎么实现无一定之规。
+一说到 MCP，就会说它有 host、client、server 三部分。它是为了方便 LLM 以统一方式调用外部工具而设计的，那么这三者怎样关系，以及怎么和 LLM 结合起来，其实很是很扑朔迷路的。
+
+其实 MCP 只是定义了 client 与 server 之间的网络交互协议，这部分是死的。其他部分并没严格规定，具体怎么实现无一定之规。
 
 官网文档： https://modelcontextprotocol.io/
 

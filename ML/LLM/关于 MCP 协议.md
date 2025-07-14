@@ -12,7 +12,7 @@
   - host 掌控 LLM，它引导用户和 host 的人机交互界面交互，并驱使 LLM 作回答、智能选择工具等等。
   - 特别的，对于 server 提供的那些 tool、resource、prompts 资源（甚至 host 可以连好多个 clients, 好多个 servers），需要选择恰当的那些用于处理用户当前请求。这个 tool/resource/prompt selection 的工作，是 host 来做的。
 
-<img width="1324" height="934" alt="image" src="https://github.com/user-attachments/assets/5f5eb631-6dad-47ed-a02f-a39753a24c4c" />
+<img width="728" height="516" alt="image" src="https://github.com/user-attachments/assets/4be8ca20-fa5c-4a6b-801d-556dd9f146b7" />
 
 **代码实现，怎么做：**
 - server：对于每一个 server，按照 mcp 协议实现即可。

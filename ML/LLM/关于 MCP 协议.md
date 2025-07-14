@@ -1,23 +1,23 @@
 
 一说到 MCP，就会说它有 host、client、server 三部分。其实它只是定义了 client 与 server 之间的交互协议，这部分是死的。其他部分并没严格规定，具体怎么实现无一定之规。
 
+官网文档： https://modelcontextprotocol.io/
+
 **简介:**
 - server：只是对于各种后端资源做了统一接口的封装。所以 server 其实是薄薄一层。server 不会请求 LLM，当需要的时候，通过反向让 client 用 sampling 来完成（client 转发给 host 作 LLM 采样）。
 - client：只是负责与 mcp server 的交互，它暴露给 host 的核接口，都是怎么与 server 打交道的，所以核心接口其实就是：server 的 tool、resource、prompt 三种资源的 list，以及 get。
   - 即暴露给上游 host 的核心接口是： list_resources， list_tools， list_prompts， read_resource， call_tool。但是这些接口属于 host 天然需要的，但是它们长什么样（名字、参数等），并不是 mcp 协议的一部分。而取决于你怎么实现它。 
   - client 本身也是轻量的，不与 LLM 打交道。
-- host：即应用本身。应用通过 client 提供的统一接口和 server 们打交道。
+- host：即应用本身（比如 ai 编程 IDE）。应用通过 client 提供的统一接口和 server 们打交道。
   - host 掌控 LLM，它引导用户和 host 的人机交互界面交互，并驱使 LLM 作回答、智能选择工具等等。
   - 特别的，对于 server 提供的那些 tool、resource、prompts 资源（甚至 host 可以连好多个 clients, 好多个 servers），需要选择恰当的那些用于处理用户当前请求。这个 tool/resource/prompt selection 的工作，是 host 来做的。
+
+<img width="1324" height="934" alt="image" src="https://github.com/user-attachments/assets/5f5eb631-6dad-47ed-a02f-a39753a24c4c" />
 
 **代码实现，怎么做：**
 - server：对于每一个 server，按照 mcp 协议实现即可。
 - client：固然可以按照 mcp 协议自己实现。但是只要 server 符合 mcp 协议，实现完好的 client 一定可以支持它。所以 client 不需要重复造轮子，用别人实现好的就行——比如官网实现的：https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/client/session.py ，即 mcp.ClientSession。对于官网例子 https://github.com/modelcontextprotocol/python-sdk/blob/main/examples/clients/simple-chatbot/mcp_simple_chatbot/main.py 来说， 这里是在使用 mcp.ClientSession，所以严格说来，它其实是实现了一个 host，而非 client。
 - host：上面提到的 https://github.com/modelcontextprotocol/python-sdk/blob/main/examples/clients/simple-chatbot/mcp_simple_chatbot/main.py 就是一个例子。通过使用 mcp.ClientSession，实现了一个具有面相用户的有实际功能的 host。
-
-**deeper：**
-
-官网文档： https://modelcontextprotocol.io/
 
 ----
 
@@ -197,7 +197,43 @@ roots 返回给 server 一个或多个 URI 的 base 地址（不只限于文件�
 
 ----
 
+
+**其他一些细节：**
+
+<img width="1144" height="536" alt="image" src="https://github.com/user-attachments/assets/44226b34-18fa-458b-af99-da0fcdb93235" />
+
+如上，建立连接后，首先要做一个“首次握手”， client 与 server 宣称自己的能力，以及协议版本(这都封装在了 py mcp.clientSession.initialize()里)。而 tools.list， prompts.list 等，并不是在 initialize 阶段完成，而是 operation 的事。
+
+此外，协议还规定需要处理处理 notification、subscribe、分页等。比如，initialize 的时候，就宣称了可变项：
+```
+client：
+      "roots": {
+        "listChanged": true
+      },
+server：
+      "prompts": {
+        "listChanged": true
+      },
+      "resources": {
+        "subscribe": true,
+        "listChanged": true
+      },
+      "tools": {
+        "listChanged": true
+      }
+```
+
+如果中途有变或有更新，需要能通知对方，也就是能热更新。
+
+notification 机制：当资源状态变化，实时事件推送，任务进度（method=notifications/progress），配置和环境变化等触发。特别在 initialize() 三部曲的最后一步就是一个 notification。
+
+以上这些，都是需要 client 与 server 的实现都能支持到。
+
+----
+
 # client-server 网络连接方式
+
+参： https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
 
 <img width="1174" height="408" alt="image" src="https://github.com/user-attachments/assets/44970ba2-5ed0-4a4e-8f6e-a8f9c54896a7" />
 

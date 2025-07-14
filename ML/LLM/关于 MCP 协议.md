@@ -19,6 +19,10 @@
 - client：固然可以按照 mcp 协议自己实现。但是只要 server 符合 mcp 协议，实现完好的 client 一定可以支持它。所以 client 不需要重复造轮子，用别人实现好的就行——比如官网实现的：https://github.com/modelcontextprotocol/python-sdk/blob/main/src/mcp/client/session.py ，即 mcp.ClientSession。对于官网例子 https://github.com/modelcontextprotocol/python-sdk/blob/main/examples/clients/simple-chatbot/mcp_simple_chatbot/main.py 来说， 这里是在使用 mcp.ClientSession，所以严格说来，它其实是实现了一个 host，而非 client。
 - host：上面提到的 https://github.com/modelcontextprotocol/python-sdk/blob/main/examples/clients/simple-chatbot/mcp_simple_chatbot/main.py 就是一个例子。通过使用 mcp.ClientSession，实现了一个具有面相用户的有实际功能的 host。
 
+**和function calling 关系:**
+
+function calling 和 mcp 协议本身没关系。但是 function calling 可以被 host 使用，用来选择调用 mcp.client -> mcp.server 链路提供的工具。
+
 ----
 
 # mcp-server

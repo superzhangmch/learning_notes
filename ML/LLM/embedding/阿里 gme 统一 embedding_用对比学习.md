@@ -2,12 +2,12 @@
 
 ### 能干啥
 
-能对 text（T)、img（I)、text+img（TI）、pdf截图（VD=visual document）的各种形式嵌入同一个语义空间，从而实现这几种方式的互相检索。
+能对 text（T)、img（I)、text+img（TI）、pdf截图（VD=visual document）的各种形式嵌入同一个语义空间，从而用向量检索的方式，实现这几种方式的互相检索。
 
 ### 实现方法简述
 
 1. 构建包括以上类型数据（T、I、TI、VD）的问答 pair 数据集
-2. 对 pair 中问与答都用 qianwen-VL 获得 emb 表示（用最后一层最后一个token 的 latent），对 emb 用 cosine 算相似度，用对比学习的 infoNCE loss 训练。
+2. 对 pair 中问与答都用 qianwen-VL 获得 emb 表示（用最后一层最后一个token 的 latent），对 emb 用 cosine 算相似度，用**对比学习**的 infoNCE loss 训练。
 
 ----
 
@@ -75,5 +75,7 @@ google 搜出的结果，会用 CLIP 作过滤。
 
 ---
 
+相比别家：
 
+大家都用对比学习，只是它用了混合模态组合，以及自己构造的数据。
 

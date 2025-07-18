@@ -38,13 +38,26 @@ $$
 
 ### 所用训练数据集
 
-用了这几类数据：
-- single-modal (T→T 用 MSMARCO dataset； I→I 用 imageNet)
-- cross-modal (T→VD 用 Docmatix； T→I 用 LAION dataset)
-- fused-modal (IT→IT 用 EVQA)
+paper 作者发现，对于一定的多模态检索任务，用混合数据集训练效果更好（相比用和任务适配的数据集）。
 
-这有5种，再加上5种的mix，共六种数据，分别训练 6个 model。实验证实，mix 模式最好：
+具体说来：
+- 有三种检索类型：
+  <img width="512" alt="image" src="https://github.com/user-attachments/assets/ff79afbd-576a-40b4-bf7c-5aef58ad9d52" />
+- 有 4 类数据可用
+  - single-modal 数据 (T→T 用 MSMARCO dataset； I→I 用 imageNet)
+  - cross-modal 数据 (T→VD 用 Docmatix； T→I 用 LAION dataset)
+  - fused-modal 数据 (IT→IT 用 EVQA)
+  - mixed 数据：把以上三种混合
 
-<img width="1076" height="576" alt="image" src="https://github.com/user-attachments/assets/3b693214-ac18-41c2-ae94-a3dfe97f0534" />
+如上 T→T，I→I，T→VD，T→I，IT→IT，mix，共六种数据，用同一套模型超参，可以训练 6个 model。每个模型模型训好后，可以在这四类数据上分别作效果评测。既有下表（横轴 6 个是model，纵轴4个是测试的数据，每个 model 测试 4 次）：
+
+<img width="512" alt="image" src="https://github.com/user-attachments/assets/c227cefb-466c-4ea3-b160-a0ddbe764c36" />
+
+可以看到：
+- 对具体 model：假设用 x 数据训练的，则它在 x 类数据上表现最好
+- 对具体类型 data：每一种都是用 mix 训出的model，对该类 data 最优。 
+
+---
+
 
 

@@ -38,11 +38,13 @@ $$
 
 ### 所用训练数据集
 
+**（1）、用怎样数据集：用 mix 各种任务的**
+
 paper 作者发现，对于一定的多模态检索任务，用混合数据集训练效果更好（相比用和任务适配的数据集）。
 
 具体说来：
 - 有三种检索类型：
-  <img width="512" alt="image" src="https://github.com/user-attachments/assets/ff79afbd-576a-40b4-bf7c-5aef58ad9d52" />
+  - <img width="512" alt="image" src="https://github.com/user-attachments/assets/ff79afbd-576a-40b4-bf7c-5aef58ad9d52" />
 - 有 4 类数据可用
   - single-modal 数据 (T→T 用 MSMARCO dataset； I→I 用 imageNet)
   - cross-modal 数据 (T→VD 用 Docmatix； T→I 用 LAION dataset)
@@ -56,6 +58,20 @@ paper 作者发现，对于一定的多模态检索任务，用混合数据集�
 可以看到：
 - 对具体 model：假设用 x 数据训练的，则它在 x 类数据上表现最好
 - 对具体类型 data：每一种都是用 mix 训出的model，对该类 data 最优。 
+
+**（2）、实际用了什么数据集**
+
+鉴于上面发现，所以作者用了 single, cross, fused 三种混合的数据集，各 200万共 600 万（paper中说8百万，似误）。single-modal, cross-modal, 都是用的开源数据集（大体如上面所列）， fused 的，除了开源数据，作者还自己构造了 110 万。
+
+构造的110万数据的效果（相比不用）如何，可参看 paper 中 table 4（然表中 EVQA 是否包括在非构造的 90万里？没深究）。
+
+### fused modal data，怎么构造的
+
+110万的，多模检索多模的 fused 数据的构造，见图：
+
+<img width="736" alt="image" src="https://github.com/user-attachments/assets/94451664-a6ef-4a6d-afe9-5973e84c8f92" />
+
+google 搜出的结果，会用 CLIP 作过滤。
 
 ---
 

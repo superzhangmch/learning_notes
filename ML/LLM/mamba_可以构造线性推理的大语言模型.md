@@ -38,7 +38,7 @@ A、B、C、D 都是 constant 的。即为常系数微分方程。且 D 可以�
 
 对于上面的一阶线性常系数微分方程，用解微分方程的常规做法，可以从数学上解出（AI 给出）： 
 
-$$x(t)=e^{At}x(s)+\int_s^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
+$$x(t)=e^{A(t-s)}x(s)+\int_s^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
 
 其中时间 0 <= s <= t。
 
@@ -50,22 +50,34 @@ $$y_t = \int_0^t [C e^{A(t−τ)} B] \cdot u(τ) dτ = \int_0^t K(t−τ) u(τ) 
 
 ### SSM 离散化（Discretization）
 
+**（1）、离散化**
+
 对上面的连续取值的微分方程 $\frac {d x(t)}{dt} = A x_t + B u_t$, 可以离散化的，比如 euler 方法。
 
-而 SSM 常用的方法叫 ZOH 法（Zero-Order Hold），做法大约为：对 input u, 把时间平均切分成一段一段，每一小段的取值等于小段起始点的取值 u_t。这样具体操作起来，就是对方程的精确解析解离散化——而上面已经有了精确解。
+而 SSM 常用的方法叫 ZOH 法（Zero-Order Hold），做法大约为：对 input u, 把时间平均切分成一段一段，每一小段的取值等于小段起始点的取值 u_t。
+
+在离散化的 u_t 基础上得到, 用上文的精确解, 即可得到离散化的 y_t 了:
 
 假设相邻时间离散点的时间差是 Δ， 把 s=t-Δ 代入精确解析解有：
 
-$$x(t)=e^{At}x(t-Δ)+\int_{t-Δ}^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
+$$x(t)=e^{AΔ}x(t-Δ)+\int_{t-Δ}^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
 
-注意： 令 $x_s:= x(t),\ x_{s-1}:=x(t-Δ)$, 根据 ZOH 离散化定义有 $u_{new}(t-Δ \le . \le t) := u(t)$，于是代入上式有：
+令 $x_s:= x(t),\ x_{s-1}:=x(t-Δ)$, 根据 ZOH 离散化定义有 $u_{new}(t-Δ \le . \le t) := u(t)$，于是代入上式有：
 
 $$
 \begin{align}
-x_s&=e^{At} x_{s-1} + u(t) \int_{t-Δ}^t e^{A(t−τ)}\cdot B  dτ \\
- &=e^{At} x_{t-1} + u(t) \int_0^Δ e^{Aτ }\cdot B  dτ \\
- &=e^{At} x_{t-1} + u(t) [\int_0^Δ e^{Aτ }\cdot dτ] B  & //数学上有：\int_0^Δ e^{Aτ }\cdot dτ = A^{-1} (e^{AΔ}−I)$, 其中A是矩阵\\
- &= e^{At} x_{t-1} + u(t) A^{-1} (e^{AΔ}−I)B
+x_s&=e^{AΔ} x_{s-1} + u(t) \int_{t-Δ}^t e^{A(t−τ)}\cdot B  dτ \\
+ &=e^{AΔ} x_{t-1} + u(t) \int_0^Δ e^{Aτ }\cdot B  dτ \\
+ &=e^{AΔ} x_{t-1} + u(t) [\int_0^Δ e^{Aτ }\cdot dτ] B  & //数学上有：\int_0^Δ e^{Aτ }\cdot dτ = A^{-1} (e^{AΔ}−I)$, 其中A是矩阵\\
+ &= e^{AΔ} x_{t-1} + u(t) A^{-1} (e^{AΔ}−I)B
 \end{align}
 $$
+
+令 $\bar{A} = e^{AΔ}, \bar{B} = A^{-1} (e^{AΔ}−I)B$, 则 $x_s = \bar{A} x_{s-1} + \bar{B} u_s$ 就是离散后的 SSM 了。这正是 《mamba》paper 中的公式4 (那里x表示input）：
+
+<img width="1024" alt="image" src="https://github.com/user-attachments/assets/778543b1-8278-4cb8-b997-3020aa7ba7b5" />
+
+**（2）、转为卷积**
+
+
 

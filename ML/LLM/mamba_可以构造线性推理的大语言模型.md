@@ -38,23 +38,34 @@ A、B、C、D 都是 constant 的。即为常系数微分方程。且 D 可以�
 
 对于上面的一阶线性常系数微分方程，用解微分方程的常规做法，可以从数学上解出（AI 给出）： 
 
-$$x(t)=e^{At}x(0)+\int_0^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
+$$x(t)=e^{At}x(s)+\int_s^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
 
-若令 x(0) = 0, 则 $x(t)=\int_0^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$。
+其中时间 0 <= s <= t。
 
-**（3）、转为卷积形式**
-
-若令 $K(t−τ) = \int_0^t e^{A(t−τ)}\cdot B$, 则 
+【若令 x(0) = 0, 则 $x(t)=\int_0^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$。此时若令 $K(t−τ) = \int_0^t e^{A(t−τ)}\cdot B$, 则 
 
 $$y_t = \int_0^t [C e^{A(t−τ)} B] \cdot u(τ) dτ = \int_0^t K(t−τ) u(τ) dτ$$
 
-这正是数学上卷积形式（不同于 CNN 中的那种卷积）。也就是说， SSM 就是个卷积，只要知道（或设法建模出）卷积核函数 K(t)，则直接计算卷积，就完成了 SSM 变换。而要获得 K(t), 根本在于知道 A B C 的取值。
+这正是数学上卷积形式（不同于 CNN 中的那种卷积）】
 
 ### SSM 离散化（Discretization）
 
-对上面的连续取值的微分方程 $\frac {d x(t)}{dt} = A x_t + B u_t$, 可以离散化的，典型如 euler 方法。而 SSM 常用的方法叫 ZOH 法。据 AI，ZOH 是数字控制系统与信号处理中早就有的一个关键概念。在 mamba/S4/H3等模型中，不过是借用而已。
+对上面的连续取值的微分方程 $\frac {d x(t)}{dt} = A x_t + B u_t$, 可以离散化的，比如 euler 方法。
 
+而 SSM 常用的方法叫 ZOH 法（Zero-Order Hold），做法大约为：对 input u, 把时间平均切分成一段一段，每一小段的取值等于小段起始点的取值 u_t。这样具体操作起来，就是对方程的精确解析解离散化——而上面已经有了精确解。
 
+假设相邻时间离散点的时间差是 Δ， 把 s=t-Δ 代入精确解析解有：
 
+$$x(t)=e^{At}x(t-Δ)+\int_{t-Δ}^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
 
+注意： 令 $x_s:= x(t),\ x_{s-1}:=x(t-Δ)$, 根据 ZOH 离散化定义有 $u_{new}(t-Δ \le . \le t) := u(t)$，于是代入上式有：
+
+$$
+\begin{align}
+x_s&=e^{At} x_{s-1} + u(t) \int_{t-Δ}^t e^{A(t−τ)}\cdot B  dτ \\
+ &=e^{At} x_{t-1} + u(t) \int_0^Δ e^{Aτ }\cdot B  dτ \\
+ &=e^{At} x_{t-1} + u(t) [\int_0^Δ e^{Aτ }\cdot dτ] B  & //数学上有：\int_0^Δ e^{Aτ }\cdot dτ = A^{-1} (e^{AΔ}−I)$, 其中A是矩阵\\
+ &= e^{At} x_{t-1} + u(t) A^{-1} (e^{AΔ}−I)B
+\end{align}
+$$
 

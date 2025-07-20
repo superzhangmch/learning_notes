@@ -4,7 +4,7 @@
 
 SSM 并不是因机器学习的问题而特意创造出来的，而是一类应用很广泛的通用模型，只是后来被借用到了机器学习领域。据 ai（姑信之）：最初来自控制理论，后来被广泛应用于信号处理、时间序列分析、物理建模和机器学习等领域。
 
-它的基本设定是，有一个随着时间 t 而变化的实值 input 信号 $u_t$，期望建模出随时间 t 同步变化的实数值 output 信号 $y_t$。时间 t 可能是连续的，也可能是离散的。
+它的基本设定是，有一个随着时间 t 而变化的实值 input 信号 $u_t$，期望建模出随时间 t 同步变化的实数值 output 信号 $y_t$。时间 t 可能是连续的，也可能是离散的。也就是它解决的是**一维的序列到序列**的转换问题。
 
 ### 连续形式的 SSM
 
@@ -33,6 +33,8 @@ y_t = C x_t + D u_t \\
 $$
 
 A、B、C、D 都是 constant 的。即为常系数微分方程。且 D 可以进一步为 0，下面都令 D=0。
+
+note：假设 SSD hidden state 维度是 m，则 $A \in \mathbb{R}^{m x m}$, B、C $\in \mathbb{R}^{m}$， 而 y_t 就是两个 m 维向量的向量积。
 
 **(3)、方程求解**
 
@@ -68,7 +70,7 @@ $$
 \begin{align}
 x_s&=e^{AΔ} x_{s-1} + u(t) \int_{t-Δ}^t e^{A(t−τ)}\cdot B  dτ \\
  &=e^{AΔ} x_{t-1} + u(t) \int_0^Δ e^{Aτ }\cdot B  dτ \\
- &=e^{AΔ} x_{t-1} + u(t) [\int_0^Δ e^{Aτ }\cdot dτ] B  & //数学上有：\int_0^Δ e^{Aτ }\cdot dτ = A^{-1} (e^{AΔ}−I)$, 其中A是矩阵\\
+ &=e^{AΔ} x_{t-1} + u(t) [\int_0^Δ e^{Aτ }\cdot dτ] B  & //数学上有：\int_0^Δ e^{Aτ }\cdot dτ = A^{-1} (e^{AΔ}−I)$, 注意 A 是矩阵 \\
  &= e^{AΔ} x_{t-1} + u(t) A^{-1} (e^{AΔ}−I)B
 \end{align}
 $$
@@ -77,7 +79,56 @@ $$
 
 <img width="1024" alt="image" src="https://github.com/user-attachments/assets/778543b1-8278-4cb8-b997-3020aa7ba7b5" />
 
+note： $\bar{A} \in \mathbb{R}^{m x m}$, $\bar{B} \in \mathbb{R}^{m}$
+
 **（2）、转为卷积**
 
+根据上面的递推公式，逐个展开有：
 
+$$
+\begin{cases}
+x_0 &= 0 \\
+x_1 &= \bar{A} x_0 + \bar{B} u_0 \\
+x_2 &= \bar{A} x_1 + \bar{B} u_1 = \bar{A}^2 x_0 + \bar{A} \bar{B} u_0 + \bar{B} u_1 \\
+\ldots \\
+x_n &= \sum_{i=0}^{n-1} \bar{A}^{n - i - 1} \bar{B} u_i
+\end{cases}
+$$
 
+于是：
+
+$$
+y_n = C \cdot x_n = \sum_{i=0}^{n-1} C \bar{A}^{n - i - 1} \bar{B} u_i
+$$
+
+令 $K[n] = C \bar{A}^{n} \bar{B}$, 则有： 
+
+$$
+y[n] = \sum_{i=0}^n K[n - i] u[i] =: x * K
+$$
+
+这就是离散版本的 SSM 的卷积形式了(且这正是《mamba》中公式3），而 K[n] 则是卷积核。
+
+note： $K[.] \in \mathbb{R}$, 从而 $\sum_{i=0}^n K[n - i] u[i]$ 乃标准的一维卷积。
+
+**（3）、用快速傅里叶加速卷积计算**
+
+既然化为标准的数学上的 1d 卷积了(非 cnn 卷积），而 1d 卷积的计算加速，是有现成的方案的：快速傅里叶变换（FFT）。正可以用它来加速这个卷积的计算。不过，为启用 FFT 加速，需要先提前把卷积核 K[.] 的所有取值都算出来的。
+
+关于 FFT 法一些简短知识：
+- 按 FFT 计算卷积的套路，一般是要求序列长度是2的幂次，这样才能达到最高效率（L * log L)。
+- 用 FFT 法，乃频域卷积代替时域递推。计算方式是：y=K∗u⟺FFT(y)=FFT(K)⋅FFT(u) ⟺ y = iFFT(FFT(K)⋅FFT(u))
+- 大整数的快速乘法，也是转化成了卷积计算，所以它也可以用 FFT 来加速。也就是二者的加速原理一样。大整数乘法本质是多项式乘法，而乘积正是卷积：
+
+$$\begin{cases}
+A(x) = \sum_{i=0}^{n-1} a_i x^i \\
+B(x) = \sum_{i=0}^{n-1} b_i x^i \\
+C(x) = A(x) \cdot B(x) = \sum_{k=0}^{2n-2} c_k x^k \\
+c_k = \sum_{i=0}^k a_i b_{k-i}
+\end{cases}$$
+
+以上内容，可以说都是纯数学角度的。
+
+---- 
+
+## S4 model

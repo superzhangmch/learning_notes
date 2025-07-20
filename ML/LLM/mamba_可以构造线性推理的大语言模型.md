@@ -32,7 +32,7 @@ y_t = C x_t + D u_t \\
 \end{cases}
 $$
 
-A、B、C、D 都是 constant 的。即为常系数微分方程。且 D 可以进一步为 0，下面都令 D=0。
+A、B、C、D 都是 constant 的（这叫 Linear Time Invariance (LTI)，时间不变）。即为常系数微分方程。且 D 可以进一步为 0，下面都令 D=0。
 
 note：假设 SSD hidden state 维度是 m，则 $A \in \mathbb{R}^{m x m}$, B、C $\in \mathbb{R}^{m}$， 而 y_t 就是两个 m 维向量的向量积。
 
@@ -131,4 +131,15 @@ c_k = \sum_{i=0}^k a_i b_{k-i}
 
 ---- 
 
-## S4 model
+## S4 model：Structured state space sequence models
+
+S4 正是上面离散 SSM 的卷积形式 model。为了加速卷积核的预计算，它对于 A B C 采取了特殊的结构，所以才说是 "structured"。
+
+A 矩阵用了一种叫 HiPPO 的结构，方便 A^n 的计算。
+
+----
+
+## H3 model：
+
+《Hungry Hungry Hippos: Towards Language Modeling with State Space Models》 https://arxiv.org/pdf/2212.14052 
+

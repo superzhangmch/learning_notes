@@ -131,11 +131,38 @@ c_k = \sum_{i=0}^k a_i b_{k-i}
 
 ---- 
 
-## S4 model：Structured state space sequence models
+## S4 model：Structured state space sequence models 
 
-S4 正是上面离散 SSM 的卷积形式 model。为了加速卷积核的预计算，它对于 A B C 采取了特殊的结构，所以才说是 "structured"。
+《Efficiently Modeling Long Sequences with Structured State Spaces》 https://arxiv.org/pdf/2111.00396
 
-A 矩阵用了一种叫 HiPPO 的结构，方便 A^n 的计算。
+S4 是对最原始的 State Space Model（SSM）进行了一系列结构化设计和加速优化的版本。它正是上面离散 SSM 的卷积形式。它试图解决传统模型在处理超长序列依赖时的计算效率和内存瓶颈问题。
+
+为了加速卷积核的预计算，它对于 A B C 采取了特殊的结构，所以才说是 "structured"。A 矩阵用了一种叫 HiPPO 的结构，方便卷积核中 A^n 的计算：
+
+$$
+A_{nk} = -\begin{cases}
+\sqrt{2n+1} \sqrt{2k+1}, & \text{if } n > k \\
+n + 1, & \text{if } n = k \\
+0, & \text{if } n < k
+\end{cases}
+\\
+, \\
+A = \begin{bmatrix}
+-(0+1) & 0 & 0 & 0 \\
+-\sqrt{3}\sqrt{1} & -(1+1) & 0 & 0 \\
+-\sqrt{5}\sqrt{1} & -\sqrt{5}\sqrt{3} & -(2+1) & 0 \\
+-\sqrt{7}\sqrt{1} & -\sqrt{7}\sqrt{3} & -\sqrt{7}\sqrt{5} & -(3+1)
+\end{bmatrix}
+$$
+
+卷积与递归两种形式是等价的。其实一般 S4 训练的时候才采用卷积形式：
+- 训练时：全序列并行的卷积形式（高效，一次性处理整个序列）
+- 推理时：递归的状态更新公式，即像RNN一样一步一步地更新状态，适合流式处理。每一step 的 memory 和计算成本都不随时间增长（而 transformer 非如此）。
+
+<img width="982" height="212" alt="image" src="https://github.com/user-attachments/assets/b96cf7cf-a003-4809-8971-4b4a6312825c" />
+
+用于语言模型建模，可以直接替换 transformer 中的 attention：
+>  By simply taking a strong Transformer baseline [2] and replacing the self-attention layers, S4 substantially closes the gap to Transformers (within 0.8 ppl), setting SoTA for attention-free models by over 2 ppl.
 
 ----
 

@@ -49,7 +49,7 @@ note：假设 SSD hidden state 维度是 m，则 $A \in \mathbb{R}^{m x m}$, B�
 | 输入维度     | 输入是向量 $x_t \in \mathbb{R}^n$，一次处理多个维度 | 通常 $u_t \in \mathbb{R}$，按维推理或建模 | 
 | 激活函数   | 非线性（如 tanh, ReLU）                              | 一般为线性（线性系统建模）                  |
 
-RNN 一次对 input 的多个维度建模，而 SSM 一次建模一个维度。两者的参数矩阵都是时间无关的。
+RNN 一次对 input 的多个维度建模，而 SSM 一次建模一个维度（所以使用 RNN 的模型的 hidden dim 远小于使用 SSM 的模型的总 hidden dim）。两者的参数矩阵都是时间无关的。
 
 
 **(3)、方程求解**
@@ -173,6 +173,7 @@ $$
 
 卷积与递归两种形式是等价的。其实一般 S4 训练的时候才采用卷积形式：
 - 训练时：全序列并行的卷积形式（高效，一次性处理整个序列）
+  - 递归形式，train 时除了不能 tokens 并行，还需要把所有的 hidden state 都存下来，以便梯度回传时用，所以比较耗显存。
 - 推理时：递归的状态更新公式，即像RNN一样一步一步地更新状态，适合流式处理。每一step 的 memory 和计算成本都不随时间增长（而 transformer 非如此）。
 
 <img width="982" height="212" alt="image" src="https://github.com/user-attachments/assets/b96cf7cf-a003-4809-8971-4b4a6312825c" />
@@ -255,6 +256,8 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 ### 对 S4 SSM 的改进：selective SSM (文内也叫它 S6)
 
+**（1）、selective SSM 什么样子**
+
 <img width="2200" height="838" alt="image" src="https://github.com/user-attachments/assets/0de78f1f-9bbb-4b5e-a10e-af344868fa22" />
 
 结构如上。
@@ -266,3 +269,17 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 <img width="1662" height="510" alt="image" src="https://github.com/user-attachments/assets/21e093d5-d254-46b6-bf50-e6fe70640c7b" />
 
+为什么有上面的改进：为了解决传统 LTI SSM 无法进行“内容选择”的问题，即不能根据输入内容来选择性处理信息，无法“忽略无关信息”或“在特定时刻记住关键内容”。是为了解决传统 SSM 模型缺乏“输入依赖”和“内容选择能力”的根本缺陷而提出的。
+
+**（2）、selective SSM 有啥实现上的困难，怎么解决的**
+
+本来 S4 已经把 SSM 弄的易于用 FFT 并行训练。现在 selective SSM 使得 FFT 不能用了。性能会不会有问题？
+
+### paper 中一些段落解释
+
+关于 S4：
+
+<img width="1484" height="520" alt="image" src="https://github.com/user-attachments/assets/b8b76bca-162b-44b5-91da-3d31150da4e1" />
+
+- 第二点：递归式更费显存，指的是train的时候（为了梯度回传，需要把所有 hidden states 都存下来），infer 的时候更省。
+- 第三点：为什么 LTI 的 SSM 比传统 RNN 能支持更大的 hidden dim？因为 SSM 是每个 input 维有好多个 SSM 的内部 hidden dim，而 RNN 是全体 input 共享一个 hidden dim。由于 S4 SSM 可以用 FFT 加速，所以 hidden dim 变大了，但是计算效率还很高。 

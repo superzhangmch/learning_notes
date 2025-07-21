@@ -48,7 +48,7 @@ $$x(t)=e^{A(t-s)}x(s)+\int_s^t e^{A(t−τ)}\cdot B \cdot u(τ) dτ$$
 
 $$y_t = \int_0^t [C e^{A(t−τ)} B] \cdot u(τ) dτ = \int_0^t K(t−τ) u(τ) dτ$$
 
-这正是数学上卷积形式（不同于 CNN 中的那种卷积）】
+这正是数学上卷积形式（不同于 CNN 中的那种局部卷积）】
 
 ### SSM 离散化（Discretization）
 
@@ -113,7 +113,7 @@ note： $K[.] \in \mathbb{R}$, 从而 $\sum_{i=0}^n K[n - i] u[i]$ 乃标准的�
 
 **（3）、用快速傅里叶加速卷积计算**
 
-既然化为标准的数学上的 1d 卷积了(非 cnn 卷积），而 1d 卷积的计算加速，是有现成的方案的：快速傅里叶变换（FFT）。正可以用它来加速这个卷积的计算。不过，为启用 FFT 加速，需要先提前把卷积核 K[.] 的所有取值都算出来的。
+既然化为标准的数学上的 1d 卷积了(非 cnn 那种局部卷积），而 1d 卷积的计算加速，是有现成的方案的：快速傅里叶变换（FFT）。正可以用它来加速这个卷积的计算。不过，为启用 FFT 加速，需要先提前把卷积核 K[.] 的所有取值都算出来的。
 
 关于 FFT 法一些简短知识：
 - 按 FFT 计算卷积的套路，一般是要求序列长度是2的幂次，这样才能达到最高效率（L * log L)。
@@ -147,7 +147,7 @@ n + 1, & \text{if } n = k \\
 \end{cases}
 \\
 , \\
-A = \begin{bmatrix}
+比如\ A = \begin{bmatrix}
 -(0+1) & 0 & 0 & 0 \\
 -\sqrt{3}\sqrt{1} & -(1+1) & 0 & 0 \\
 -\sqrt{5}\sqrt{1} & -\sqrt{5}\sqrt{3} & -(2+1) & 0 \\
@@ -174,10 +174,48 @@ S4 作为一个 SSM，对于input token embs 的多个维度，只能一个一�
 
 H3 乃基于 S4 的优化, 不过不再是简单的一个 SSM，而是包含两个 SSM。它的典型用法也是替换 transformer 中的 attention 模块。
 
-它诞生的 High-level Intuition：
+**它诞生的 High-level Intuition：**
 - SSM 记忆能力不足：不能有效“回忆”序列中早期的 token，为此引入了 Shift SSM 
 - S4 不能像 attention 那样“比较不同位置之间 token”(To compare tokens across the sequence)，为此结构总用 pointwise 乘法
 - 从 linear attn 获得灵感，因此采用和它类似的流程：linear attn 乃 softmax attn 的一种优化，所以是 QKV 结构的，只是计算时先结合 KV 成 Q(K'V）
   - 于是 H3 也是分出了 QKV 并采用形式： $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$
 
 <img width="968" height="878" alt="image" src="https://github.com/user-attachments/assets/a78a3b08-43cd-4cd5-8e55-3529579e255c" />
+
+**H3 的两个 SSM：**
+
+diag SSM 与 shift SSM，都是 S4 SSM 风格的，也就是乃 1d 卷积形式，可以用 FFT 加速。不过在矩阵选取上比 S4 还简单。
+
+diag SSM：A矩阵是完全的对角形式（故只有 m 个参数），从而 A^n 计算极其简单。
+
+shift-SSM 的 A B C 特殊选择使得它其实就是一个 1d conv，所以在《mamba》paper 的配图中，直接用 conv 来表示：
+
+<img width="894" height="808" alt="image" src="https://github.com/user-attachments/assets/89163445-410c-4e69-93fb-f17df4143c48" />
+
+这是因为，shift-SSM 的 A 矩阵选为
+
+$$
+A_{i,j} = \begin{cases}
+1 & \text{for } i - 1 = j \\
+0 & \text{otherwise}
+\end{cases}
+, \ \
+比如\ A = \begin{bmatrix}
+0 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+\end{bmatrix}
+$$
+
+而 B 矩阵，可以选为 $B=e_1 = [1, 0, ... 0]$, 这样按 A x + B u,  对 shift-SSM 的 hidden 有 $xi = [u_i , u_{i−1}, . . . , u_{i−m+1}]$, 正好把最近 m 个时间的 u 给 shift 到了 hidden state 了【note：input u 是多维的，每个维度有独立的 SSM，所以shft-SSM 的 hidden state 存的是某一个维度的最近 m 个历史，多个 shift-SSM 联合起来才存下完整的最近历史】。
+
+令 $C = [w_0, w_1, ..]$, 则 $y_i = C x_i = \sum_{k=0}^{m-1} w_k \cdot u_{i - k}$, 正好是窗长=m 的 1d conv【这个就是 CNN 1d-conv了】。
+
+diag-SSM 需要 IFFT(FFT(.) FFT(.)) 加速，而 shift-SSM 并不需要 FFT。
+
+**怎么使用：**
+
+它的一种典型用法是替换 transformer 中的 attention 模块。从 paper 看，不需要位置编码。现在看个《H3》paper 中的具体例子：
+
+

@@ -131,7 +131,7 @@ c_k = \sum_{i=0}^k a_i b_{k-i}
 
 ---- 
 
-## S4 model：Structured state space sequence models 
+## S4 model：Structured state space sequence models —— SSM 加速版
 
 《Efficiently Modeling Long Sequences with Structured State Spaces》 https://arxiv.org/pdf/2111.00396
 
@@ -168,7 +168,7 @@ S4 作为一个 SSM，对于input token embs 的多个维度，只能一个一�
 
 ----
 
-## H3 model：
+## H3 model
 
 《Hungry Hungry Hippos: Towards Language Modeling with State Space Models》 https://arxiv.org/pdf/2212.14052 
 
@@ -180,3 +180,4 @@ H3 乃基于 S4 的优化, 不过不再是简单的一个 SSM，而是包含两�
 - 从 linear attn 获得灵感，因此采用和它类似的流程：linear attn 乃 softmax attn 的一种优化，所以是 QKV 结构的，只是计算时先结合 KV 成 Q(K'V）
   - 于是 H3 也是分出了 QKV 并采用形式： $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$
 
+<img width="968" height="878" alt="image" src="https://github.com/user-attachments/assets/a78a3b08-43cd-4cd5-8e55-3529579e255c" />

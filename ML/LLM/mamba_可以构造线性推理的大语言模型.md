@@ -194,7 +194,7 @@ H3 乃基于 S4 的优化, 不过不再是简单的一个 SSM，而是包含两�
 - SSM 记忆能力不足：不能有效“回忆”序列中早期的 token，为此引入了 Shift SSM 
 - S4 不能像 attention 那样“比较不同位置之间 token”(To compare tokens across the sequence)，为此结构总用 pointwise 乘法
 - 从 linear attn 获得灵感，因此采用和它类似的流程：linear attn 乃 softmax attn 的一种优化，所以是 QKV 结构的，只是计算时先结合 KV 成 Q(K'V）
-  - 于是 H3 也是分出了 QKV 并采用形式： $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$
+  - 于是 H3 也是分出了 QKV 并大约这样形式： $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$
 
 <img width="968" height="878" alt="image" src="https://github.com/user-attachments/assets/a78a3b08-43cd-4cd5-8e55-3529579e255c" />
 
@@ -234,13 +234,16 @@ diag-SSM 需要 IFFT(FFT(.) FFT(.)) 加速，而 shift-SSM 并不需要 FFT。
 
 它的一种典型用法是替换 transformer 中的 attention 模块。从 paper 看，不需要位置编码。看下《H3》paper 中的例子：
 
-它像 MHA attn 一样，也可以分好多个 heads。从 H3 的 $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ 式看，SSM 看不到 heads 存在，QKV的交互计算，才牵扯 head。
-
 Q、K、V、output 都需要 projection，FFN 和 transformer 中一样，这些部分有 $12d^2$ 个参数。shift-SSM 只有 C 有参数（m个）， diag-SSM 的 ABC都是 m 个参数，所以 SSM 不分一共有 4m*d=4md个参数，总参数量是 $12d^2+4md$，假设vocab size=50k，则可以算得 paper 中各 model 参数量如下（基本对得上）：
 
-| 模型     | Layers | Hidden dim(d) | FFN dim | Heads | SSM dim(m) | 算出的参数量|
-| -------- | ------ | ------| ------ | --- | ----- | ---- |
-| 125M     | 12     | 768   | 3072   | 12 | 64 | 125.69M |
-| 355M     | 24     | 1024  | 4096   | 16 | 64 | 359.48M |
-| 1.3B     | 24     | 2048  | 8192   | 16 | 64 | 1322.94M | 
-| 2.7B     | 32     | 2560  | 10240  | 20 | 64 | 2665.55M |
+| 模型   | Layers | Hidden dim(d) | FFN dim | Heads | SSM dim(m) | 算出的参数量|
+| ----- | ------ | ------| ------ | --- | --- | ---- |
+| 125M  | 12     | 768   | 3072   | 12 | 64 | 125.69M  |
+| 355M  | 24     | 1024  | 4096   | 16 | 64 | 359.48M  |
+| 1.3B  | 24     | 2048  | 8192   | 16 | 64 | 1322.94M | 
+| 2.7B  | 32     | 2560  | 10240  | 20 | 64 | 2665.55M |
+
+注意：
+- 例子中，H3 像 MHA attn 一样，也可以分好多个 heads。从 H3 的 $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ 式看，SSM 看不到 heads 存在，QKV的交互计算，才牵扯 head。SSM 的input shape 与 output shape 保持不变，所以 H3 结构可以看作是插入了两个 SSM 的 linear attention。
+- 关于 " $H3 = Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ " 一式， 只算是示意。若K、V是多个时间步，则 K V 都是行向量的concat， $SSM_{shift}(K) \cdot V$ 真实表达的是 $\sum_i (SSM_{shift}(K_i) ⊗ V_i)$。 其中 $A⊗B=\\{a_i b_j\\}_{i,j}$ 是外积。
+

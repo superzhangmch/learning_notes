@@ -1,5 +1,9 @@
 《Mamba: Linear-Time Sequence Modeling with Selective State Spaces》 https://arxiv.org/pdf/2312.00752
 
+这里先记述 mamba 的一些依赖知识与前序 model， 然后结束 mamba。顺序是 SSM -> S4 -> H3 -> mamba。
+
+----
+
 ## SSM： 状态空间模型，State Space Models
 
 SSM 并不是因机器学习的问题而特意创造出来的，而是一类应用很广泛的通用模型，只是后来被借用到了机器学习领域。据 ai（姑信之）：最初来自控制理论，后来被广泛应用于信号处理、时间序列分析、物理建模和机器学习等领域。
@@ -216,6 +220,15 @@ diag-SSM 需要 IFFT(FFT(.) FFT(.)) 加速，而 shift-SSM 并不需要 FFT。
 
 **怎么使用：**
 
-它的一种典型用法是替换 transformer 中的 attention 模块。从 paper 看，不需要位置编码。现在看个《H3》paper 中的具体例子：
+它的一种典型用法是替换 transformer 中的 attention 模块。从 paper 看，不需要位置编码。看下《H3》paper 中的例子：
 
+它像 MHA attn 一样，也可以分好多个 heads。从 $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ 式看，但作用于 SSM 之上。但是具体的
 
+Q、K、V、output 都需要 projection，FFN 和 transformer 中一样，这些部分有 $12d^2$ 个参数。shift-SSM 只有 C 有参数（m个）， diag-SSM 的 ABC都是 m 个参数，所以 SSM 不分一共有 4m*d=4md个参数，总参数量是 $12d^2+4md$，假设vocab size=50k，则可以算得 paper 中各 model 参数量如下（基本对得上）：
+
+| 模型     | Layers | Hidden dim(d) | FFN dim | Heads | SSM dim(m) | 算出的参数量|
+| -------- | ------ | ------| ------ | --- | ----- | ---- |
+| 125M     | 12     | 768   | 3072   | 12 | 64 | 125.69M |
+| 355M     | 24     | 1024  | 4096   | 16 | 64 | 359.48M |
+| 1.3B     | 24     | 2048  | 8192   | 16 | 64 | 1322.94M | 
+| 2.7B     | 32     | 2560  | 10240  | 20 | 64 | 2665.55M |

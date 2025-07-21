@@ -234,7 +234,7 @@ diag-SSM 需要 IFFT(FFT(.) FFT(.)) 加速，而 shift-SSM 并不需要 FFT。
 
 它的一种典型用法是替换 transformer 中的 attention 模块。从 paper 看，不需要位置编码。看下《H3》paper 中的例子：
 
-它像 MHA attn 一样，也可以分好多个 heads。从 $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ 式看，但作用于 SSM 之上。但是具体的
+它像 MHA attn 一样，也可以分好多个 heads。从 H3 的 $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ 式看，SSM 看不到 heads 存在，QKV的交互计算，才牵扯 head。
 
 Q、K、V、output 都需要 projection，FFN 和 transformer 中一样，这些部分有 $12d^2$ 个参数。shift-SSM 只有 C 有参数（m个）， diag-SSM 的 ABC都是 m 个参数，所以 SSM 不分一共有 4m*d=4md个参数，总参数量是 $12d^2+4md$，假设vocab size=50k，则可以算得 paper 中各 model 参数量如下（基本对得上）：
 

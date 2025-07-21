@@ -1,6 +1,6 @@
 《Mamba: Linear-Time Sequence Modeling with Selective State Spaces》 https://arxiv.org/pdf/2312.00752
 
-这里先记述 mamba 的一些依赖知识与前序 model， 然后结束 mamba。顺序是 SSM -> S4 -> H3 -> mamba。
+这里先记述 mamba 的一些依赖知识与前序 model，然后是 mamba。顺序是 SSM -> S4 -> H3 -> mamba。
 
 ----
 
@@ -39,6 +39,18 @@ $$
 A、B、C、D 都是 constant 的（这叫 Linear Time Invariance (LTI)，时间不变）。即为常系数微分方程。且 D 可以进一步为 0，下面都令 D=0。
 
 note：假设 SSD hidden state 维度是 m，则 $A \in \mathbb{R}^{m x m}$, B、C $\in \mathbb{R}^{m}$， 而 y_t 就是两个 m 维向量的向量积。
+
+**和 RNN 的区别：RNN vs SSM:**
+
+| 维度         | RNN（Recurrent Neural Network）                  | SSM（State Space Model）         |
+| ---------- | ---------------------------------------------- | ------------------------------ |
+| 状态更新公式 | $h_t = \tanh(W_{xh}x_t + W_{hh}h_{t-1} + b_h)$ | $x_{t+1} = A x_t + B u_t$      |
+| 输出公式   | $y_t = W_{hy} h_t + b_y$                       | $y_t = C x_t + D u_t$          |
+| 输入维度     | 输入是向量 $x_t \in \mathbb{R}^n$，一次处理多个维度 | 通常 $u_t \in \mathbb{R}$，按维推理或建模 | 
+| 激活函数   | 非线性（如 tanh, ReLU）                              | 一般为线性（线性系统建模）                  |
+
+RNN 一次对 input 的多个维度建模，而 SSM 一次建模一个维度。两者的参数矩阵都是时间无关的。
+
 
 **(3)、方程求解**
 

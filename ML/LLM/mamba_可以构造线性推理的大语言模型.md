@@ -164,9 +164,19 @@ $$
 用于语言模型建模，可以直接替换 transformer 中的 attention：
 >  By simply taking a strong Transformer baseline [2] and replacing the self-attention layers, S4 substantially closes the gap to Transformers (within 0.8 ppl), setting SoTA for attention-free models by over 2 ppl.
 
+S4 作为一个 SSM，对于input token embs 的多个维度，只能一个一个维度分开独立建模，有多少维度就有几个 SSM。
+
 ----
 
 ## H3 model：
 
 《Hungry Hungry Hippos: Towards Language Modeling with State Space Models》 https://arxiv.org/pdf/2212.14052 
+
+H3 乃基于 S4 的优化, 不过不再是简单的一个 SSM，而是包含两个 SSM。它的典型用法也是替换 transformer 中的 attention 模块。
+
+它诞生的 High-level Intuition：
+- SSM 记忆能力不足：不能有效“回忆”序列中早期的 token，为此引入了 Shift SSM 
+- S4 不能像 attention 那样“比较不同位置之间 token”(To compare tokens across the sequence)，为此结构总用 pointwise 乘法
+- 从 linear attn 获得灵感，因此采用和它类似的流程：linear attn 乃 softmax attn 的一种优化，所以是 QKV 结构的，只是计算时先结合 KV 成 Q(K'V）
+  - 于是 H3 也是分出了 QKV 并采用形式： $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$
 

@@ -247,3 +247,22 @@ Q、K、V、output 都需要 projection，FFN 和 transformer 中一样，这些
 - 例子中，H3 像 MHA attn 一样，也可以分好多个 heads。从 H3 的 $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ 式看，SSM 看不到 heads 存在，QKV的交互计算，才牵扯 head。SSM 的input shape 与 output shape 保持不变，所以 H3 结构可以看作是插入了两个 SSM 的 linear attention。
 - 关于 " $H3 = Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$ " 一式， 只算是示意。若K、V是多个时间步，则 K V 都是行向量的concat， $SSM_{shift}(K) \cdot V$ 真实表达的是 $\sum_i (SSM_{shift}(K_i) ⊗ V_i)$。 其中 $A⊗B=\\{a_i b_j\\}_{i,j}$ 是外积。
 
+----
+
+## mamba
+
+mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而对 H3 的改进。
+
+### 对 S4 SSM 的改进：selective SSM (文内也叫它 S6)
+
+<img width="2200" height="838" alt="image" src="https://github.com/user-attachments/assets/0de78f1f-9bbb-4b5e-a10e-af344868fa22" />
+
+结构如上。
+
+- 原始 SSM 的矩阵 A B C 等都是固定的常量， 这里把它改成了 B C $\Delta$ 都是由当前 input x_t 经过线性层推出的(上文 x_t 是当做 hidden state 的，这里当做了input)。这使得它不再是 LTI 了。
+  - 不再是 LTI，从而不再能用 FFT 加速，只能递归展开。
+- 一个 SSM 只能处理一维数据。这里传给 SSM 的 input 仍然是单维的，但是是经过 x_t 多维度信息交换后的一维。
+- 原始 SSM 离散化时是平均切分时间，这里变成了动态切分：时间间隔是动态的，根据当前 input x_t 而定。
+
+<img width="1662" height="510" alt="image" src="https://github.com/user-attachments/assets/21e093d5-d254-46b6-bf50-e6fe70640c7b" />
+

@@ -143,7 +143,7 @@ C(x) = A(x) \cdot B(x) = \sum_{k=0}^{2n-2} c_k x^k \\
 c_k = \sum_{i=0}^k a_i b_{k-i}
 \end{cases}$$
 
-以上内容，可以说都是纯数学角度的。
+以上内容，可以说是从纯数学角度说的。
 
 ---- 
 
@@ -174,6 +174,7 @@ $$
 卷积与递归两种形式是等价的。其实一般 S4 训练的时候才采用卷积形式：
 - 训练时：全序列并行的卷积形式（高效，一次性处理整个序列）
   - 递归形式，train 时除了不能 tokens 并行，还需要把所有的 hidden state 都存下来，以便梯度回传时用，所以比较耗显存。
+    - 递归 hidden 占用 shape：(batch, seq_len, input_dim, ssm_hidden_dim)。卷积模式时不用展开 hidden state 只用存下卷积核，显存占用 shape = (batch, seq_len, input_dim), 显著更小。
 - 推理时：递归的状态更新公式，即像RNN一样一步一步地更新状态，适合流式处理。每一step 的 memory 和计算成本都不随时间增长（而 transformer 非如此）。
 
 <img width="982" height="212" alt="image" src="https://github.com/user-attachments/assets/b96cf7cf-a003-4809-8971-4b4a6312825c" />
@@ -273,7 +274,15 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 **（2）、selective SSM 有啥实现上的困难，怎么解决的**
 
-本来 S4 已经把 SSM 弄的易于用 FFT 并行训练。现在 selective SSM 使得 FFT 不能用了。性能会不会有问题？
+本来 S4 已经用 FFT 把 SSM 的训练优化得很好了。现在 selective SSM 使得 FFT 不能用了，于是训练不再可以并行，显存会占用更多，计算量会变大——仅仅为了 selective 能力。如何是好？
+
+作者发现：
+- 计算量问题：看起来还好。
+  - recurrent 计算量是 $O(BLDN)=a BLDN $, 而 conv FFT 计算量是 $O(BLD\log(L))=b BLD\log(L)$, 往往 log(L) < N【比如log(一千万)=16】，若常数项 a b 一样，确实 conv 计算量小。但是实际中 O(BLDN) 的常数项系数 a 更小。消去相同因子后 a * N 与 b * log(L) 比， 如果 N 比较小，同时 L 比较长，则 recurrent 不见得有劣势。
+  - note: B=batch，L=seq_len, D=input_dim, N=SSM_hidden_dim, 而 FFT 计算量是 Llog(L）
+- 显存问题：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
+- 并行问题：用一个叫 work-efficient parallel scan algorithm 实现并行。
+  - Parallel scan，又称为并行前缀和（parallel prefix sum），解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。其实就是解决 cumsum=cumulative sum 问题。
 
 ### paper 中一些段落解释
 

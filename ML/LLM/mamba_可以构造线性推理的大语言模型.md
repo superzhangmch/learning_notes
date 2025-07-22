@@ -283,7 +283,7 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 - 显存问题：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
 - 并行问题：用一个叫 work-efficient parallel scan algorithm 实现并行。
   - Parallel scan，又称为并行前缀和（parallel prefix sum），解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。其实就是解决 cumsum=cumulative sum 问题。
-  - 算法简介：计算量基本不变，而运行时间是 O(log n)。分两阶段进行：
+  - Blelloch scan 简介：计算量基本不变，而运行时间是 O(n) => O(log n)。分两阶段进行：
     1. Up-sweep（Reduce）阶段：构建一棵二叉树，从底向上归约，最终在根节点得到全局和。这个阶段目的是让每个节点都能获得其子树的和。
     2. Down-sweep 阶段：从树根向下进行，传播和分配前缀值。这样每个节点最终得到其前缀和。
 - 其他：IO 优化。用 kernel fuse（把多个操作打包成一个基本操作）。Δ, A, B, C 离散出新的 A B，然后执行 hidden state 更新，并产生输出，一系列操作都放到了一个 kernel 里（selective SSM 图里也有示意）：

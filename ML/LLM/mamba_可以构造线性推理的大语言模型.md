@@ -280,7 +280,7 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 - **计算量问题**：看起来还好。
   - recurrent 计算量是 $O(BLDN)=a BLDN $, 而 conv FFT 计算量是 $O(BLD\log(L))=b BLD\log(L)$, 往往 log(L) < N【比如log(一千万)=16】，若常数项 a b 一样，确实 conv 计算量小。但是实际中 O(BLDN) 的常数项系数 a 更小。消去相同因子后 a * N 与 b * log(L) 比， 如果 N 比较小，同时 L 比较长，则 recurrent 不见得有劣势。
     - recurrent 模式的 O(BLDN) 怎么来的：SSM 内的计算是 $h \leftarrow Ah+Bx; y \leftarrow Ch$, A 矩阵是对角矩阵，所以 Ah 计算量是 N 而非 N², 而 Bx与 Ch 计算量都是 N，所以一次 SSM 内计算乘法与加法共是 5N。所以是 O(BLDN)
-    - conv 模式的计算量是 $O(BLD\log(L))$ 怎么来的：卷积核可以提前算好从而不计入，于是一次 conv 模式的 SSM 计算量 y = conv(K, x) 只取决于 IFFT(FFT FFT) 操作，一个 FFT 计算量是 5 L log(L), 从而得到 $O(BLD\log(L))$。整个的系数不小于10（按 ai 10~15），确实比 recurrent 模式的大。
+    - conv 模式的计算量是 $O(BLD\log(L))$ 怎么来的：卷积核可以提前算好从而不计入，于是一次 conv 模式的 SSM 计算量 y = conv(K, x) 只取决于 IFFT(FFT FFT) 操作，一个 FFT 计算量是 5 L log(L), 从而得到 $O(BLD\log(L))$。整个的系数大约为 10，确实比 recurrent 模式的大。
   - note: B=batch，L=seq_len, D=input_dim, N=SSM_hidden_dim, 而 FFT 计算量是 Llog(L）
 - **显存问题**：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
 - **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。

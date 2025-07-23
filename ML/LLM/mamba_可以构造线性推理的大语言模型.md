@@ -332,8 +332,8 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 一系列 mamba block stack 起来，下面接 embedding 层，最上接 softmax，就可以作 LLM 那些事了。
 
 其他：
-- 位置编码：
-- 多 heads:
+- 位置编码：不需要（paper中没提需要）。即 input emb 不需要这样 x_embed = x_embed + pos_embed
+- 多 heads: H3 是有像 MHA 一样的多 heads 的。 mamba 不需要（特别地，paper 表12 提到 "Model dimension and **number of heads applies only to Transformer models**")
 
 ### paper 中一些段落解释
 

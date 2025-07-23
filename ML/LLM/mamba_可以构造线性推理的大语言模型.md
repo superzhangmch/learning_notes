@@ -191,6 +191,17 @@ $$
 
 S4 作为一个 SSM，对于input token embs 的多个维度，只能一个一个维度分开独立建模，有多少维度就有几个 SSM。
 
+**关于 conv SSM 的并行训练：**
+
+训练时，conv 模式的 SSM 可以并行化，但是需要先计算好卷积核（A B C 本身是训练参数，故每次迭代时，都需要准备下）。卷积核 $K = [CA^nB]$ 计算并不能简单并行，而是需要逐步算 A^n（或者采用一定手段并行化）。如果A是对角矩阵，这时候可以完全并行化：
+
+```
+a = torch.tensor(3.0)  # 假设 a 是 3
+N = 100
+powers = torch.arange(1, 1+N)  # tensor([1, 2, 3, 4, 5, .. 100])
+results = torch.pow(a, powers) # 并行一次算出 [a^1, a^2, a^3, ..., a^100]
+```
+
 ----
 
 ## H3 model
@@ -287,7 +298,7 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 - **计算量问题**：看起来还好。
   - recurrent 计算量是 $O(BLDN)=a BLDN $, 而 conv FFT 计算量是 $O(BLD\log(L))=b BLD\log(L)$, 往往 log(L) < N【比如log(一千万)=16】，若常数项 a b 一样，确实 conv 计算量小。但是实际中 O(BLDN) 的常数项系数 a 更小。消去相同因子后 a * N 与 b * log(L) 比， 如果 N 比较小，同时 L 比较长，则 recurrent 不见得有劣势。
     - recurrent 模式的 O(BLDN) 怎么来的：SSM 内的计算是 $h \leftarrow Ah+Bx; y \leftarrow Ch$, A 矩阵是对角矩阵，所以 Ah 计算量是 N 而非 N², 而 Bx与 Ch 计算量都是 N，所以一次 SSM 内计算乘法与加法共是 5N。所以是 O(BLDN)
-    - conv 模式的计算量是 $O(BLD\log(L))$ 怎么来的：卷积核可以提前算好从而不计入，于是一次 conv 模式的 SSM 计算量 y = conv(K, x) 只取决于 IFFT(FFT FFT) 操作，一个 FFT 计算量是 5 L log(L), 从而得到 $O(BLD\log(L))$。整个的系数大约为 10，确实比 recurrent 模式的大。
+    - conv 模式的计算量是 $O(BLD\log(L))$ 怎么来的：一次 conv 模式的 SSM 计算量是卷积核准备 + IFFT(FFT FFT) 操作。卷积核计算时间是 O(LN^2), 若A矩阵是对角矩阵，则是 O(LN)，batch内只需要计算一次，故卷积核计算量可忽略。一个 FFT 计算量是 5 L log(L), 从而得到 $O(BLD\log(L))$。整个的系数大约为 10，确实比 recurrent 模式的系数大。
   - note: B=batch，L=seq_len, D=input_dim, N=SSM_hidden_dim, 而 FFT 计算量是 Llog(L）
 - **显存问题**：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
 - **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。待深究

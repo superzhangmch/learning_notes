@@ -145,6 +145,9 @@ c_k = \sum_{i=0}^k a_i b_{k-i}
 
 以上内容，可以说是从纯数学角度说的。
 
+SSM 参考资料：
+- https://huggingface.co/blog/lbourdois/get-on-the-ssm-train
+
 ---- 
 
 ## S4 model：Structured state space sequence models —— SSM 加速版
@@ -283,7 +286,7 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
     - conv 模式的计算量是 $O(BLD\log(L))$ 怎么来的：卷积核可以提前算好从而不计入，于是一次 conv 模式的 SSM 计算量 y = conv(K, x) 只取决于 IFFT(FFT FFT) 操作，一个 FFT 计算量是 5 L log(L), 从而得到 $O(BLD\log(L))$。整个的系数大约为 10，确实比 recurrent 模式的大。
   - note: B=batch，L=seq_len, D=input_dim, N=SSM_hidden_dim, 而 FFT 计算量是 Llog(L）
 - **显存问题**：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
-- **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。
+- **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。待深究
   - Parallel scan，又称为并行前缀和（parallel prefix sum），解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。其实就是解决 cumsum=cumulative sum 问题。
   - Blelloch scan 简介：计算量基本不变，而运行时间是 O(n) => O(log n)。分两阶段进行：
     1. Up-sweep（Reduce）阶段：构建一棵二叉树，从底向上归约，最终在根节点得到全局和。这个阶段目的是让每个节点都能获得其子树的和。
@@ -292,6 +295,18 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 - 其他：IO 优化。用 kernel fuse（把多个操作打包成一个基本操作）。Δ, A, B, C 离散出新的 A B，然后执行 hidden state 更新，并产生输出，一系列操作都放到了一个 kernel 里（selective SSM 图里也有示意）：
   - <img width="1464" height="250" alt="image" src="https://github.com/user-attachments/assets/b0ddf62d-f96e-4251-bf7d-5f71442ecf7b" />
   - reduce IOs by a factor of 𝑂(𝑁) (N=SSM_dim), which in practice speeds up the operation by 20-40 times
+
+**（3）、怎么使用**
+
+如下图，作者没有像之前一般做法那样，仅仅是用新的序列建模结构，替换 transformer 的 attention，而是把该结构嵌入到了 FFN 内部，从而彻底取代了 transformer：
+
+<img width="1802" height="926" alt="image" src="https://github.com/user-attachments/assets/b936a36c-991f-4205-9113-b828fc60c802" />
+
+为了与 transformer 参数量匹配，mamba block 重复二次当做一个 transformer 的替代物：
+
+<img width="1012" height="868" alt="image" src="https://github.com/user-attachments/assets/d2c945dc-2365-45cc-a529-302b779f8bd1" />
+
+注意加了 swiGLU 激活后的 FFN 长这样： $FFN(x)= [Swish(x W_1)\odot (xW_0)]\cdot W_2$ ，它正是上图的 gated MLP。
 
 ### paper 中一些段落解释
 

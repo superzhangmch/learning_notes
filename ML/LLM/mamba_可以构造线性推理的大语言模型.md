@@ -1,5 +1,9 @@
 《Mamba: Linear-Time Sequence Modeling with Selective State Spaces》 https://arxiv.org/pdf/2312.00752
 
+<img width="720" height="630" alt="image" src="https://github.com/user-attachments/assets/d1daff8e-3170-4f68-8ae6-79b60a2e4d51" />
+
+Mamba block 如上。
+
 这里先记述 mamba 的一些依赖知识与前序 model，然后是 mamba。顺序是 SSM -> S4 -> H3 -> mamba。
 
 ----
@@ -302,11 +306,23 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 <img width="1802" height="926" alt="image" src="https://github.com/user-attachments/assets/b936a36c-991f-4205-9113-b828fc60c802" />
 
+注意：
+- 加了 swiGLU 激活后的 FFN 长这样： $FFN(x)= [Swish(x W_1)\odot (xW_0)]\cdot W_2$ ，它正是上图的 gated MLP。
+- H3 的非线性来自点乘，而 mamba 中则有非线性激活函数
+
 为了与 transformer 参数量匹配，mamba block 重复二次当做一个 transformer 的替代物：
 
 <img width="1012" height="868" alt="image" src="https://github.com/user-attachments/assets/d2c945dc-2365-45cc-a529-302b779f8bd1" />
 
-注意加了 swiGLU 激活后的 FFN 长这样： $FFN(x)= [Swish(x W_1)\odot (xW_0)]\cdot W_2$ ，它正是上图的 gated MLP。
+为啥 mamba 重复 2 次等于一个 transformer：令 hidden dim=d。则 transformer 参数量是 12d², FFN 与 ATTN的proj层 各有 8d² 与 4d² 个。而 mamba block 中三个升降维的 proj 参数量都是 2d², 共 6d²，所以 2个 block 是 12d²。注意：transformer FFN 一般升维倍数是 4，swiGLU 化的 FFN 有三个矩阵，升维因子是 8/3（以维持参数量同普通 FFN）, 而 mamba 继承了三个矩阵的 swiGLU FFN，但是升维因子选用了 2(即 paper 3.4节中的 E），见下图。
+
+<img width="1438" height="570" alt="image" src="https://github.com/user-attachments/assets/e4171da2-7f12-4089-bbe9-0ef633f6120b" />
+
+一系列 mamba block stack 起来，下面接 embedding 层，最上接 softmax，就可以作 LLM 那些事了。
+
+其他：
+- 位置编码：
+- 多 heads:
 
 ### paper 中一些段落解释
 

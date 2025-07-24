@@ -290,6 +290,8 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 为什么有上面的改进：为了解决传统 LTI SSM 无法进行“内容选择”的问题，即不能根据输入内容来选择性处理信息，无法“忽略无关信息”或“在特定时刻记住关键内容”。是为了解决传统 SSM 模型缺乏“输入依赖”和“内容选择能力”的根本缺陷而提出的。
 
+paper 把它的 SSM 改进结构叫做 S6，是因为：能力上，有序列内的空间感知能力的加强（selective）， 同时有 parallel scan 这样的前缀和的加速算法等一系列计算优化来保证性能（即文中所谓 selective scan）。从而增加两个 S。【原文：被叫 S6 because they are S4 models with a selection mechanism and computed with a scan】
+
 **（2）、selective SSM 有啥实现上的困难，怎么解决的**
 
 本来 S4 已经用 FFT 把 SSM 的训练优化得很好了。现在 selective SSM 使得 FFT 不能用了，于是训练不再可以并行，显存会占用更多，计算量会变大——仅仅为了 selective 能力。如何是好？
@@ -334,6 +336,12 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 其他：
 - 位置编码：不需要（paper中没提需要）。即 input emb 不需要这样 x_embed = x_embed + pos_embed
 - 多 heads: H3 是有像 MHA 一样的多 heads 的。 mamba 不需要（特别地，paper 表12 提到 "Model dimension and **number of heads applies only to Transformer models**")
+
+**（4)、和 transformer 对比**
+
+mamba 用作 transformer 那样的语言模型后，可以作自回归生成，这时对 prompt 不分，也可以类似 transformer 的 prefill 那样快速并行处理（用 parallel scan）。
+
+
 
 ### paper 中一些段落解释
 

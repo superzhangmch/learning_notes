@@ -341,6 +341,10 @@ paper 把它的 SSM 改进结构叫做 S6，是因为：能力上，有序列内
 
 mamba 用作 transformer 那样的语言模型后，可以作自回归生成，这时对 prompt 不分，也可以类似 transformer 的 prefill 那样快速并行处理（用 parallel scan）。
 
+据paper:
+- 同等参数的model，mamba 不输 transformer，在大上下文（8K）下表现更好
+- 在相同模型大小下，Mamba 的 token 生成速度是 Transformer 的 4～5 倍。且内存占用恒定计算量线性 
+- Mamba 支持最多 1M token 的上下文长度；性能 随着上下文长度增长而提升，而 Transformer 往往会因为“稀释注意力”而表现下降；原因在于 Mamba 可以选择性地过滤上下文（选择性机制），只保留重要状态。
 
 
 ### paper 中一些段落解释

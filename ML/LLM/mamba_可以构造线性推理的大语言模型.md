@@ -2,7 +2,7 @@
 
 <img width="720" height="630" alt="image" src="https://github.com/user-attachments/assets/d1daff8e-3170-4f68-8ae6-79b60a2e4d51" />
 
-Mamba block 如上。
+Mamba block 如上。每一步不用像 attn 那样作序列全扫描，但相比 transformer，它内部的 hidden 维度特别大，所以才能保持性能。
 
 这里先记述 mamba 的一些依赖知识与前序 model，然后是 mamba。顺序是 SSM -> S4 -> H3 -> mamba。
 
@@ -346,6 +346,8 @@ mamba 用作 transformer 那样的语言模型后，可以作自回归生成，�
 - 在相同模型大小下，Mamba 的 token 生成速度是 Transformer 的 4～5 倍。且内存占用恒定计算量线性 
 - Mamba 支持最多 1M token 的上下文长度；性能 随着上下文长度增长而提升，而 Transformer 往往会因为“稀释注意力”而表现下降；原因在于 Mamba 可以选择性地过滤上下文（选择性机制），只保留重要状态。
 
+selective 怎么做到的？
+parallel scan 怎么回事？
 
 ### paper 中一些段落解释
 

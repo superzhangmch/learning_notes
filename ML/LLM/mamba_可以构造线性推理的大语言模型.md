@@ -292,6 +292,23 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 paper 把它的 SSM 改进结构叫做 S6，是因为：能力上，有序列内的空间感知能力的加强（selective）， 同时有 parallel scan 这样的前缀和的加速算法等一系列计算优化来保证性能（即文中所谓 selective scan）。从而增加两个 S。【原文：被叫 S6 because they are S4 models with a selection mechanism and computed with a scan】
 
+**怎么理解 selective：**
+
+迭代公式：
+
+```
+hₜ = A hₜ₋₁ + Bₜ xₜ
+yₜ = Cₜ hₜ
+```
+中：
+```
+Bₜ = s_B(xₜ)      # 输入决定当前 token 是否写入 state
+Cₜ = s_C(xₜ)      # 输入决定是否读取 state
+Δₜ = τ(s_Δ(xₜ))   # 输入决定状态更新的快慢/保留
+```
+
+除了以上，再看 paper 3.5.2 一节。
+
 **（2）、selective SSM 有啥实现上的困难，怎么解决的**
 
 本来 S4 已经用 FFT 把 SSM 的训练优化得很好了。现在 selective SSM 使得 FFT 不能用了，于是训练不再可以并行，显存会占用更多，计算量会变大——仅仅为了 selective 能力。如何是好？
@@ -346,14 +363,14 @@ mamba 用作 transformer 那样的语言模型后，可以作自回归生成，�
 - 在相同模型大小下，Mamba 的 token 生成速度是 Transformer 的 4～5 倍。且内存占用恒定计算量线性 
 - Mamba 支持最多 1M token 的上下文长度；性能 随着上下文长度增长而提升，而 Transformer 往往会因为“稀释注意力”而表现下降；原因在于 Mamba 可以选择性地过滤上下文（选择性机制），只保留重要状态。
 
-selective 怎么做到的？
-parallel scan 怎么回事？
+### 《paper》paper 中一些段落解释
 
-### paper 中一些段落解释
-
-关于 S4：
+**关于 S4："3.3.1 Motivation of Prior Models"**
 
 <img width="1484" height="520" alt="image" src="https://github.com/user-attachments/assets/b8b76bca-162b-44b5-91da-3d31150da4e1" />
 
 - 第二点：递归式更费显存，指的是train的时候（为了梯度回传，需要把所有 hidden states 都存下来），infer 的时候更省。
 - 第三点：为什么 LTI 的 SSM 比传统 RNN 能支持更大的 hidden dim？因为 SSM 是每个 input 维有好多个 SSM 的内部 hidden dim，而 RNN 是全体 input 共享一个 hidden dim。由于 S4 SSM 可以用 FFT 加速，所以 hidden dim 变大了，但是计算效率还很高。 
+
+**关于 mamba 的选择机制的一些解释： "3.5.2 Interpretation of Selection Mechanisms"**
+

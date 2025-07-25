@@ -405,7 +405,16 @@ $$g_t := 1 - \exp(-\delta)
 \Rightarrow
 h_t = (1 - g_t) h_{t-1} + g_t x_t$$
 
-
-
 **关于 mamba 的选择机制的一些解释： "3.5.2 Interpretation of Selection Mechanisms"**
+
+根据这节内容， $\Delta$ 决定了模型对当前输入 $x_t$ 的“注意力”或“记忆效果”：
+
+> **大 $\Delta_t \Rightarrow$ 忽略之前的状态，重置并关注当前输入；
+> 小 $\Delta_t \Rightarrow$ 忽略当前输入，延续先前状态。**
+
+而这显然需要在 $h_t = A_d h_{t-1} + B_d x_t$, $A_d = \exp(\Delta A)$ 式中矩阵 A 的取值要配合（比如如 theorem 1， A=-1）。
+
+但是矩阵 A 是可训参数，并没法控制它是负的。若正，则 $\Delta \rightarrow \infty$ 时，反而让之前状态最大化了。对此，model的处理方式是 3.6 节的特别参数初始化，也及时初始化为负：
+
+<img width="1004" height="132" alt="image" src="https://github.com/user-attachments/assets/ac46142b-247e-4aa8-90a7-871619719e91" />
 

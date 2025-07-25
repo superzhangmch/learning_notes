@@ -328,6 +328,7 @@ Cₜ = s_C(xₜ)      # 输入决定是否读取 state
     1. Up-sweep（Reduce）阶段：构建一棵二叉树，从底向上归约，最终在根节点得到全局和。这个阶段目的是让每个节点都能获得其子树的和。
     2. Down-sweep 阶段：从树根向下进行，传播和分配前缀值。这样每个节点最终得到其前缀和。
   - 关于前缀和：https://arxiv.org/pdf/2312.06635 《GLA-gated linear attention》，先列这里。另外， 《linghting-attn》 也是在解决这个问题。
+  - 参考： https://zhuanlan.zhihu.com/p/1929192016195089740 
 - 其他：IO 优化。用 kernel fuse（把多个操作打包成一个基本操作）。Δ, A, B, C 离散出新的 A B，然后执行 hidden state 更新，并产生输出，一系列操作都放到了一个 kernel 里（selective SSM 图里也有示意）：
   - <img width="1464" height="250" alt="image" src="https://github.com/user-attachments/assets/b0ddf62d-f96e-4251-bf7d-5f71442ecf7b" />
   - reduce IOs by a factor of 𝑂(𝑁) (N=SSM_dim), which in practice speeds up the operation by 20-40 times

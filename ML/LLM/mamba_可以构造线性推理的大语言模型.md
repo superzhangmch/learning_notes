@@ -372,5 +372,40 @@ mamba 用作 transformer 那样的语言模型后，可以作自回归生成，�
 - 第二点：递归式更费显存，指的是train的时候（为了梯度回传，需要把所有 hidden states 都存下来），infer 的时候更省。
 - 第三点：为什么 LTI 的 SSM 比传统 RNN 能支持更大的 hidden dim？因为 SSM 是每个 input 维有好多个 SSM 的内部 hidden dim，而 RNN 是全体 input 共享一个 hidden dim。由于 S4 SSM 可以用 FFT 加速，所以 hidden dim 变大了，但是计算效率还很高。 
 
+**关于 3.5.1 节 定理1**
+
+<img width="1008" height="111" alt="image" src="https://github.com/user-attachments/assets/278ff664-3022-4733-9718-05a08522bd88" />
+
+SSM 离散后表达式是：
+
+$$
+\begin{cases}
+h_t = A_d h_{t-1} + B_d x_t \\
+A_d = \exp(\Delta A) \\
+B_d = A^{-1}(A_d - I) B = (\Delta A)^{-1} (\exp(\Delta A) - I) \Delta B
+\end{cases}
+$$
+
+把 $A = -1$, $B = 1$, $\Delta = \delta$ 带入：
+
+$$
+\begin{cases}
+A_d &= \exp(-\delta) \\
+B_d &= (-\delta)^{-1} \left( \exp(-\delta) - 1 \right) \delta = \frac{1 - \exp(-\delta)}{\delta} \cdot \delta = 1 - \exp(-\delta)
+\end{cases}
+$$
+
+所以更新公式变为：
+
+$$h_t = \exp(-\delta) h_{t-1} + (1 - \exp(-\delta)) x_t$$
+
+现在我们令：
+
+$$g_t := 1 - \exp(-\delta)
+\Rightarrow
+h_t = (1 - g_t) h_{t-1} + g_t x_t$$
+
+
+
 **关于 mamba 的选择机制的一些解释： "3.5.2 Interpretation of Selection Mechanisms"**
 

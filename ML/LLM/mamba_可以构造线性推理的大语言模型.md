@@ -323,8 +323,8 @@ Cₜ = s_C(xₜ)      # 输入决定是否读取 state
   - note: B=batch，L=seq_len, D=input_dim, N=SSM_hidden_dim, 而 FFT 计算量是 Llog(L）
 - **显存问题**：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
 - **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。待深究
-  - Parallel scan，又称为并行前缀和（parallel prefix sum），解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。其实就是解决 cumsum=cumulative sum 问题。
-  - Blelloch scan 简介：计算量基本不变，而运行时间是 O(n) => O(log n)。分两阶段进行：
+  - Parallel scan，又称为并行前缀和（parallel prefix sum），解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。(那么就是 torch.cumsum=cumulative sum 问题了）。
+  - Blelloch scan 简介：计算量基本不变，而运行时间是 O(n) => O(log n)，核心在于对 f1∘f2∘f3∘..fn 函数嵌套，如果相邻函数可以结合，则可以用 (f1∘f2)∘(f3∘f4).. 形式并行加速【∘定义为：f∘g(x)=f(g(x)】。分两阶段进行：
     1. Up-sweep（Reduce）阶段：构建一棵二叉树，从底向上归约，最终在根节点得到全局和。这个阶段目的是让每个节点都能获得其子树的和。
     2. Down-sweep 阶段：从树根向下进行，传播和分配前缀值。这样每个节点最终得到其前缀和。
   - 关于前缀和：https://arxiv.org/pdf/2312.06635 《GLA-gated linear attention》，先列这里。另外， 《linghting-attn》 也是在解决这个问题。
@@ -409,7 +409,13 @@ h_t = (1 - g_t) h_{t-1} + g_t x_t$$
 
 **关于 mamba 的选择机制的一些解释： "3.5.2 Interpretation of Selection Mechanisms"**
 
-根据这节内容， $\Delta$ 决定了模型对当前输入 $x_t$ 的“注意力”或“记忆效果”：
+根据这节内容:
+
+A). B_t：控制是是否让当前输入 x_t 存入 h_t(或者说存入多少）， 
+
+B). C_t: 控制了让 state h_t 参与多少到 output y_t
+
+C). $\Delta$: 离散时间步进长度，决定了模型对当前输入 $x_t$ 的“注意力”或“记忆效果”：
 
 > **大 $\Delta_t \Rightarrow$ 忽略之前的状态，重置并关注当前输入；
 > 小 $\Delta_t \Rightarrow$ 忽略当前输入，延续先前状态。**
@@ -420,3 +426,4 @@ h_t = (1 - g_t) h_{t-1} + g_t x_t$$
 
 <img width="1004" height="132" alt="image" src="https://github.com/user-attachments/assets/ac46142b-247e-4aa8-90a7-871619719e91" />
 
+特别的，如果多个本应独立的序列被拼接在一起时，transformer 可以用 attention mask 来分隔，而 LTI 的 SSM 没法区分。而在 mamba 中，则可以令 $\Delta$ 取很大值来隔离不同序列（对应 paper 的 Boundary Resetting 一小节）。

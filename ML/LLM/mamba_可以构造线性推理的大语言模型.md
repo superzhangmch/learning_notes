@@ -322,13 +322,7 @@ Cₜ = s_C(xₜ)      # 输入决定是否读取 state
     - conv 模式的计算量是 $O(BLD\log(L))$ 怎么来的：一次 conv 模式的 SSM 计算量是卷积核准备 + IFFT(FFT FFT) 操作。卷积核计算时间是 O(LN^2), 若A矩阵是对角矩阵，则是 O(LN)，batch内只需要计算一次，故卷积核计算量可忽略。一个 FFT 计算量是 5 L log(L), 从而得到 $O(BLD\log(L))$。整个的系数大约为 10，确实比 recurrent 模式的系数大。
   - note: B=batch，L=seq_len, D=input_dim, N=SSM_hidden_dim, 而 FFT 计算量是 Llog(L）
 - **显存问题**：可化解。recurrent SSM 需要把所有时间的 hidden 展开存显存(HBM)以便反向传播用。而这用 recomputation 即可（用时当场算出一个）
-- **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。待深究
-  - Parallel scan，又称为并行前缀和（parallel prefix sum），解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。(那么就是 torch.cumsum=cumulative sum 问题了）。
-  - Blelloch scan 简介：计算量基本不变，而运行时间是 O(n) => O(log n)，核心在于对 f1∘f2∘f3∘..fn 函数嵌套，如果相邻函数可以结合，则可以用 (f1∘f2)∘(f3∘f4).. 形式并行加速【∘定义为：f∘g(x)=f(g(x)】。分两阶段进行：
-    1. Up-sweep（Reduce）阶段：构建一棵二叉树，从底向上归约，最终在根节点得到全局和。这个阶段目的是让每个节点都能获得其子树的和。
-    2. Down-sweep 阶段：从树根向下进行，传播和分配前缀值。这样每个节点最终得到其前缀和。
-  - 关于前缀和：https://arxiv.org/pdf/2312.06635 《GLA-gated linear attention》，先列这里。另外， 《linghting-attn》 也是在解决这个问题。
-  - 参考： https://zhuanlan.zhihu.com/p/1929192016195089740 
+- **并行问题**：用一个叫 work-efficient parallel scan algorithm 实现并行。
 - 其他：IO 优化。用 kernel fuse（把多个操作打包成一个基本操作）。Δ, A, B, C 离散出新的 A B，然后执行 hidden state 更新，并产生输出，一系列操作都放到了一个 kernel 里（selective SSM 图里也有示意）：
   - <img width="1464" height="250" alt="image" src="https://github.com/user-attachments/assets/b0ddf62d-f96e-4251-bf7d-5f71442ecf7b" />
   - reduce IOs by a factor of 𝑂(𝑁) (N=SSM_dim), which in practice speeds up the operation by 20-40 times
@@ -428,3 +422,29 @@ C). $\Delta$: 离散时间步进长度，决定了模型对当前输入 $x_t$ �
 <img width="1004" height="132" alt="image" src="https://github.com/user-attachments/assets/ac46142b-247e-4aa8-90a7-871619719e91" />
 
 特别的，如果多个本应独立的序列被拼接在一起时，transformer 可以用 attention mask 来分隔，而 LTI 的 SSM 没法区分。而在 mamba 中，则可以令 $\Delta$ 取很大值来隔离不同序列（对应 paper 的 Boundary Resetting 一小节）。
+
+**关于 work-efficient parallel scan algorithm 加速 selective SSM**
+
+这种算法即 Parallel scan。又称为并行前缀和（parallel prefix sum），通俗说，要解决的问题是：已知数量 {$a_n$}, 需要求出前缀和数列 {$b_n$}, 其中 $b_n = \sum_0^n a_i$。(那么就是 torch.cumsum=cumulative sum 问题了）。
+
+当然实际上不只是前缀和，而是某一类问题，前缀和只是其一。它解决的一类问题是：对 f1∘f2∘f3∘..fn(x) 函数嵌套【∘定义为：f∘g(x)=f(g(x)】，如果相邻函数可以结合，即可以 (f1∘f2)∘(f3∘f4)..，则可以并行地把先把结合函数算出，从而递归并行加速。也就是，它其实是逐次的对函数式的归并。
+
+Blelloch scan 乃 Parallel scan 算法之一种。它保持计算量基本不变（相比串行），而运行时间是 O(n) => O(log n)。分两阶段进行：
+- Up-sweep（Reduce）阶段：构建一棵二叉树，从底向上归约，最终在根节点得到全局和。这个阶段目的是让每个节点都能获得其子树的和。
+- Down-sweep 阶段：从树根向下进行，传播和分配前缀值。这样每个节点最终得到其前缀和。
+
+对于 selective SSM, 为啥可用 Parallel scan?
+
+selective SSM 的 hidden 更新式子可以写成 
+
+$$h_t = M_t(h_{t-1}) = A_t h_{t-1} + u_t \quad \text{其中} \quad u_t = B_t x_t$$
+
+若令 $(A_t, u_t)$ 表示更新映射，即定义 $(A_t, u_t)(x) := A_t x + u_t$ , 则可以验证有：
+
+$$
+(A_2, u_2) \circ (A_1, u_1) = (A_2 A_1, A_2 u_1 + u_2)
+$$
+
+因此它是满足上面说的 f1∘f2∘f3∘..fn(x) == (f1∘f2)∘(f3∘f4)..fn(x) 的结合性的。从而可以并行递归加速计算。
+
+关于前缀和：https://arxiv.org/pdf/2312.06635 《GLA-gated linear attention》，再参考： https://zhuanlan.zhihu.com/p/1929192016195089740 

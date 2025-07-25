@@ -288,7 +288,9 @@ mamba 包括几方面：一是对 SSM 的改进，二是基于改进的 SSM 而�
 
 <img width="1662" height="510" alt="image" src="https://github.com/user-attachments/assets/21e093d5-d254-46b6-bf50-e6fe70640c7b" />
 
-为什么有上面的改进：为了解决传统 LTI SSM 无法进行“内容选择”的问题，即不能根据输入内容来选择性处理信息，无法“忽略无关信息”或“在特定时刻记住关键内容”。是为了解决传统 SSM 模型缺乏“输入依赖”和“内容选择能力”的根本缺陷而提出的。
+为什么有上面的改进：为了解决传统 LTI SSM 无法进行“内容选择”的问题，即不能根据输入内容来选择性处理信息，无法“忽略无关信息”或“在特定时刻记住关键内容”。是为了解决传统 SSM 模型缺乏“输入依赖”和“内容选择能力”的根本缺陷而提出的。用原文说，它的好处是：
+
+> the most important property of selectivity is filtering out irrelevant information so that a sequence model’s context can be compressed into an efficient state. 
 
 paper 把它的 SSM 改进结构叫做 S6，是因为：能力上，有序列内的空间感知能力的加强（selective）， 同时有 parallel scan 这样的前缀和的加速算法等一系列计算优化来保证性能（即文中所谓 selective scan）。从而增加两个 S。【原文：被叫 S6 because they are S4 models with a selection mechanism and computed with a scan】
 
@@ -414,7 +416,7 @@ h_t = (1 - g_t) h_{t-1} + g_t x_t$$
 
 而这显然需要在 $h_t = A_d h_{t-1} + B_d x_t$, $A_d = \exp(\Delta A)$ 式中矩阵 A 的取值要配合（比如如 theorem 1， A=-1）。
 
-但是矩阵 A 是可训参数，并没法控制它是负的。若正，则 $\Delta \rightarrow \infty$ 时，反而让之前状态最大化了。对此，model的处理方式是 3.6 节的特别参数初始化，也及时初始化为负：
+但是矩阵 A 是可训参数，并没法控制它是负的。若正，则 $\Delta \rightarrow \infty$ 时，反而让之前状态最大化了。对此，model 的处理方式是 3.6 节的特别参数初始化，即初始化为负（但是最终训出的参数并不能保证一定负）：
 
 <img width="1004" height="132" alt="image" src="https://github.com/user-attachments/assets/ac46142b-247e-4aa8-90a7-871619719e91" />
 

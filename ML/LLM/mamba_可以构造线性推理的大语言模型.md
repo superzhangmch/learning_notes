@@ -44,18 +44,6 @@ A、B、C、D 都是 constant 的（这叫 Linear Time Invariance (LTI)，时间
 
 note：假设 SSD hidden state 维度是 m，则 $A \in \mathbb{R}^{m x m}$, B、C $\in \mathbb{R}^{m}$， 而 y_t 就是两个 m 维向量的向量积。
 
-**和 RNN 的区别：RNN vs SSM:**
-
-| 维度         | RNN（Recurrent Neural Network）                  | SSM（State Space Model）         |
-| ---------- | ---------------------------------------------- | ------------------------------ |
-| 状态更新公式 | $h_t = \tanh(W_{xh}x_t + W_{hh}h_{t-1} + b_h)$ | $x_{t+1} = A x_t + B u_t$      |
-| 输出公式   | $y_t = W_{hy} h_t + b_y$                       | $y_t = C x_t + D u_t$          |
-| 输入维度     | 输入是向量 $x_t \in \mathbb{R}^n$，一次处理多个维度 | 通常 $u_t \in \mathbb{R}$，按维推理或建模 | 
-| 激活函数   | 非线性（如 tanh, ReLU）                              | 一般为线性（线性系统建模）                  |
-
-RNN 一次对 input 的多个维度建模，而 SSM 一次建模一个维度（所以使用 RNN 的模型的 hidden dim 远小于使用 SSM 的模型的总 hidden dim）。两者的参数矩阵都是时间无关的。
-
-
 **(3)、方程求解**
 
 对于上面的一阶线性常系数微分方程，用解微分方程的常规做法，可以从数学上解出（AI 给出）： 
@@ -74,11 +62,11 @@ $$y_t = \int_0^t [C e^{A(t−τ)} B] \cdot u(τ) dτ = \int_0^t K(t−τ) u(τ) 
 
 **（1）、离散化**
 
-对上面的连续取值的微分方程 $\frac {d x(t)}{dt} = A x_t + B u_t$, 可以离散化的，比如 euler 方法。
+对上面的连续取值的微分方程 $\frac {d x(t)}{dt} = A x_t + B u_t$, 可以离散化的（离散成差分方程），比如 euler 方法。
 
-而 SSM 常用的方法叫 ZOH 法（Zero-Order Hold），做法大约为：对 input u, 把时间平均切分成一段一段，每一小段的取值等于小段起始点的取值 u_t。
+而 SSM 常用的方法叫 ZOH 法（Zero-Order Hold），做法大约为：对 input u 把时间 t 平均切分成一段一段，令每一小段内的取值都等于小段起始点的取值 u_t（从而光滑连续信号变成了阶梯连续信号）。在这阶梯信号 u_t 下，原方程仍然有效，其解仍是前述形式（若 u_t 是某种极其不规则的不连续态，并不能这样做。u_t 为阶梯函数，则还可以）。于是对跳变点{u_t}, 代入解公式得到{x_t}, 就可以得到离散化式子了。
 
-在离散化的 u_t 基础上得到, 用上文的精确解, 即可得到离散化的 y_t 了:
+具体说来：
 
 假设相邻时间离散点的时间差是 Δ， 把 s=t-Δ 代入精确解析解有：
 
@@ -100,6 +88,17 @@ $$
 <img width="1024" alt="image" src="https://github.com/user-attachments/assets/778543b1-8278-4cb8-b997-3020aa7ba7b5" />
 
 note： $\bar{A} \in \mathbb{R}^{m x m}$, $\bar{B} \in \mathbb{R}^{m}$
+
+**和 RNN 的区别：RNN vs SSM:**
+
+| 维度         | RNN（Recurrent Neural Network）                  | SSM（State Space Model）         |
+| ---------- | ---------------------------------------------- | ------------------------------ |
+| 状态更新公式 | $h_t = \tanh(W_{xh}x_t + W_{hh}h_{t-1} + b_h)$ | $x_{t+1} = A x_t + B u_t$      |
+| 输出公式   | $y_t = W_{hy} h_t + b_y$                       | $y_t = C x_t + D u_t$          |
+| 输入维度     | 输入是向量 $x_t \in \mathbb{R}^n$，一次处理多个维度 | 通常 $u_t \in \mathbb{R}$，按维推理或建模 | 
+| 激活函数   | 非线性（如 tanh, ReLU）                              | 一般为线性（线性系统建模）                  |
+
+RNN 一次对 input 的多个维度建模，而 SSM 一次建模一个维度（所以使用 RNN 的模型的 hidden dim 远小于使用 SSM 的模型的总 hidden dim）。两者的参数矩阵都是时间无关的。
 
 **（2）、转为卷积**
 

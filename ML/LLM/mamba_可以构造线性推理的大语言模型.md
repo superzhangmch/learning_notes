@@ -100,6 +100,8 @@ note： $\bar{A} \in \mathbb{R}^{m x m}$, $\bar{B} \in \mathbb{R}^{m}$
 
 RNN 一次对 input 的多个维度建模，而 SSM 一次建模一个维度（所以使用 RNN 的模型的 hidden dim 远小于使用 SSM 的模型的总 hidden dim）。两者的参数矩阵都是时间无关的。
 
+广义地说，RNN 本质是有 hidden state 传递，SSM 也是 RNN。这里 RNN 指的一般人心目中那种 RNN。
+
 **（2）、转为卷积**
 
 根据上面的递推公式，逐个展开有：

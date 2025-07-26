@@ -209,21 +209,19 @@ results = torch.pow(a, powers) # 并行一次算出 [a^1, a^2, a^3, ..., a^100]
 
 H3 乃基于 S4 的优化, 不过不再是简单的一个 SSM，而是包含两个 SSM。它的典型用法也是替换 transformer 中的 attention 模块。
 
+<img width="968" height="878" alt="image" src="https://github.com/user-attachments/assets/a78a3b08-43cd-4cd5-8e55-3529579e255c" />
+
 **它诞生的 High-level Intuition：**
 - SSM 记忆能力不足：不能有效“回忆”序列中早期的 token，为此引入了 Shift SSM 
 - S4 不能像 attention 那样“比较不同位置之间 token”(To compare tokens across the sequence)，为此结构总用 pointwise 乘法
 - 从 linear attn 获得灵感，因此采用和它类似的流程：linear attn 乃 softmax attn 的一种优化，所以是 QKV 结构的，只是计算时先结合 KV 成 Q(K'V）
   - 于是 H3 也是分出了 QKV 并大约这样形式： $Q \cdot SSM_{diag}(SSM_{shift}(K) \cdot V)$
 
-<img width="968" height="878" alt="image" src="https://github.com/user-attachments/assets/a78a3b08-43cd-4cd5-8e55-3529579e255c" />
-
 **H3 的两个 SSM：**
 
-diag SSM 与 shift SSM，都是 S4 SSM 风格的，也就是乃 1d 卷积形式，可以用 FFT 加速。不过在矩阵选取上比 S4 还简单。
+diag SSM 是 S4 SSM 风格的，也就是乃卷积模式的，可以用 FFT 加速训练。不过在矩阵选取上比 S4 还简单，A矩阵是完全的对角形式（故只有 m 个参数），从而 A^n 计算极其简单。
 
-diag SSM：A矩阵是完全的对角形式（故只有 m 个参数），从而 A^n 计算极其简单。
-
-shift-SSM 的 A B C 特殊选择使得它其实就是一个 1d conv，所以在《mamba》paper 的配图中，直接用 conv 来表示：
+而 shift-SSM 的 A B C 特殊选择使得它其实就是一个CNN卷积那样的 1d conv，所以在《mamba》paper 的配图中，直接用 conv 来表示：
 
 <img width="894" height="808" alt="image" src="https://github.com/user-attachments/assets/89163445-410c-4e69-93fb-f17df4143c48" />
 

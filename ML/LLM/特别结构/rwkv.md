@@ -55,7 +55,8 @@ $$WKV_t = \frac{[\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i} \odot v_i] + e^{u + k_t} \
 
 wkv_t 计算中，以及 $\sigma(r_t)\odot wkv_t$ 中，都是维度独立进行的。这种方式，paper 中说是受了 AFT（attention-free-transformer）启发。
 
-要用 e^(..) 是为了保证 v_i 的权重非负，乃继承自 AFT 的做法。
+要用 e^(..) 是为了保证 v_i 的权重非负，乃继承自 AFT 的做法。另据paper，这个 e^(..) 还有稳定训练时梯度的功效：
+> This model uses a unique attention-like score update process, which includes a time-dependent softmax operation improving numerical stability and mitigating vanishing gradients (for rigorous proof, see Appendix H). It ensures that the gradient is propagated along the most relevant path.
 
 **（2）WKV_t 中 u 的作用**
 
@@ -174,8 +175,11 @@ $$
 
 计算量：
 
-设序列长度=T，每个 token 的维度=d，每个桶的大小=b，总桶数 B = T / b，每个桶作标准Attention计算计算量是 $O(b^2 d)$， B 个桶总共 $B*O(b^2 d)=O(Tbd)$，但是为了作 LSH，需要先对 T 长序列做排序，耗时是 $O(T \log(T))$
-...
+设序列长度=T，每个 token 的维度=d，每个桶的大小=b，总桶数 B = T / b，每个桶作标准Attention计算计算量是 $O(b^2 d)$， B 个桶总共 $B*O(b^2 d)=O(Tbd)$。
+
+但是为了作 LSH，需要先对 T 长序列做排序，耗时是 $O(T \log(T))$。注意在排序时比较的并不是原始的 d 维向量，而是它们的哈希码——一串长度很短（几十到上百 bit）的二进制签名，或直接把这串 bit 当成一个整数。所以耗时是 $O(T \log(T))$ 不是 $O(T \log(T) d)$
+
+表格中计算量 $O(T \log(T) d)$ 不知道怎么算出的。
 
 **Linear Transformer：**
 
@@ -202,29 +206,20 @@ Performer 与 Linear Transformer 公式类似，对比如下：
 | 效果           | 稳定、简单实现，速度快        | 精度高，拟合 softmax 更好        |
 | 复杂度          | $O(T d^2)$         | $O(T d^2 \log d)$（因映射成本） |
 
-
-### 训练的一些要点
+### 训练的一些点
 
 paper 3.4 节：
 - Custom CUDA Kernel：RWKV 为核心 WKV 操作实现了自定义 CUDA kernel，大幅提升了训练和推理效率。
 - Small Init Embedding + LayerNorm：使用小值初始化 embedding，并加入额外 LayerNorm，帮助模型更快脱离初始状态、加速收敛。
 - Custom Initialization：采用近似恒等映射的初始化方式，大部分权重初始化为零，增强深层网络的训练稳定性和梯度流动。
 
-hidden state dim：
-并行train：
-梯度稳定性：
+并行 train：如上所说，paper 提到可用，但没用 parallel scan。线性 RNN 可用 parallel scan：见 https://arxiv.org/pdf/1709.04057 《PARALLELIZING LINEAR RECURRENT NEURAL NETS OVER SEQUENCE LENGTH》。
 
 ----
 
 ## AFT
 
 AFT： https://arxiv.org/pdf/2105.14103 《An Attention Free Transformer》
-
-----
-
-## 线性 rnn 用 parallel scan 并行加速计算：
-
-https://arxiv.org/pdf/1709.04057 《PARALLELIZING LINEAR RECURRENT NEURAL NETS OVER SEQUENCE LENGTH》
 
 ----
 

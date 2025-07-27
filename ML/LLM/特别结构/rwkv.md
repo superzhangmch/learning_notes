@@ -28,15 +28,19 @@ RWKV 设计上想集 rnn 与 transformer 两家之长，且避两家之短：通
 
 不考虑 token-shift 的 rwkv block 详情如下：
 
-<img width="1328" height="1064" alt="image" src="https://github.com/user-attachments/assets/8a763bd0-a85d-44f1-a374-765e1fe7ccce" />
+<img width="1290" height="976" alt="image" src="https://github.com/user-attachments/assets/279aada5-1009-4e4a-8372-562b7a66d9d1" />
 
 **channel-mixing：**
 
-对 channel-mixing： 若定义激活函数 $\text{maxAct}(x) = max(x^2, 0)$, 则 channel-mix 中的 k'-v' 那一分支就是 
+对 channel-mixing： 若定义激活函数 $\text{maxAct}(x) = max(x^2, 0)$, 则图中 channel-mix 中的 K'-K' 那一分支就是 
 
 $$W'_v \cdot \text{maxAct}(W'_k \cdot x_t)$$
 
-这和 FFN 的公式是一样的【 $\text{FFN}(x) = W_2 \cdot \phi(W_1 \cdot x) + b_2$，比如 $\text{FFN}(x) = W_2 \cdot \text{ReLU}(W_1 \cdot x)$ 】，所以说 channel-mix 算是 FFN。
+且 $W'_k$ 把维度升4倍，而 $W'_v$ 又降4倍回原位，整体上和 transformer 的 FFN 的公式是一样的【 $\text{FFN}(x) = W_2 \cdot \phi(W_1 \cdot x) + b_2$，比如 $\text{FFN}(x) = W_2 \cdot \text{ReLU}(W_1 \cdot x)$ 】，所以说 channel-mix 算是 FFN。
+
+关于升4倍降4倍：paper 中没提到，但是代码中有： https://github.com/BlinkDL/RWKV-LM/blob/main/RWKV-v4/src/model.py :
+
+<img width="1086" height="214" alt="image" src="https://github.com/user-attachments/assets/29a320eb-af71-4c61-a5cf-89dfa71b68db" />
 
 **time-mixing：**
 
@@ -90,16 +94,39 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
 
 <img width="1478" height="1064" alt="image" src="https://github.com/user-attachments/assets/4aac82fd-368d-4ce4-bff8-d6d180623c79" />
 
-### 计算资源占用
+### 参数量、计算量等
 
-训练时 forward 计算量是： 
-- r/k/v/o 矩阵操作 O(batch_size * seq_len * hidden_dim^2)
-- WKV_t(.) 沿着时间按顺序展开，计算量是 O(batch_size * seq_len * hidden_dim）。
-  - 可以用 parallel scan 加速，从而 O(batch_size * log(seq_len) * hidden_dim)，作者提到可用但还没用（mamba 即用到了 parallel scan）
+**参数量：**
+
+参数量 = 2 V D + 13 L D^2 + D(11L + 4), D=hidden_dim, V=词表大小，L=层数
+- 2VD: embedding，output_proj 共两个故维 2VD
+- 每个 rwkv block：13 D^2:
+  - time-mixing: R/K/V/Output 共四个 proj，每个维 D^2，共 4D^2
+  - channel-mixing: R'=D^2, K'=4D^2, V'=4D^2, 共 9D^2
+  - 所以总共维 13D^2
+- D(11L + 4)
+  - 11D*L: 每个 rwkv block 的 11D 怎么来：
+    - 有两个 layerNorm，每个 layer Norm 共有γ,β 参数共2D *2 = 4D
+    - time-mixing 的 token-shift 对 r/k/v 共有 3D 参数
+    - channel-mixing 的 token-shift 对 r'/k' 共有 2D 参数
+    - WKV_t(.) 计算中有 w, u 两个参数向量共 2D 参数
+    - 以上共 11 D
+  - 4D 哪里来：rwkv blocks 以外，在入口 emb 处，以及出口处，还有两个 layerNorm, 共 4D 参数
+
+<img width="1028" height="1144" alt="image" src="https://github.com/user-attachments/assets/7db4863b-a586-4cc2-95dd-78bb3806a61c" />
+
+**计算量：**
+
+训练时forward 计算量是： B=batch_size
+- r/k/v/o 矩阵操作 O(B * L * D^2)
+- WKV_t(.) 沿着时间按顺序展开，计算量是 O(B * L * D）。
+  - 可以用 parallel scan 加速，从而 O(B * log(L) * D)，作者提到可用但还没用（mamba 即用到了 parallel scan）
   - note：rwkv 算一种 RNN，但是 
-    - 一般 RNN 计算量一般是 O(batch_size * seq_len * hidden_dim^2), 这是因为 WKV(.) 是在每维上独立进行的，没有矩阵运算。而 rnn $h_t = \tanh(W_{xh} x_t + W_{hh} h_{t-1} + b$ 有跨纬的矩阵计算
+    - 一般 RNN 计算量一般是 O(B * L * D^2), 这是因为 WKV(.) 是在每维上独立进行的，没有矩阵运算。而 rnn $h_t = \tanh(W_{xh} x_t + W_{hh} h_{t-1} + b$ 有跨纬的矩阵计算
       - 另外，mamba 也是每一维对应一个 SSM，每维独立计算的
     - WKV(.) 可以 parallel scan 并行，而一般 RNN 不行。因为 RNN 不是线性的，展开后不满足 parallel scan 的条件
+
+具体可算得，包括2倍于forward 的backword 后，总train 计算量是 6(2V D + 13D2L)，满足 FLOPS = 6 * parameters_cnt。而标准 transformer 也是这样的关系。
 
 inference 时，逐步递归算即可。计算量与存储占用都是 constant 的：
 
@@ -115,9 +142,13 @@ WKV_t &= \dfrac{a_{t-1} + e^{u + k_t} \odot v_t}{b_{t-1} + e^{u + k_t}} \\
 \end{cases}
 $$
 
+### 训练的一些要点（paper 3.4 节）
 
-
+- Custom CUDA Kernel：RWKV 为核心 WKV 操作实现了自定义 CUDA kernel，大幅提升了训练和推理效率。
+- Small Init Embedding + LayerNorm：使用小值初始化 embedding，并加入额外 LayerNorm，帮助模型更快脱离初始状态、加速收敛。
+- Custom Initialization：采用近似恒等映射的初始化方式，大部分权重初始化为零，增强深层网络的训练稳定性和梯度流动。
 
 
 hidden state dim：
 并行train：
+梯度稳定性：

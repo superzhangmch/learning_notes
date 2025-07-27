@@ -38,6 +38,7 @@ $$W'_v \cdot \text{maxAct}(W'_k \cdot x_t)$$
 
 **time-mixing：**
 
+**（1）WKV_t 公式解释**
 时间 t 时的 wkv_t 的原始公式是：
 
 $$WKV_t = \frac{[\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i} \odot v_i] + e^{u + k_t} \odot v_t} {[\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i}] + e^{u + k_t}}$$
@@ -46,6 +47,10 @@ $$WKV_t = \frac{[\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i} \odot v_i] + e^{u + k_t} \
 
 上面 wkv 公式，kᵢ, vᵢ 是d维向量，则分母是 d 维向量，除法定义无意义。所以这个式子只是示意性的，表示每个维度怎么做的（逐维怎么做）。当然也可以把 kᵢ, vᵢ，w，u 重定义理解为就代表d个维度中的某一维度，则式子就数学上成立了。
 
+wkv_t 计算中，以及 $\sigma(r_t)\odot wkv_t$ 中，都是维度独立进行的。这种方式，paper 中说是受了 AFT（attention-free-transformer）启发。
+
+**（2）WKV_t 中 u 的作用**
+
 若对当前位置 t 不想做特殊处理，也就是不需要用 u，则是这样更统一形式的 
 $WKV1_t = \frac{\sum_{i=1}^{t} e^{-(t-1-i)w + k_i} \odot v_i} {\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i}}$
 
@@ -53,15 +58,17 @@ $WKV1_t = \frac{\sum_{i=1}^{t} e^{-(t-1-i)w + k_i} \odot v_i} {\sum_{i=1}^{t-1} 
 
 > To circumvent any potential degradation of W, we introduce a vector U that separately attends to the current token
 
+若不引入 u，即当前 token 也用通用的 $e^{-(t-1-i)w + k_i}$， 则把 i=t 代入 得到 $e^{w + k_i}$。也就是引入 u 只是代替了 w 而已。那么引入 u 就是为了特殊化处理当前 token 了。w 是用于所有历史时间步的，u 专用于当前 token。
+
+**（3）相对位置**
+
 式子中 $-(t-1-i)w$ 乃位置 t 与 i 的差的形式，起到的是相对位置编码的作用。若令 $a_{t,i} = -(t-1-i)w$, 则 $WKV2_t = \frac{\sum_{i=1}^{t} e^{a_{t,i} + k_i} \odot v_i} {\sum_{i=1}^{t-1} e^{a_{t,i} + k_i}}$，更容易看出它想干啥。
 
-这种逐维独立作序列操作，是受 AFT（attention-free-transformer）启发。
+rwkv 是否需要位置编码：可以说 WKV_t 公式中的 $-(t-1-i)w$ 就是相对位置编码，所以不需要额外添加。
+
+**（4）time-mixing 相当于每一维都做 attention**
 
 关于 $\sigma(r_t)\odot wkv_t$： R 就相当于 attention 中的 Q。各维上独立操作的，假设就只一个维度，令 $q_t:= \sigma(r_t) \in \mathbb{R}$, 并用上面 $WKV2_t$ 形式，有 $\sigma(r_t)\cdot wkv_t = q_t \cdot wkv_t = \frac{\sum_{i=1}^{t} (q_t \cdot e^{a_{t,i} + k_i}) \cdot v_i} {\sum_{i=1}^{t-1} e^{a_{t,i} + k_i}}$, 这基本就是 attention 的 $\sum_j sim(q_i, k_j) v_j$ 形式了。所以 rwkv 的 time-mixing，约等于是每个维度上的 attention。
-
-是否需要位置编码：
-hidden state dim：
-并行train：
 
 **token shift：**
 
@@ -79,4 +86,8 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
 
 <img width="1478" height="1064" alt="image" src="https://github.com/user-attachments/assets/4aac82fd-368d-4ce4-bff8-d6d180623c79" />
 
+####
 
+
+hidden state dim：
+并行train：

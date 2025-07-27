@@ -232,4 +232,4 @@ rwkv 架构演进历史（来自其官网）： https://rwkv.cn/docs/RWKV-Wiki/R
   - 而 RWKV-V5 则将 u、w、k、v 分割成一组组维度为 64 向量， 每一组 k和  v 通过外积交织相乘成为一个 64 × 64 的矩阵，即 state 的一个头（head）。 Head size 是固定的 64
 - rwkv-v6: 引入了基于 LoRA 的动态递归机制，优化了 Token Shift 和 time-mixing 过程(二者都用了 lora机制）
 - rwkv-v7: RWKV-V7 不直接存储 k-v 对，而是通过动态计算更新 state，从上下文动态学习 key 和 value 之间的关系，再使用更新后的 state 处理新的输入 q（在 RWKV 中是 r ） 并得到输出。
-
+  - 模型拥有一个内部模型 v ≈ k S^⊤。它需要拟合一个简单的目标：对于给定的两个向量序列 k_t  和 v_t，通过 S(state）把 k_i 转化为 v_i，输出的 v 需要和目标的 v 尽量接近。

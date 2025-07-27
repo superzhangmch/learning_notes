@@ -96,7 +96,7 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
 
 ### 参数量、计算量等
 
-**参数量：**
+**(1）、参数量：**
 
 参数量 = 2 V D + 13 L D^2 + D(11L + 4), D=hidden_dim, V=词表大小，L=层数
 - 2VD: embedding，output_proj 共两个故维 2VD
@@ -115,7 +115,17 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
 
 <img width="1028" height="1144" alt="image" src="https://github.com/user-attachments/assets/7db4863b-a586-4cc2-95dd-78bb3806a61c" />
 
-**计算量：**
+下面是作者实际训得几个模型的参数：
+
+<img width="1054" height="580" alt="image" src="https://github.com/user-attachments/assets/0de9250f-eac7-40c9-8cfb-b133cd2ca6f1" />
+
+注意，它的 state dim 比较小。据rwkv 官网说：
+
+>RWKV-V4 版本的一大特点是 state（RNN 的隐藏状态）非常小，这是因为彭博专注于在“最小的 state 下实现最大的性能”。
+
+**（2）、计算量：**
+
+**train：**
 
 训练时forward 计算量是： B=batch_size
 - r/k/v/o 矩阵操作 O(B * L * D^2)
@@ -127,6 +137,8 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
     - WKV(.) 可以 parallel scan 并行，而一般 RNN 不行。因为 RNN 不是线性的，展开后不满足 parallel scan 的条件
 
 具体可算得，包括2倍于forward 的backword 后，总train 计算量是 6(2V D + 13D2L)，满足 FLOPS = 6 * parameters_cnt。而标准 transformer 也是这样的关系。
+
+**inference：**
 
 inference 时，逐步递归算即可。计算量与存储占用都是 constant 的：
 
@@ -142,13 +154,34 @@ WKV_t &= \dfrac{a_{t-1} + e^{u + k_t} \odot v_t}{b_{t-1} + e^{u + k_t}} \\
 \end{cases}
 $$
 
-### 训练的一些要点（paper 3.4 节）
+**（3）、和其他 model 比较**
 
+<img width="932" height="752" alt="image" src="https://github.com/user-attachments/assets/d09bf082-79ed-41e6-bd71-e3a707f0d0ec" />
+
+### 训练的一些要点
+
+paper 3.4 节：
 - Custom CUDA Kernel：RWKV 为核心 WKV 操作实现了自定义 CUDA kernel，大幅提升了训练和推理效率。
 - Small Init Embedding + LayerNorm：使用小值初始化 embedding，并加入额外 LayerNorm，帮助模型更快脱离初始状态、加速收敛。
 - Custom Initialization：采用近似恒等映射的初始化方式，大部分权重初始化为零，增强深层网络的训练稳定性和梯度流动。
 
-
 hidden state dim：
 并行train：
 梯度稳定性：
+
+----
+
+## AFT
+
+AFT： https://arxiv.org/pdf/2105.14103 《An Attention Free Transformer》
+
+----
+
+## 线性 rnn 用 parallel scan 并行加速计算：
+
+https://arxiv.org/pdf/1709.04057 《PARALLELIZING LINEAR RECURRENT NEURAL NETS OVER SEQUENCE LENGTH》
+
+----
+
+## rwkv 的其他版本有啥演进
+

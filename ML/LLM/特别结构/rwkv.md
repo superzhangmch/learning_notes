@@ -113,9 +113,9 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
     - 以上共 11 D
   - 4D 哪里来：rwkv blocks 以外，在入口 emb 处，以及出口处，还有两个 layerNorm, 共 4D 参数
 
-<img width="1028" height="1144" alt="image" src="https://github.com/user-attachments/assets/7db4863b-a586-4cc2-95dd-78bb3806a61c" />
+<img width="1064" height="1166" alt="image" src="https://github.com/user-attachments/assets/481cee46-10bd-4576-aabc-22fc09bf704c" />
 
-下面是作者实际训得几个模型的参数：
+下面是作者实际训的几个模型的参数：
 
 <img width="1054" height="580" alt="image" src="https://github.com/user-attachments/assets/0de9250f-eac7-40c9-8cfb-b133cd2ca6f1" />
 

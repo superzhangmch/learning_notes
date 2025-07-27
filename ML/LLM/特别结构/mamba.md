@@ -446,4 +446,10 @@ $$
 
 因此它是满足上面说的 f1∘f2∘f3∘..fn(x) == (f1∘f2)∘(f3∘f4)..fn(x) 的结合性的。从而可以并行递归加速计算。
 
-关于前缀和：https://arxiv.org/pdf/2312.06635 《GLA-gated linear attention》，再参考： https://zhuanlan.zhihu.com/p/1929192016195089740 
+selective SSM 可以用 parallel scan，在于它内部是线性的（都没激活函数），从而可以展开成适合 parallel scan 的形式。
+
+RNN 若成linear RNN，也是可以parallel scan 的（ https://arxiv.org/pdf/1709.04057 《PARALLELIZING LINEAR RECURRENT NEURAL NETS OVER SEQUENCE LENGTH》）
+
+参考：
+- https://arxiv.org/pdf/2312.06635 《GLA-gated linear attention》
+- https://zhuanlan.zhihu.com/p/1929192016195089740 

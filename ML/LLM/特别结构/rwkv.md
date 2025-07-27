@@ -16,6 +16,8 @@ RWKV=Receptance Weighted Key Value。如下图有 R W K V 出现，所以叫 RWK
 
 ### RWKV 结构啥样
 
+RWKV 设计上想集 rnn 与 transformer 两家之长，且避两家之短：通过重构注意力机制(引入时间衰减和递归状态更新)，使得模型在训练时像 Transformer 一样高效并行，在推理时又像 RNN 一样内存和计算代价低(常数开销，而非线性增长），同时保留良好的上下文建模能力。
+
 如下图右，多个 rwkv block 上下 stack 后，底部是 token，顶部是 softmax，就可以作 transformer 那样的自回归语言模型了。
 
 而每个 rwkv block 由两部分组成（下图左）： time-mixing 与 channel-mixing。
@@ -49,6 +51,8 @@ $$WKV_t = \frac{[\sum_{i=1}^{t-1} e^{-(t-1-i)w + k_i} \odot v_i] + e^{u + k_t} \
 
 wkv_t 计算中，以及 $\sigma(r_t)\odot wkv_t$ 中，都是维度独立进行的。这种方式，paper 中说是受了 AFT（attention-free-transformer）启发。
 
+要用 e^(..) 是为了保证 v_i 的权重非负，乃继承自 AFT 的做法。
+
 **（2）WKV_t 中 u 的作用**
 
 若对当前位置 t 不想做特殊处理，也就是不需要用 u，则是这样更统一形式的 
@@ -66,9 +70,9 @@ $WKV1_t = \frac{\sum_{i=1}^{t} e^{-(t-1-i)w + k_i} \odot v_i} {\sum_{i=1}^{t-1} 
 
 rwkv 是否需要位置编码：可以说 WKV_t 公式中的 $-(t-1-i)w$ 就是相对位置编码，所以不需要额外添加。
 
-**（4）time-mixing 相当于每一维都做 attention**
+**（4）time-mixing 相当于每一维都做 linear attention**
 
-关于 $\sigma(r_t)\odot wkv_t$： R 就相当于 attention 中的 Q。各维上独立操作的，假设就只一个维度，令 $q_t:= \sigma(r_t) \in \mathbb{R}$, 并用上面 $WKV2_t$ 形式，有 $\sigma(r_t)\cdot wkv_t = q_t \cdot wkv_t = \frac{\sum_{i=1}^{t} (q_t \cdot e^{a_{t,i} + k_i}) \cdot v_i} {\sum_{i=1}^{t-1} e^{a_{t,i} + k_i}}$, 这基本就是 attention 的 $\sum_j sim(q_i, k_j) v_j$ 形式了。所以 rwkv 的 time-mixing，约等于是每个维度上的 attention。
+关于 $\sigma(r_t)\odot wkv_t$： R 像是 attention 中的 Q 角色。鉴于是各维是独立操作的，假设 hidden 只一个维度，令 $q_t:= \sigma(r_t) \in \mathbb{R}$, 并用上面 $WKV2_t$ 形式，有 $\sigma(r_t)\cdot wkv_t = q_t \cdot wkv_t = \frac{\sum_{i=1}^{t} (q_t \cdot e^{a_{t,i} + k_i}) \cdot v_i} {\sum_{i=1}^{t-1} e^{a_{t,i} + k_i}}$, 这基本就是 attention 的 $\sum_j sim(q_i, k_j) v_j$ 形式了。所以 rwkv 的 time-mixing，约等于是每个维度上的 linear attention，而这又相当于 multi-head attn，head_dim=1。
 
 **token shift：**
 
@@ -86,7 +90,33 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
 
 <img width="1478" height="1064" alt="image" src="https://github.com/user-attachments/assets/4aac82fd-368d-4ce4-bff8-d6d180623c79" />
 
-####
+### 计算资源占用
+
+训练时 forward 计算量是： 
+- r/k/v/o 矩阵操作 O(batch_size * seq_len * hidden_dim^2)
+- WKV_t(.) 沿着时间按顺序展开，计算量是 O(batch_size * seq_len * hidden_dim）。
+  - 可以用 parallel scan 加速，从而 O(batch_size * log(seq_len) * hidden_dim)，作者提到可用但还没用（mamba 即用到了 parallel scan）
+  - note：rwkv 算一种 RNN，但是 
+    - 一般 RNN 计算量一般是 O(batch_size * seq_len * hidden_dim^2), 这是因为 WKV(.) 是在每维上独立进行的，没有矩阵运算。而 rnn $h_t = \tanh(W_{xh} x_t + W_{hh} h_{t-1} + b$ 有跨纬的矩阵计算
+      - 另外，mamba 也是每一维对应一个 SSM，每维独立计算的
+    - WKV(.) 可以 parallel scan 并行，而一般 RNN 不行。因为 RNN 不是线性的，展开后不满足 parallel scan 的条件
+
+inference 时，逐步递归算即可。计算量与存储占用都是 constant 的：
+
+WKV 计算递归式为（为防 overflow，实际上需要是下面的一种变体，详见 paper）：
+
+$$
+\begin{cases}
+a_0 &= 0 \\
+b_0 &= 0 \\
+a_t &= e^{-w} \odot a_{t-1} + e^{k_t} \odot v_t \\
+b_t &= e^{-w} \odot b_{t-1} + e^{k_t} \\
+WKV_t &= \dfrac{a_{t-1} + e^{u + k_t} \odot v_t}{b_{t-1} + e^{u + k_t}} \\
+\end{cases}
+$$
+
+
+
 
 
 hidden state dim：

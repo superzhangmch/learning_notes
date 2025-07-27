@@ -58,6 +58,12 @@ wkv_t 计算中，以及 $\sigma(r_t)\odot wkv_t$ 中，都是维度独立进行
 要用 e^(..) 是为了保证 v_i 的权重非负，乃继承自 AFT 的做法。另据paper，这个 e^(..) 还有稳定训练时梯度的功效：
 > This model uses a unique attention-like score update process, which includes a time-dependent softmax operation improving numerical stability and mitigating vanishing gradients (for rigorous proof, see Appendix H). It ensures that the gradient is propagated along the most relevant path.
 
+《AFT：An Attention Free Transformer》 - https://arxiv.org/pdf/2105.14103 ：
+
+<img width="1110" height="600" alt="image" src="https://github.com/user-attachments/assets/d6f97c73-2255-4f3d-a4d1-34c5999a798c" />
+
+> 《AFT》：In this rearranged form, we are able to express AFT in terms of attention again. 。。。 In other words, AFT can be interpreted as performing implicit attention with as many heads as feature dimensions, where the attention matrices take a factorized form.
+
 **（2）WKV_t 中 u 的作用**
 
 若对当前位置 t 不想做特殊处理，也就是不需要用 u，则是这样更统一形式的 
@@ -159,7 +165,7 @@ $$
 
 <img width="932" height="752" alt="image" src="https://github.com/user-attachments/assets/d09bf082-79ed-41e6-bd71-e3a707f0d0ec" />
 
-其他几种 transformer 变种简介如下（AI总结）：
+这表来自《AFT》paper，追加了 rwkv。其他几种 transformer 变种简介如下（AI总结）：
 
 **reformer：**
 
@@ -214,12 +220,6 @@ paper 3.4 节：
 - Custom Initialization：采用近似恒等映射的初始化方式，大部分权重初始化为零，增强深层网络的训练稳定性和梯度流动。
 
 并行 train：如上所说，paper 提到可用，但没用 parallel scan。线性 RNN 可用 parallel scan：见 https://arxiv.org/pdf/1709.04057 《PARALLELIZING LINEAR RECURRENT NEURAL NETS OVER SEQUENCE LENGTH》。
-
-----
-
-## AFT
-
-AFT： https://arxiv.org/pdf/2105.14103 《An Attention Free Transformer》
 
 ----
 

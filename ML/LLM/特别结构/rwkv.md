@@ -158,6 +158,51 @@ $$
 
 <img width="932" height="752" alt="image" src="https://github.com/user-attachments/assets/d09bf082-79ed-41e6-bd71-e3a707f0d0ec" />
 
+其他几种 transformer 变种简介如下（AI总结）：
+
+**reformer：**
+
+Reformer 的 Attention 用局部敏感哈希（LSH），把相似 Q/K 打到同一个桶内【可以多次哈希（多轮）确保高召回，一般2就可以】，桶内作attn，桶之间不作，从而大大减少计算量：
+
+注意力仅在桶内计算，公式变为：
+
+$$
+\text{Attention}(Q, K, V) \approx \bigcup_{b=1}^{B} \text{softmax}\left( \frac{Q_b K_b^\top}{\sqrt{d}} \right)V_b
+$$
+
+其中 $Q_b, K_b, V_b$ 表示桶 $b$ 内的向量子集。
+
+计算量：
+
+设序列长度=T，每个 token 的维度=d，每个桶的大小=b，总桶数 B = T / b，每个桶作标准Attention计算计算量是 $O(b^2 d)$， B 个桶总共 $B*O(b^2 d)=O(Tbd)$，但是为了作 LSH，需要先对 T 长序列做排序，耗时是 $O(T \log(T))$
+...
+
+**Linear Transformer：**
+
+$$
+\text{Attention}(Q, K, V) = \phi(Q) \cdot (\phi(K)^T V)
+$$
+
+使用固定的核函数 $\phi$，如 ReLU/ELU 变种。
+
+**Performer：**
+
+$$
+\text{Attention}(Q, K, V) \approx \frac{\phi(Q)(\phi(K)^T V)}{\phi(Q)(\phi(K)^T \mathbf{1})}
+$$
+
+这是 softmax(QK^T)V 的核近似，分子和分母都使用随机映射特征 $\phi(\cdot)$。
+
+Performer 与 Linear Transformer 公式类似，对比如下：
+
+| 对比维度         | Linear Transformer | Performer                |
+| ------------ | ------------------ | ------------------------ |
+| 是否逼近 softmax | 否                  | 是                        |
+| $\phi$ 方式    | 显式固定函数             | 随机特征映射                   |
+| 效果           | 稳定、简单实现，速度快        | 精度高，拟合 softmax 更好        |
+| 复杂度          | $O(T d^2)$         | $O(T d^2 \log d)$（因映射成本） |
+
+
 ### 训练的一些要点
 
 paper 3.4 节：

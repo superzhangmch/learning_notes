@@ -2,7 +2,6 @@ rwkv 要多个版本迭代，其第一篇 paper https://arxiv.org/abs/2305.13048
 
 一篇关于它综述： https://arxiv.org/pdf/2411.02795
 
-rwkv 架构历史（来自其官网）： https://rwkv.cn/docs/RWKV-Wiki/RWKV-Architecture
 
 ----
 
@@ -224,4 +223,13 @@ paper 3.4 节：
 ----
 
 ## rwkv 的其他版本有啥演进
+
+rwkv 架构演进历史（来自其官网）： https://rwkv.cn/docs/RWKV-Wiki/RWKV-Architecture 。下面主要摘抄自该网址下：
+
+- rwkv-v5：WKV_t(.) 公式中的分母取消；不再相当于 head_size=1，而是正常分多 heads（即 hidden 由向量=> 矩阵）
+  - 重点改动在于引入了多头的、基于矩阵值的状态（state），即论文中的 “multi-headed matrix-valued states”。
+  - 在 RWKV-V4 架构的 time mixing 计算中， u/w/k/v 参数都是维度为 D 的向量，而 head size 是 1，所计算的 state 也是维度为 D 的向量。
+  - 而 RWKV-V5 则将 u、w、k、v 分割成一组组维度为 64 向量， 每一组 k和  v 通过外积交织相乘成为一个 64 × 64 的矩阵，即 state 的一个头（head）。 Head size 是固定的 64
+- rwkv-v6: 引入了基于 LoRA 的动态递归机制，优化了 Token Shift 和 time-mixing 过程(二者都用了 lora机制）
+- rwkv-v7: RWKV-V7 不直接存储 k-v 对，而是通过动态计算更新 state，从上下文动态学习 key 和 value 之间的关系，再使用更新后的 state 处理新的输入 q（在 RWKV 中是 r ） 并得到输出。
 

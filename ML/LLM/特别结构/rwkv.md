@@ -225,17 +225,29 @@ paper 3.4 节：
 
 ## rwkv 的其他版本有啥演进
 
-rwkv 架构演进历史（来自其官网）： https://rwkv.cn/docs/RWKV-Wiki/RWKV-Architecture 。下面主要摘抄自该网址下：
+rwkv 架构演进历史（来自其官网）： https://rwkv.cn/docs/RWKV-Wiki/RWKV-Architecture 。下面主要摘抄（或改编）自该网址下：
 
 - rwkv-v5：WKV_t(.) 公式中的分母取消；不再相当于 head_size=1，而是正常分多 heads（即 hidden 由向量=> 矩阵）
   - 重点改动在于引入了多头的、基于矩阵值的状态（state），即论文中的 “multi-headed matrix-valued states”。
   - 在 RWKV-V4 架构的 time mixing 计算中， u/w/k/v 参数都是维度为 D 的向量，而 head size 是 1，所计算的 state 也是维度为 D 的向量。
-  - 而 RWKV-V5 则将 u、w、k、v 分割成一组组维度为 64 向量， 每一组 k和  v 通过外积交织相乘成为一个 64 × 64 的矩阵，即 state 的一个头（head）。 Head size 是固定的 64
+  - 而 RWKV-V5 则将 u、w、k、v 分割成一组组维度为 64 向量， 每一组 k和 v 通过外积交织相乘成为一个 64 × 64 的矩阵，即 state 的一个头（head）。 Head size 是固定的 64
+    - u、w 这时成了对角矩阵
 - rwkv-v6: 引入了基于 LoRA 的动态递归机制，优化了 Token Shift 和 time-mixing 过程(二者都用了 lora机制）
+  - 和 v5 一起发布
 - rwkv-v7: RWKV-V7 不直接存储 k-v 对，而是通过动态计算更新 state，从上下文动态学习 key 和 value 之间的关系，再使用更新后的 state 处理新的输入 q（在 RWKV 中是 r ） 并得到输出。
   - 模型拥有一个内部模型 v ≈ k S^⊤。它需要拟合一个简单的目标：对于给定的两个向量序列 k_t  和 v_t，通过 S(state）把 k_i 转化为 v_i，输出的 v 需要和目标的 v 尽量接近。
   - 据rwkv 作者： https://www.zhihu.com/question/668189430/answer/4828165921:
   > 因为从前的 RWKV-1 到 RWKV-6（以及 Mamba1 Mamba2 等等模型）都可以写成 Linear Attention，但是 RWKV-7 就超越了所有 attention 的表达力。
+
+state size 变化：
+
+据 《rwkv-v5-v6》 https://arxiv.org/pdf/2404.05892 ， rwkv-v4 的 hidden state size=5DL， 而 v5-v6 是 66DL，扩大了10倍。那么 5DL，66DL，怎么来的？
+- v5-v6：66DL=2DL+64DL=2DL + (D/h)^2 * h
+  - D=model_dim, h=heads_num, head_dim = 64, 所以 D/h=64。每个 head 的 state_size=(D/h)^2, 乘以 heads 数，故有 64DL
+  - 另外的 2DL 来源和下面 v4 中的 2DL 一样
+- v4： 5DL = 2DL + 3DL，按其上述官网，包括 2DL 的 mixing 和 3DL 的 WKV。那么分别是什么？
+  - 根据 2DL 是 token-shift 的 last_time input, time-mix与channel-mix 各有一个
+  - 另外 3DL： WKV_t(.) 计算中，需要记下截止当前的分子、分母，共 2DL，另外 1DL，据 AI 分析，乃为了记录数值稳定用的 log‑max。不知对否
 
 ----
 

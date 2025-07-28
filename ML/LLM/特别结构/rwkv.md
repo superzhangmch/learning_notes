@@ -1,11 +1,8 @@
-rwkv 要多个版本迭代，其第一篇 paper https://arxiv.org/abs/2305.13048 《RWKV: Reinventing RNNs for the Transformer Era》，是 rwkv-v4 的。
+rwkv 要多个版本迭代，其第一篇 paper https://arxiv.org/abs/2305.13048 《RWKV: Reinventing RNNs for the Transformer Era》，是 rwkv-v4 的。这里重点看下它的 v4。
 
-一篇关于它综述： https://arxiv.org/pdf/2411.02795
-
-
+rwkv 用于语言模型，乃多个 rwkv block 堆叠，下接 embeds 上接 softmax LM 头的结构。rwkv block 内像 transformer 一样，也有建模需要依赖关系的 attention 与提供非线性映射增强表达能力的 ffn 的对应物。不过，它最大亮点还是它的序列建模方式，大约上乃分单维度进行的线性 attention（或说 attn 分 heads，但是每个 head dim=1）。后序版本有各种变化，直到 rwkv-v6 都算(linear) attn 范式。
+ 
 ----
-
-这里重点看下它的 v4，也就是 https://arxiv.org/abs/2305.13048 。
 
 ### RWKV 名字由来
 
@@ -99,6 +96,8 @@ rwkv block 的 time-mix 与 channel-mix 的 input，按说只用接收当前 tok
 具体自回归场景的例子：
 
 <img width="1478" height="1064" alt="image" src="https://github.com/user-attachments/assets/4aac82fd-368d-4ce4-bff8-d6d180623c79" />
+
+time-mix, channel-mix, token-shift 三个，如果用来直接改造 transformer，最自然的当是用 time-mix 代替 attention。
 
 ### 参数量、计算量等
 
@@ -233,3 +232,11 @@ rwkv 架构演进历史（来自其官网）： https://rwkv.cn/docs/RWKV-Wiki/R
 - rwkv-v6: 引入了基于 LoRA 的动态递归机制，优化了 Token Shift 和 time-mixing 过程(二者都用了 lora机制）
 - rwkv-v7: RWKV-V7 不直接存储 k-v 对，而是通过动态计算更新 state，从上下文动态学习 key 和 value 之间的关系，再使用更新后的 state 处理新的输入 q（在 RWKV 中是 r ） 并得到输出。
   - 模型拥有一个内部模型 v ≈ k S^⊤。它需要拟合一个简单的目标：对于给定的两个向量序列 k_t  和 v_t，通过 S(state）把 k_i 转化为 v_i，输出的 v 需要和目标的 v 尽量接近。
+  - 据rwkv 作者： https://www.zhihu.com/question/668189430/answer/4828165921:
+  > 因为从前的 RWKV-1 到 RWKV-6（以及 Mamba1 Mamba2 等等模型）都可以写成 Linear Attention，但是 RWKV-7 就超越了所有 attention 的表达力。
+
+----
+
+其他参考： 
+- 一篇关于它综述： https://arxiv.org/pdf/2411.02795
+

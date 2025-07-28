@@ -1,7 +1,9 @@
-rwkv 要多个版本迭代，其第一篇 paper https://arxiv.org/abs/2305.13048 《RWKV: Reinventing RNNs for the Transformer Era》，是 rwkv-v4 的。这里重点看下它的 v4。
+rwkv 要多个版本迭代，其第一篇 paper 是 RWKV: Reinventing RNNs for the Transformer Era ，是 rwkv-v4 的。这里重点看下它的 v4。
 
-rwkv 用于语言模型，乃多个 rwkv block 堆叠，下接 embeds 上接 softmax LM 头的结构。rwkv block 内像 transformer 一样，也有建模需要依赖关系的 attention 与提供非线性映射增强表达能力的 ffn 的对应物。不过，它最大亮点还是它的序列建模方式，大约上乃分单维度进行的线性 attention（或说 attn 分 heads，但是每个 head dim=1）。后序版本有各种变化，直到 rwkv-v6 都算(linear) attn 范式。
- 
+rwkv 用于语言模型，乃多个 rwkv block 的堆叠，下接 embeds 上接 softmax LM 头的结构。每个 rwkv block 像 transformer 一样，也有建模需要依赖关系的 attention 与提供非线性映射增强表达能力的 ffn 的对应物。不过，它最大亮点是它的序列建模方式，大约上乃分单维度进行的线性 attention（或说 多头 attn ，但是每个 head dim=1）。后序版本有各种变化，直到 rwkv-v6 都算(linear) attn 范式。
+
+用线性 attention 模式，所以像 RNN，同时又足够像 transformer，所以它说自己能集二者之长，避二者之短。
+
 ----
 
 ### RWKV 名字由来

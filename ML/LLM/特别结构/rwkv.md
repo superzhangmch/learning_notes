@@ -1,4 +1,4 @@
-rwkv 要多个版本迭代，其第一篇 paper 是 RWKV: Reinventing RNNs for the Transformer Era ，是 rwkv-v4 的。这里重点看下它的 v4。
+rwkv 有多个版本迭代，其第一篇 paper 是 RWKV: Reinventing RNNs for the Transformer Era ，是 rwkv-v4 的。这里重点看下它的 v4。
 
 rwkv 用于语言模型，乃多个 rwkv block 的堆叠，下接 embeds 上接 softmax LM 头的结构。每个 rwkv block 像 transformer 一样，也有建模需要依赖关系的 attention 与提供非线性映射增强表达能力的 ffn 的对应物。不过，它最大亮点是它的序列建模方式，大约上乃分单维度进行的线性 attention（或说 多头 attn ，但是每个 head dim=1）。后序版本有各种变化，直到 rwkv-v6 都算(linear) attn 范式。
 
@@ -30,7 +30,7 @@ RWKV 设计上想集 rnn 与 transformer 两家之长，且避两家之短：通
 
 **channel-mixing：**
 
-对 channel-mixing： 若定义激活函数 $\text{maxAct}(x) = max(x^2, 0)$, 则图中 channel-mix 中的 K'-K' 那一分支就是 
+对 channel-mixing： 若定义激活函数 $\text{maxAct}(x) = max(x^2, 0)$, 则图中 channel-mix 中的 K'-V' 那一分支就是 
 
 $$W'_v \cdot \text{maxAct}(W'_k \cdot x_t)$$
 

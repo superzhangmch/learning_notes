@@ -54,15 +54,65 @@ paper 倾向于 Recursion-wise Caching。
 
 ----
 
-### 两种路由方式对比：
+## 一些细节
 
-|    | Expert-choice  | Token-choice |
-| ------ | ------------ | --------- |
-| 好处    | 没负载均衡问题 | 不泄露     |
-| 缺点    | 因果泄露      | 负载不均衡  |
-| 怎么解决 | Aux Rout, Aux Loss | Balance Loss, Loss-free |
+### 路由一些细节
 
-### 两种 kv-cache 方法对比：
+（1）Expert-choice Routing（每个 loop 决定是否继续）
+
+对于time=t 的 token，它的第 r 个 loop 的 hidden state 为 $H^r_t$，router 的路由打分输出为（其中 $\theta_r$ 乃第 $r$ 步的参数向量， $\sigma$ 可选 sigmoid）：
+
+$$
+g^r_t = \sigma(\theta_r^\top \mathcal{H}^r_t) \in [0,1]
+$$
+
+第 $r$ 层所有 token 的打分集合 $G^r = \{ g^r_t \}$ 选取 top-k% 的做计算。  
+
+hidden state 为 $H^r_t$ 在不同loop层的迭代为（$\Phi'$ 是不同 loop 之间的共享参数）：
+
+$$
+H_t^{r+1} =
+\begin{cases}
+g^r_t \cdot \text{transformBlock}(H^r_t, \Phi) + H^r_t & \text{token被选中，则加上新的} \\
+H^r_t & \text{token 没被选中, 则透传}
+\end{cases}
+$$
+
+也就是每个token独立计算路由得分，但是层内统一做一次 top-k 优选。
+
+另外注意：一旦 token 在某一轮被判定为非重要（即没进入 top-k%），它就“退出”递归，不会再被重新激活。
+
+（2）Token-choice Routing（一次性决定递归次数）
+
+对每个 time=t 的 token，只在第 1 层输入计算路由得分（假设循环 N 次）
+
+$$
+g_t = \sigma(\theta^\top H^1_t) \in \mathbb{R}^N
+$$
+
+这一步得到每个循环部署的得分，选得分最大的，从而得到应该循环几次，假设为 1 < i <= N。那么对于每个 loop 的 hidden states 计算式是：
+
+$$
+H_t^{r+1} =
+\begin{cases}
+g^r_t \cdot f(\mathcal{H}^r_t, \Phi') + \mathcal{H}^1_t & \text{token被选中，则加上新的} \\
+g^r_t \cdot f(\mathcal{H}^r_t, \Phi') & \text{token 没被选中, 则透传}
+\end{cases}
+
+每个token独立计算路由得分，但不作层内统筹。
+
+两种路由方式对比：
+
+|        | Expert-choice | Token-choice |
+| ------ | ------------- | --------- |
+| 好处    | 没负载均衡问题  | 不泄露     |
+| 缺点    | 因果泄露       | 负载不均衡  |
+| 怎么解决 | 辅助Router+辅助Loss | Balance Loss或Loss-free |
+
+
+### 两种 kv-cache 一些细节
+
+方法对比：
 
 下表的符号含义：
 - N = loop_cnt

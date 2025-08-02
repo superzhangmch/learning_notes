@@ -20,7 +20,7 @@ MOR：《Mixture-of-Recursions: Learning Dynamic Recursive Depths for Adaptive T
 | **Middle-Cycle**    | `emb → L0 → (1,2,3) → (1,2,3) → ... → (1,2,3) → L_last → softmax` |
 | **Middle-Sequence** | `emb → L0 → (1,1,1) → (2,2,2) → ... → (N,N,N) → L_last → softmax` |
 
-paper 中优选 Middle-Cycle。
+paper 中 Middle-Cycle 更好。
 
 ### router 选择
 
@@ -30,7 +30,7 @@ paper 中优选 Middle-Cycle。
 
 每一次循环前判断序列中有几个token 可以进入循环 ，若一个token已经被阻断，则不进入下一 loop。
 - training 时：所有token并行训练，并靠 attn 三角 mask保证数据不沿时间泄露，而该 routing 方法其实做不到，也就是有数据泄露：按说应该是对 $\{seq[0: i]\}_i$ 中的每个都独立作选重要tokens，但每个选出的没法自然融合。这种泄露需要特殊处理。
-- inference 时：假设已经在生成第 n 个 token，每个 loop 仍然要对包括当前token的前 n-1 个重新选 top-k，看当前token是否包括进去（从而决定是否参与 loop 计算）。
+- inference 时：卡 top-k% 的阈值（得动态维护阈值大小）
   - route 怎么知道一个token重要度，又没标注：靠联合loss建模，model 自动学出来，就像 MOE 的专家路由。
 
 **（2）、Token-choice routing**
@@ -48,7 +48,7 @@ paper 中优选 Middle-Cycle。
 - Recursive KV sharing：只 cache 每个 token 的 loop-1 的 kv 进 kv-cache
   - 这样cache 的 kv 要小，但是 attn 计算量和原生 transformer 比，保持一样。
 
-paper 倾向于 Recursion-wise Caching。
+paper 中 Recursion-wise Caching 更好。
 
 <img width="1318" height="762" alt="image" src="https://github.com/user-attachments/assets/755174f6-cc72-46ba-8600-58407854d6d9" />
 
@@ -80,7 +80,7 @@ $$
 
 也就是每个token独立计算路由得分，但是层内统一做一次 top-k 优选。
 
-另外注意：一旦 token 在某一轮被判定为非重要（即没进入 top-k%），它就“退出”递归，不会再被重新激活。
+另外注意：inference 时，也要做top-k决定当前token的去留，这时候只需要维持一个动态的阈值即可，不用管之前的token的去留问题。
 
 （2）Token-choice Routing（一次性决定递归次数）
 
@@ -95,9 +95,10 @@ $$
 $$
 H_t^{r+1} =
 \begin{cases}
-g^r_t \cdot f(\mathcal{H}^r_t, \Phi') + \mathcal{H}^1_t & \text{token被选中，则加上新的} \\
-g^r_t \cdot f(\mathcal{H}^r_t, \Phi') & \text{token 没被选中, 则透传}
+g^r_t \cdot f(H^r_t, \Phi') + H^1_t & \text{token被选中，则加上新的} \\
+g^r_t \cdot f(H}^r_t, \Phi') & \text{token 没被选中, 则透传}
 \end{cases}
+$$
 
 每个token独立计算路由得分，但不作层内统筹。
 

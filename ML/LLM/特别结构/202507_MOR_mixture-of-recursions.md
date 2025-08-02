@@ -6,7 +6,7 @@ MOR：《Mixture-of-Recursions: Learning Dynamic Recursive Depths for Adaptive T
 
 ### 循环模式选择
 
-这样的循环安排，有几种选择：
+这样的循环安排，有几种选择方案：
 - 每个block一模一样（Cycle）：emb -> **(1,2,3) -> (1,2,3) -> ... -> (1, 2, 3）**-> softmax
 - block 内每层一模一样（Sequence）：emb -> **(1,1,1) -> (2,2,2) -> ... -> (N, N, N)** -> softmax
 - 有非循环层：
@@ -24,7 +24,7 @@ paper 中 Middle-Cycle 更好。
 
 ### router 选择
 
-而 router，有两种方式（如下图）：
+而 router，有两种方式可选（如下图）：
 
 **（1）、Expert-choice routing** （paper 推荐这种的）
 
@@ -41,7 +41,7 @@ paper 中 Middle-Cycle 更好。
 
 ### attention kv-cache 选择
 
-既然在每一个 time step，token 未必计算所有 transformer layers，那么当前 token 计算 attn 时，每层怎么和前面的 kv-list（每层都有漏缺）作attention呢？ paper 也给出两种方式：
+既然在每一个 time step，token 未必计算所有 transformer layers，那么当前 token 计算 attn 时，每层怎么和前面的 kv-list（每层都有漏缺）作attention呢？ paper 也给出两种可选方式：
 
 - Recursion-wise KV caching：每个 token 的 没计算的 loop cache，计算attn时跳过它。
   - 这样计算量要小。
@@ -95,8 +95,8 @@ $$
 $$
 H_t^{r+1} =
 \begin{cases}
-g^r_t \cdot f(H^r_t, \Phi') + H^1_t & \text{token被选中，则加上新的} \\
-g^r_t \cdot f(H}^r_t, \Phi') & \text{token 没被选中, 则透传}
+g^r_t \cdot \text{transformBlock}(H^r_t, \Phi') + H^1_t & \text{token被选中，则加上新的} \\
+g^r_t \cdot \text{transformBlock}(H^r_t, \Phi') & \text{token 没被选中, 则透传}
 \end{cases}
 $$
 

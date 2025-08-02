@@ -48,22 +48,38 @@ paper 中优选 Middle-Cycle。
 - Recursive KV sharing：只 cache 每个 token 的 loop-1 的 kv 进 kv-cache
   - 这样cache 的 kv 要小，但是 attn 计算量和原生 transformer 比，保持一样。
 
+paper 倾向于 Recursion-wise Caching。
+
 <img width="1318" height="762" alt="image" src="https://github.com/user-attachments/assets/755174f6-cc72-46ba-8600-58407854d6d9" />
 
 ----
 
-两种路由方式对比：
+### 两种路由方式对比：
 
-|           | Expert-choice     | Token-choice    |
-| --------- | --------------------- | ------------------- |
-| 好处  | 没负载均衡问题 | 不泄露          |
-| 缺点 | 因果泄露   | 负载不均衡     |
-| 怎么解决 | Aux Rout, Aux Loss    | Balance Loss, Loss-free |
+|    | Expert-choice  | Token-choice |
+| ------ | ------------ | --------- |
+| 好处    | 没负载均衡问题 | 不泄露     |
+| 缺点    | 因果泄露      | 负载不均衡  |
+| 怎么解决 | Aux Rout, Aux Loss | Balance Loss, Loss-free |
 
-两种 kv-cache 方法对比：
+### 两种 kv-cache 方法对比：
+
+下表的符号含义：
+- N = loop_cnt
+- N_ctx= seq_len
+- k = token 的被选中次数
+- k/N_ctx=token 选中率。
+
+下表表示不同方法与"传统 transformer 的 attention"的比较比率：
 
 |                 | **Recursion-wise Caching** | **Recursive Sharing** |
 | --------------- | -------------------------- | --------------------- |
-| **KV Memory**   | $(N_r + 1)/2N_r$           | $1/N_r$               |
-| **KV Cache IO** | $(N_r + 1)/2N_r$           | 1                     |
-| **Attn FLOPs**  | $k^2/N^2_{ctx}$            | $k/N_{ctx}$           |
+| **KV Memory**   | a = (N + 1)/(2N)     | d = 1/N           |
+| **KV Cache IO** | b = (N + 1)/(2N)     | e = 1                 |
+| **Attn FLOPs**  | c = $k^2/N^2_{ctx}$ < 1    | f = $k/N_{ctx}$ < 1   |
+
+- FLOPs c: 当前token的 q 只计算 k/N_ctx(其余跳过）, 只和 k/N_ctx 的 kv 作 attn，所以为 c= $(k/N_{ctx})^2$。
+- FLOPs f: 当前token的 q 只计算 k/N_ctx, 但和全长度的 kv 作 attn，所以为 f= $k/N_{ctx}\cdot 1=k/N_{ctx}$。
+- a、b：loop次数为 N, loop-1必定执行，往下走，留存需计算的token越来越少。于是假设是均匀减少的，直到最后一个 loop，剩下 1/N, 也就是逐层留存需计算的token（以及相应的kv-mem占用与 kv-IO）为：1=N/N, (N-1)/N, (N-2)/N, ..., 2/N, 1/N，累加得到 $\sum_i i/N = N(N+1) / 2$, 而原始 transformer 相应数字是 N，从而比率为 $\frac {N(N+1) / 2} N = (N + 1)/(2N)$
+- d：多个 loop，只存loop-1，所以为 1/N
+- e=1: Recursive Sharing省显存，不省计算保持不变，所以为 1

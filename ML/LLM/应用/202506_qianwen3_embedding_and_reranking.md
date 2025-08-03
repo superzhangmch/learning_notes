@@ -14,7 +14,7 @@ embedding、reranking 方法如图
 {Instruction} {Query}<|endoftext|>
 ```
 
-然后取 EOS token 的最后一层的 hidden state 当做 embedding。（和 alibaba 的《GME》 基本一样，但是本文没提它）
+然后取 EOS token 的最后一层的 hidden state 当做 embedding。（和 alibaba 的《GME》相似，但是本文没提它）
 
 loss 用的对比学习的 infoNCE 的一个变体：
 

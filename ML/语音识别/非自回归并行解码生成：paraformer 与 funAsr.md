@@ -21,7 +21,7 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 ![image](https://github.com/user-attachments/assets/49e58d87-3356-46e4-b834-b50491c38cae)
 
-在某一个 train step，先 inference 一步，看看和 ground  truth 的差异：根据差异率把 CIF 的 embds 中的一些随机替换成 ground-truth token 的 embds。差异率越大，替换的越多。替换后做预测计算loss，而第一次的预测并不用于梯度回传。
+在某一个 train step，先 inference 一步，看看和 ground  truth (这段语音的正确asr结果) 的差异：根据差异率把 CIF 的 embds 中的一些随机替换成 ground-truth token 的 embds。差异率越大，替换的越多。替换后做预测计算loss，而第一次的预测并不用于梯度回传。
 
 这样容易最终学到 output tokens 之间的依赖关系。infer 时流程只需要 pass-1。
 

@@ -70,7 +70,9 @@ $$(M M')^{-1/2} M = ((UEV')(UEV')')^{-1/2}\cdot (UEV') = (UE^2U')^{-1/2} (UEV') 
 
 Newton-Schulz 算法是一种用于矩阵平方根或矩阵逆平方根近似计算的迭代方法。muon名字中就有来自 Newton-Schulz 的字母。这个算法正是为了求出 $(M M')^{-1/2}$。
 
-下面内容据su jianlin：
+下面内容据 su jianlin：
+
+《《《《
 
 $U(M M')^{-1/2} M = P (\Lambda)^{-1/2} P' M $， 而 $P (\Lambda)^{-1/2}$ 其实就是个分维进行的向量函数，每一维是 $\mathbb{R} \Rightarrow \mathbb{R}$。对单维，可以有 t=1 处的泰勒级数展开：
 
@@ -87,9 +89,49 @@ $$
 (MM')^{-1/2} M = \frac{15}{8}M - \frac{5}{4}MM'M + \frac{3}{8}MM'MM'M + \cdots
 $$
 
-然后怎么导出的迭代式？
+然后怎么导出的迭代式？ ？？
 
-https://kellerjordan.github.io/posts/muon/ 这里有，迭代式的产生。
+》》》》
+
+https://kellerjordan.github.io/posts/muon/ 这里讲得比较容易懂：
+
+首先有这么一个结论（为啥？）：对于 $s \in [0, 1]$，存在某些多项式 $\phi(s) = a s + b s^3 + c s^5$，使得反复迭代后 $\phi^N(s) \to 1$。假设这样的 a b c 我们已经找到了。
+
+对于矩阵 M=UEV', 试图定义它上面的 $\phi(.)$ 函数：
+
+$$\phi(M) := aM + b(MM')M + c(MM')^2M$$
+
+那么就有
+
+$$
+\begin{align}
+\phi(M) &= (aI + b(MM') + c(MM^T)^2)M \\
+&= (aI + bUE^2U' + cUE^4U^\top)UEV' \\
+&= U(aE + bE^3 + cE^5)V' \\
+&= U \phi(E) V'
+\end{align}
+$$
+
+多次迭代，也就是有：
+
+$$
+\begin{align}
+\phi(\phi(M)) &= U \phi(\phi(E)) V'  \\
+\phi(\phi(\phi(M))) &= U \phi(\phi(\phi(E))) V'  \\
+\end{align}
+$$
+
+或者说：
+
+$$
+\phi \circ  \phi \circ \cdots \circ \phi (M) = U \cdot \phi \circ  \phi \circ \cdots \circ \phi (E) \cdot V'
+$$
+
+E = {σᵢ} 是对角矩阵， 所以  φ∘φ∘⋯∘φ(E) = { φ∘φ∘⋯∘φ(σᵢ)}。
+
+也就是说，如果 σᵢ 都在 [0, 1] 之间，足够多次迭代后，φ∘φ∘⋯∘φ(E) => I, 从而 φ∘φ∘⋯∘φ(M) = Uφ∘φ∘⋯∘φ(E)V' => UV'。这样就靠迭代把 UV' 算出来了。
+
+作者找到的 a b c 为： p(x)=3.4445x-4.7750x³+2.0315x⁵，在 405B Llama model 上，额外计算开销小于 1%。
 
 **关于符号函数**：
 

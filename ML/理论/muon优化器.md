@@ -43,7 +43,7 @@ $M'M$ 是正定的，按线性代数可以有分解： $M'M = V \Lambda V'$， �
 
 E 对角元素排序后，分解的唯一性： $MM'=UEEU'$ , $M'M=V'EEV$ , 故而 $E^2$ 是 $MM'$ 的取值确定特征值，故E取值确定。
 
-**M_new = UV' 有啥合理性吗**：
+**M_new = UV' 为啥可行**：
 
 M = UEV' 中 E 对角元素乃 M'M 的特征值的平方根，称为 M 的奇异值。对 E 的对角元素排序后，去除尾部较小特征值，对 UEV 作缩减调整后仍作 UEV' 计算，所得矩阵是原矩阵的近似。这可以用来作数据的压缩（比如图片看做矩阵，从而作压缩）。但是 muon 后并不是去掉小特征值，而是一律置为 1，因此难说 UVᵀ 与原始 Mₜ 梯度矩阵近似，所以不能把 muon 理解成用 UVᵀ 逼近原始梯度。
 
@@ -57,6 +57,12 @@ M_new = UV' 是正交矩阵，所有元素绝对值不超 1，而 M 最大值无
 > And for an empirically-flavored motivation, we observe that based on manual inspection, the updates produced by both SGD-momentum and Adam for the 2D parameters in transformer-based neural networks typically have very **high condition number**(最大最小奇异值的比例）. That is, they are almost **low-rank matrices**, with the updates for all neurons being dominated by just a few directions. We speculate that orthogonalization effectively increases the scale of other “rare directions” which have small magnitude in the update but are nevertheless important for learning.
 >
 > (人工检查看到，更新矩阵奇异值差异迥异，几乎都是低秩矩阵，所有神经元的更新都主要集中在少数几个方向上。因此 UV' 正交化在某种程度上放大了那些在更新中幅度较小但对学习仍然重要的“稀有方向”的尺度)
+
+上述总总，让人觉得用 UV' 是有一定道理的，但总觉得还是差了一点。
+
+另外可以证明，和 M 的 $\sqrt{sum{|.-.|^2}}$ 范数距离最小的正交矩阵是 UV'（[Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces](https://spaces.ac.cn/archives/10592)）。
+
+**为啥 UV' 是 M 的符号矩阵**:
 
 （2）为什么 UVᵀ 是谱范数约束下的梯度下降
 

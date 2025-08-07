@@ -56,7 +56,7 @@ M_new = UV' 是正交矩阵，所有元素绝对值不超 1，而 M 最大值无
 
 上述总总，让人觉得用 UV' 是有一定道理的，但总觉得还是差了一点。
 
-另外可以证明，和 M 的 $\sqrt{sum{|.-.|^2}}$ 范数距离最小的正交矩阵是 UV'（[Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces](https://spaces.ac.cn/archives/10592)）。
+另外可以证明，和 M 的 $\sqrt{sum{|.-.|^2}}$ F-范数距离最小的正交矩阵是 UV'（[Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces](https://spaces.ac.cn/archives/10592)）。
 
 ### UV' 的计算
 
@@ -67,6 +67,10 @@ $$(M M')^{-1/2} M = ((UEV')(UEV')')^{-1/2}\cdot (UEV') = (UE^2U')^{-1/2} (UEV') 
 这样求 UV' 就归结为求 $(M M')^{-1/2} M$。
 
 **$(M M')^{-1/2} M$ 的计算**：
+
+Newton-Schulz 算法是一种用于矩阵平方根或矩阵逆平方根近似计算的迭代方法。muon名字中就有来自 Newton-Schulz 的字母。这个算法正是为了求出 $(M M')^{-1/2}$。
+
+下面内容据su jianlin：
 
 $U(M M')^{-1/2} M = P (\Lambda)^{-1/2} P' M $， 而 $P (\Lambda)^{-1/2}$ 其实就是个分维进行的向量函数，每一维是 $\mathbb{R} \Rightarrow \mathbb{R}$。对单维，可以有 t=1 处的泰勒级数展开：
 
@@ -82,6 +86,10 @@ $$
 $$
 (MM')^{-1/2} M = \frac{15}{8}M - \frac{5}{4}MM'M + \frac{3}{8}MM'MM'M + \cdots
 $$
+
+然后怎么导出的迭代式？
+
+https://kellerjordan.github.io/posts/muon/ 这里有，迭代式的产生。
 
 **关于符号函数**：
 

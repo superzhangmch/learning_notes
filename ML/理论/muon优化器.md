@@ -160,9 +160,25 @@ ai 又说：
 令 γ := ||w-wₜ|| = ||Δw||, ϕ :=−Δw/||Δw|| 单位方向, L(w) ≈ L(w)+ gₜΔw，则 L_new 可以改写成：min L_new = min[ λγ² + gₜ(-Δw/||Δw||)(-||Δw||)] = min[λγ²-gₜϕγ]，其中 gₜϕ 为内积。
 
 注意γ与ϕ是完全独立的，从而 min[λγ²-gₜϕγ] 可以独立优化，也就是可以 min[λγ²-gₜϕγ] = min[λγ²-γ max(gₜϕ)]
+ 
+下面考察：gₜϕ，它们是两个 1d 向量的内积。但是 muon 下，gₜ 本为矩阵形式，ϕ也是矩阵形式，所以 gₜϕ 内矩阵展开成 1d 后的内积。如果仍然保持 gₜ 与 ϕ 是矩阵，则应该是：tr(gₜϕ)。这是因为 $tr(A'B) = sum_{ij} {a_{ij} b_{ij}}$。于是下面记 gₜϕ 为 tr(gₜ'ϕ)。
+
+$gₜ' = UEV = \sum_i^r \sigma_i u_i v'_i$, 这里 $u_i, v_i$ 是列向量, $u_i v'_i$ 是外积矩阵, r = rank(gₜ)。trace 是线性的所以，所以
+
+$$
+\begin{align}
+\text{tr}(g'_t ϕ) &= \text{tr}(\sum_i^r \sigma_i u_i v'_i ϕ) \\
+&= \sum_i^r \sigma_i tr(u_i v'_i ϕ)    & // tr 是现行的 \\
+&= \sum_i^r \sigma_i tr(u_i (v'_i ϕ)) \\
+&= \sum_i^r \sigma_i tr((v'_i ϕ) u_i)  & //tr(u'v) = tr(vu') 对 u, v 是向量\\
+&= \sum_i^r \sigma_i (v'_i ϕ) u_i)     & //(v'_i ϕ) u_i 是数字\\
+&= \sum_i^r \sigma_i v'_i (ϕ u_i) \\
+& \le \sum_i^r \sigma_i
+\end{align}
+$$
 
 
-gₜϕ= tr(
+
 
 
 

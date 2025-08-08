@@ -207,7 +207,7 @@ $$
 
 - ϕ 是定义在一定范数距离下的单位方向矩阵，这个范数可以取 F 范数距离，也可以取其他的。这里取矩阵的谱范数。
 - $1 = \lVert ϕ \rVert _{谱} := \max_x \frac {\lVert ϕ x \rVert_2} {\lVert x \rVert _2}$, 所以 $\frac {\lVert ϕ u_i \rVert_2} {\lVert u_i \rVert _2} \le 1 \Rightarrow \lVert ϕ u_i \rVert_2 \le \lVert u_i \rVert _2 = 1$ (U是正交的，故 $\lVert u_i \rVert _2 = 1$）
-- ||ϕ uᵢ||_2 <= 1, ||v'ᵢ|| == 1 ⇒ v'ᵢ (ϕ uᵢ) = ||v'ᵢ (ϕ uᵢ)|| ≤ ||v'ᵢ ||⋅||(ϕ uᵢ)|| ≤ 1
+- $\lVert ϕ u_i \rVert_2 \le 1$, $\lVert v'_i \rVert _2 = 1$ ⇒ $v'_i (ϕ u_i) = \lVert v'_i (ϕ u_i) \rVert \le \lVert v'_i \rVert \cdot \lVert (ϕ u_i)\rVert  \le 1$
 
 对于 $\sum_i^r \sigma_i v'_i (ϕ u_i) \le \sum_i^r \sigma_i$ 既然 $v'_i (ϕ u_i) \le 1$， 要使得等号成立，必须对任意 i 都有 $v'_i (ϕ u_i) = 1$。
 

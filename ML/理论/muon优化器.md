@@ -207,7 +207,7 @@ E = {σᵢ} 是对角矩阵， 所以  φ∘φ∘⋯∘φ(E) = { φ∘φ∘⋯�
 
 原始 Muon 没有 weight decay，大模型训练时权重和层输出 RMS（Root Mean Square 均方根, RMS = $\sqrt{\sum a_{i}^2}/ \sqrt{n}$） 会持续变大，超出 bf16 范围，导致性能下降。
 
-于是采用 AdamW 方式的 weight decay： $W_t ​ =W_{t−1} ​ −η(O_t ​+ λ W_t−1)$, $O_t = UV'$ 抑制权重值过大（注意：按正则项放入 loss，则效果被优化器动量等操作所冲淡，所以才放入优化器）。
+于是采用 AdamW 方式的 weight decay： $W_t ​ =W_{t−1} ​ −η(O_t ​+ λ W_t−1)$, $O_t = UV'$ 抑制权重值过大（注意：按正则项放入 loss，则效果被优化器动量等操作所冲淡，所以才放入优化器）。λ 取 0.1 量级。
 
 <img width="1374" height="628" alt="image" src="https://github.com/user-attachments/assets/826e3906-3ec2-447d-a1c6-b1570503272d" />
 
@@ -244,7 +244,51 @@ $$
 
 <img width="1520" height="724" alt="image" src="https://github.com/user-attachments/assets/67ec1409-1b21-47ff-85b5-206dca5f8c1d" />
 
+好像增加不少计算与通讯。文章指出，通信量为分布式 adamW 的 1~1.25倍，而总 latency 增加大约 1% ~ 3%。
+
 ### （4）QK-clip
+
+训练超大规模 LLM 时，才出现的问题。 adamW 也有这问题吗？
+
+在 Transformer 的注意力计算里：
+
+$$
+O^h = \text{softmax}\left( \frac{1}{\sqrt{d}} Q^h (K^h)^\top \right) V^h
+$$
+
+如果 $Q^h$ 和 $K^h$ 的范数不断变大，$QK^T / \sqrt{d}$ 里的最大 logit 也会变大，softmax 会变得极端尖锐（几乎是 one-hot），梯度传播会很不稳定，甚至梯度消失或爆炸。
+
+QK-Clip 方法是：在每次参数更新后检查当前 batch 中每个 head 的 最大 logit：
+
+$$
+S_{\max}^h = \frac{1}{\sqrt{d}} \max_{X\in B} \max_{i,j} Q^h_i (K^h_j)^\top
+$$
+
+如果 $S_{\max}^h$ 超过了目标阈值 $\tau$，就把 $W_q, W_k$ 的权重按比例缩小，抑制 logits 增长。这个缩放只影响下一步的计算，不会回改当前步的前向/反向结果（只用作“后处理”）。
+
+---
+
+## **4. 特点**
+
+* **不影响当前步的梯度计算**（forward/backward 完全照常进行），只是更新后做一次 clip。
+* **阈值 $\tau$** 控制 logits 允许的最大幅度，比如设成 50 以内可以防止 softmax 饱和。
+* 对 MLA（Multi-Head Latent Attention）等共享 Key 的结构，也能精细化裁剪，避免副作用。
+
+---
+
+📌 **一句话总结**
+QK-Clip 就是一个**更新后“限速器”**，用来控制 Q 和 K 的权重增长，防止注意力 logits 爆炸，从而保持 softmax 的数值稳定性和梯度可传递性。
+
+---
+
+如果你需要的话，我可以帮你画一个 **QK-Clip 数据流示意图**，把“检测最大 logit → 计算缩放因子 → 裁剪 Q/K 权重”的过程画出来，会很直观。你要我画吗？
+
+
+
+
+
+
+
 
 
 ---

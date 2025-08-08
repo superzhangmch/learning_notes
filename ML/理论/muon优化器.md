@@ -155,15 +155,41 @@ ai 又说：
 
 但是 UV' 的合理性，只靠直觉是不够的，需要严格的证明。下面证明方法来自 su jianlin https://spaces.ac.cn/archives/10592：
 
-各种优化器，都可以转为在一定距离约束下的优化，也就是下面这样带约束项的形式：L_new = λ ||w-wₜ||² + L(w)，其中 λ 为大值数。为了令 L_new 更小，除了对它求导，还可以做转化换一个方式看：
+各种优化器，都可以转为在一定距离约束下的优化，也就是下面这样带约束项的形式：
 
-令 γ := ||w-wₜ|| = ||Δw||, ϕ :=−Δw/||Δw|| 单位方向, gₜ 是梯度，L(w) ≈ L(w)+ g'ₜΔw，则 L_new 可以改写成：min L_new = min[ λγ² + g'ₜ(-Δw/||Δw||)(-||Δw||)] = min[λγ²-g'ₜϕγ]，其中 g'ₜϕ 为内积。
+$$
+L_{new} = \lambda \lVert w - w_t \rVert^2 + L(w)
+$$
+
+其中 λ 为大值数, $\lVert \cdots \rVert$ 为某种范数。为了令 $L_{new}$ 更小，除了对它求导，还可以做转化换一个方式看：
+
+令 
+
+$$
+\begin{cases}
+γ &:= \lVert w-w_t \rVert = \lVert Δw \rVert \\
+ϕ &:=− \frac {Δw} {\lVert Δw \rVert}  &// 为单位长度的方向 \\
+g_t &:= \nabla L(w) & //是梯度 \\
+L(w_t) &≈ L(w)+ {g'}_ {t} Δw &// 一阶展开 
+\end{cases}
+$$
+
+则 $L_{new}$ 可以改写成：
+
+$$
+\begin{align}
+\min L_{new} &= \min\[ λγ^2 + {g'}_t(- \frac {Δw}{\lVert Δw \rVert})(-\lVert Δw \rVert)\]  \\
+&= \min \[λγ^2-{g'}_tϕγ \]
+\end{align}
+$$
+
+其中 g'ₜϕ 为内积。
 
 注意γ与ϕ是完全独立的，从而 min[λγ²-g'ₜϕγ] 可以独立优化，也就是可以 min[λγ²-g'ₜϕγ] = min[λγ²-γ max(g'ₜϕ)]
  
-下面考察：g'ₜϕ，它们是两个 1d 向量的内积。但是 muon 设置下，gₜ 本为矩阵形式，ϕ 也是矩阵，所以 g'ₜϕ 内积乃展开成 1d 后的内积。如果仍然保持 gₜ 与 ϕ 是矩阵，则应该是：tr(g'ₜϕ)【这是因为 $tr(A'B) = sum_{ij} {a_{ij} b_{ij}}$】。于是下面记 g'ₜϕ 为 tr(gₜ'ϕ)。
+下面考察：g'ₜϕ，它们是两个 1d 向量的内积。但是 muon 设置下，gₜ 本为矩阵形式，ϕ 也是矩阵，所以 g'ₜϕ 内积乃展开成 1d 后的内积。如果仍然保持 gₜ 与 ϕ 是矩阵，则应该是：tr(g'ₜϕ)【这是因为 $tr(A'B) = \sum_{ij} {a_{ij} b_{ij}}$】。于是下面记 g'ₜϕ 为 tr(gₜ'ϕ)。
 
-$gₜ' = UEV = \sum_i^r \sigma_i u_i v'_i$, 这里 $u_i, v_i$ 是列向量, $u_i v'_i$ 是外积所成的矩阵, r = rank(gₜ)。 则有：
+${g'}_t = UEV = \sum_i^r \sigma_i u_i v'_i$, 这里 $u_i, v_i$ 是来自 UV 的列向量, $u_i v'_i$ 是外积所成的矩阵, r = rank(gₜ)。 则有：
 
 $$
 \begin{align}
@@ -173,14 +199,14 @@ $$
 &= \sum_i^r \sigma_i tr((v'_i ϕ) u_i)  & //tr(u'v) = tr(vu') 对 u, v 是向量\\
 &= \sum_i^r \sigma_i (v'_i ϕ) u_i)     & //(v'_i ϕ) u_i 是数字\\
 &= \sum_i^r \sigma_i v'_i (ϕ u_i) \\
-& \le \sum_i^r \sigma_i & // 原因见下
+& \le \sum_i^r \sigma_i & // v'_i (ϕ u_i) \le 1。原因见下
 \end{align}
 $$
 
 为啥 $v'_i (ϕ u_i) \le 1$: 
 
-- ϕ是定义在一定范数距离下的单位方向矩阵，这个范数可以取 F 范数距离，也可以取其他的。这里取矩阵的谱范数。
-- 1 == ||ϕ||_谱 := max ||ϕ x||_2 / ||x||_2, 所以||ϕ uᵢ||_2 / ||uᵢ||_2 ≤ 1 ⇒ ||ϕ uᵢ||_2 ≤ ||uᵢ||_2 == 1 (U是正交的，故 ||uᵢ||=1）
+- ϕ 是定义在一定范数距离下的单位方向矩阵，这个范数可以取 F 范数距离，也可以取其他的。这里取矩阵的谱范数。
+- $1 = \lVert ϕ \rVert _{谱} := \max_x \frac {\lVert ϕ x \rVert_2} {\lVert x \rVert _2}$, 所以 $\frac {\lVert ϕ u_i \rVert_2} {\lVert u_i \rVert _2} \le 1 \Rightarrow \lVert ϕ u_i \rVert_2 \le \lVert u_i \rVert _2 = 1$ (U是正交的，故 $\lVert u_i \rVert _2 = 1$）
 - ||ϕ uᵢ||_2 <= 1, ||v'ᵢ|| == 1 ⇒ v'ᵢ (ϕ uᵢ) = ||v'ᵢ (ϕ uᵢ)|| ≤ ||v'ᵢ ||⋅||(ϕ uᵢ)|| ≤ 1
 
 对于 $\sum_i^r \sigma_i v'_i (ϕ u_i) \le \sum_i^r \sigma_i$ 既然 $v'_i (ϕ u_i) \le 1$， 要使得等号成立，必须对任意 i 都有 $v'_i (ϕ u_i) = 1$。

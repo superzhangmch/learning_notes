@@ -198,6 +198,57 @@ E = {σᵢ} 是对角矩阵， 所以  φ∘φ∘⋯∘φ(E) = { φ∘φ∘⋯�
 
 ---
 
+## 推向实用
+
+- A:《MUON IS SCALABLE FOR LLM TRAINING》 https://arxiv.org/pdf/2502.16982v1
+- B：《KIMI K2: OPEN AGENTIC INTELLIGENCE》 https://arxiv.org/pdf/2507.20534
+
+### （1）weight decay
+
+原始 Muon 没有 weight decay，大模型训练时权重和层输出 RMS（Root Mean Square 均方根, RMS = $\sqrt{\sum a_{i}^2}/ \sqrt{n}$） 会持续变大，超出 bf16 范围，导致性能下降。
+
+于是采用 AdamW 方式的 weight decay： $W_t ​ =W_{t−1} ​ −η(O_t ​+ λ W_t−1)$, $O_t = UV'$ 抑制权重值过大（注意：按正则项放入 loss，则效果被优化器动量等操作所冲淡，所以才放入优化器）。
+
+<img width="1374" height="628" alt="image" src="https://github.com/user-attachments/assets/826e3906-3ec2-447d-a1c6-b1570503272d" />
+
+### （2）参数平均更新量（RMS衡量）的对齐
+
+用 RMS，即 Root Mean Square 均方根 $\sqrt{\sum \Delta w_{i}^2}/ \sqrt{n}$ 来衡量 {$w_i$} 这多个参数的更新量{$w_i-w_{i-1}$} 的平均每参数的更新量。
+
+上面 A 文指出，Adam/AdamW 的 update RMS 大约是 0.2 ~ 0.4。为啥？？
+
+而 muon 会让同一个参数矩阵内的参数的更新比较平均，但是跨越不同参数矩阵，平均更新量却不同。作者证明了，对一个 shape=$A \times B$ 的参数矩阵，它的 update RMS 是 
+
+$$\sqrt {1/\max(A, B)}$$
+
+（为啥？？？）
+这等于说，不同的参数矩阵用了不同的学习率，导致有的更新不够（从而训得不充分），有的过于大（从而训练不稳定）。因此需要每个参数矩阵都调一下，使得各用不同学习率。于是更新公式应该是：
+
+$$
+W_t = W_{t−1} − \eta_t(\sqrt {\max(A, B)} \cdot O_t+ λW_{t−1}); \ \ O_t = UV'
+$$
+
+**和 adamW 对齐：**
+
+更新的参数除了矩阵，还有向量——这些更适合用 adam、adamW。那么 adamW 管理的参数的 RMS 也应该与 muon 的一致。于是上面式子调整为（取 adam RMS=0.2）：
+
+$$
+W_t = W_{t−1} − \eta_t(0.2 \cdot \sqrt {\max(A, B)} \cdot O_t + λW_{t−1}); \ \ O_t = UV'
+$$
+
+### （3）并行化
+
+并行训练使得 muon 可能有问题。如果是张量并行，权重矩阵分散开，使得 muon 不可成行，这好理解。除此外，ZERO-1 训练也会导致 muon 不能用。zero 下，即使张量没拆分，参数和动量分片存储，每个 GPU 只拿到矩阵的一部分梯度，不能直接做正交化。
+
+于是需要特别优化，注意每个 DP 组内每个 rank 都会重复做一次 gather + 正交化，这是刻意的换取简单实现和可并行重叠的通信。
+
+<img width="1520" height="724" alt="image" src="https://github.com/user-attachments/assets/67ec1409-1b21-47ff-85b5-206dca5f8c1d" />
+
+### （4）QK-clip
+
+
+---
+
 ## 补充知识
 
 **（1）、SVD 分解**

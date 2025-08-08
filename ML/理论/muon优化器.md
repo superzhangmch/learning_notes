@@ -42,7 +42,7 @@ M_new = UV' 是正交矩阵，所有元素绝对值不超 1，而 M 最大值无
 
 另外可以证明，和 M 的 $\sqrt{sum{|a_{ij}|^2}}$ Frobenius 范数距离最小的正交矩阵是 UV'（[Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces](https://spaces.ac.cn/archives/10592)）。
 
-y = f(Wx), 令 z = Wx, 则 $dy = \frac{\partial f}{\partial z} \cdot dW \cdot x$, 可以从这里感觉下 dW=w_t-w 对loss（y) 下降量的影响。若参数更新量是原始参差不齐的梯度，$dW \cdot x$ 对 x 的各维的影响不一: dW=UEV', 则E会令各维有迥异的伸缩率。若 dW=UV', 则仅仅是对 x 做了旋转反射，从而 x 各维会平等参与到 loss 下降中。
+y = f(Wx), 令 z = Wx, 则 $dy = \frac{\partial f}{\partial z} \cdot dW \cdot x$, 可以从这里感觉下 dW=w_t-w 对loss（y) 下降量的影响。若参数更新量是原始参差不齐的梯度， $dW \cdot x$ 对 x 的各维的影响不一: dW=UEV', 则E会令各维有迥异的伸缩率。若 dW=UV', 则仅仅是对 x 做了旋转反射，从而 x 各维会平等参与到 loss 下降中。
 
 上述总总，让人觉得用 UV' 作优化方向，是有一定道理的，但总觉得有点糊涂——至少一点是，凭啥**一定**导致梯度下降。
 
@@ -213,15 +213,16 @@ E = {σᵢ} 是对角矩阵， 所以  φ∘φ∘⋯∘φ(E) = { φ∘φ∘⋯�
 
 ### （2）参数平均更新量（RMS衡量）的对齐
 
-用 RMS，即 Root Mean Square 均方根 $\sqrt{\sum \Delta w_{i}^2}/ \sqrt{n}$ 来衡量 {$w_i$} 这多个参数的更新量{$w_i-w_{i-1}$} 的平均每参数的更新量。
+用 RMS，即 Root Mean Square 均方根 $\sqrt{\sum \Delta w_{i}^2}/ \sqrt{n}$ 来衡量 {$w_i$} 这多个参数的更新量{$w_i-w_{i-1}$} 的平均每参数的更新量（假设学习率为1）。
 
-上面 A 文指出，Adam/AdamW 的 update RMS 大约是 0.2 ~ 0.4。为啥？？
+上面 A 文指出，Adam/AdamW 的 update RMS 大约是 0.2 ~ 0.4【为啥：】。
 
 而 muon 会让同一个参数矩阵内的参数的更新比较平均，但是跨越不同参数矩阵，平均更新量却不同。作者证明了，对一个 shape=$A \times B$ 的参数矩阵，它的 update RMS 是 
 
-$$\sqrt {1/\max(A, B)}$$
+$$\sqrt {1/\max(A, B)}$$ 
 
-（为啥？？？）
+【为啥：设参数梯度矩阵是 $m \times n$ 的，rank=r, 更新量是 UEV 导出的 $X = VU_{[:, :r]} V_{[:r, :]}$, 展开来 $X_{i,j} = \sum_{k=1}^r U_{i,k} V_{k,j}$, 从而 $\text{RMS}(X)^2 = \frac{1}{mn} \sum_{i=1}^n \sum_{j=1}^m \sum_{k=1}^r U_{i,k}^2 V_{k,j}^2 = \frac{r}{mn}$, 若参数梯度矩阵满秩(实际中肯定满)，即 rank=min(m, n), 则 RMS^2= min(m,n)/(mn)=1/max(m,n)】
+
 这等于说，不同的参数矩阵用了不同的学习率，导致有的更新不够（从而训得不充分），有的过于大（从而训练不稳定）。因此需要每个参数矩阵都调一下，使得各用不同学习率。于是更新公式应该是：
 
 $$

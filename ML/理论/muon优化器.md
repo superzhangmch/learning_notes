@@ -145,11 +145,11 @@ E = {σᵢ} 是对角矩阵， 所以  φ∘φ∘⋯∘φ(E) = { φ∘φ∘⋯�
 
 下面是 ai 提供的一些知识：
 
-<img width="1172" height="950" alt="image" src="https://github.com/user-attachments/assets/4fdd1f3e-cfa2-4bc0-b494-7a5d777d644d" />
+<img width="1334" height="1090" alt="image" src="https://github.com/user-attachments/assets/394d2416-f6e4-400a-bdda-b63ce0365f5d" />
 
 ai 又说：
 
-<img width="1492" height="264" alt="image" src="https://github.com/user-attachments/assets/9fa2d46e-374c-4b3f-bd8d-b16eb57df45f" />
+<img width="1368" height="250" alt="image" src="https://github.com/user-attachments/assets/9bfab53a-d39a-4232-82dc-914b387400ff" />
 
 ### 为什么 UVᵀ 是谱范数约束下的梯度下降
 

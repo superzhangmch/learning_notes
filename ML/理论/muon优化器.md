@@ -56,7 +56,7 @@ M_new = UV' 是正交矩阵，所有元素绝对值不超 1，而 M 最大值无
 
 上述总总，让人觉得用 UV' 是有一定道理的，但总觉得还是差了一点。
 
-另外可以证明，和 M 的 $\sqrt{sum{|.-.|^2}}$ F-范数距离最小的正交矩阵是 UV'（[Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces](https://spaces.ac.cn/archives/10592)）。
+另外可以证明，和 M 的 $\sqrt{sum{|a_{ij}|^2}}$ Frobenius 范数距离最小的正交矩阵是 UV'（[Muon优化器赏析：从向量到矩阵的本质跨越 - 科学空间|Scientific Spaces](https://spaces.ac.cn/archives/10592)）。
 
 ### UV' 的计算
 
@@ -163,26 +163,29 @@ ai 又说：
  
 下面考察：gₜϕ，它们是两个 1d 向量的内积。但是 muon 下，gₜ 本为矩阵形式，ϕ也是矩阵形式，所以 gₜϕ 内矩阵展开成 1d 后的内积。如果仍然保持 gₜ 与 ϕ 是矩阵，则应该是：tr(gₜϕ)。这是因为 $tr(A'B) = sum_{ij} {a_{ij} b_{ij}}$。于是下面记 gₜϕ 为 tr(gₜ'ϕ)。
 
-$gₜ' = UEV = \sum_i^r \sigma_i u_i v'_i$, 这里 $u_i, v_i$ 是列向量, $u_i v'_i$ 是外积矩阵, r = rank(gₜ)。trace 是线性的所以，所以
+$gₜ' = UEV = \sum_i^r \sigma_i u_i v'_i$, 这里 $u_i, v_i$ 是列向量, $u_i v'_i$ 是外积所成的矩阵, r = rank(gₜ)。 则有：
 
 $$
 \begin{align}
 \text{tr}(g'_t ϕ) &= \text{tr}(\sum_i^r \sigma_i u_i v'_i ϕ) \\
-&= \sum_i^r \sigma_i tr(u_i v'_i ϕ)    & // tr 是现行的 \\
+&= \sum_i^r \sigma_i tr(u_i v'_i ϕ)    & // tr 是linear的 \\
 &= \sum_i^r \sigma_i tr(u_i (v'_i ϕ)) \\
 &= \sum_i^r \sigma_i tr((v'_i ϕ) u_i)  & //tr(u'v) = tr(vu') 对 u, v 是向量\\
 &= \sum_i^r \sigma_i (v'_i ϕ) u_i)     & //(v'_i ϕ) u_i 是数字\\
 &= \sum_i^r \sigma_i v'_i (ϕ u_i) \\
-& \le \sum_i^r \sigma_i
+& \le \sum_i^r \sigma_i & // 原因见下
 \end{align}
 $$
 
+为啥 $v'_i (ϕ u_i) \le 1$: 
 
+- ϕ是定义在一定范数距离下的单位方向矩阵，这个范数可以取 F 范数距离，也可以取其他的。这里取矩阵的谱范数。
+- 1 == ||ϕ||_谱 := max ||ϕ x||_2 / ||x||_2, 所以||ϕ uᵢ||_2 / ||uᵢ||_2 ≤ 1 ⇒ ||ϕ uᵢ||_2 ≤ ||uᵢ||_2 == 1 (U是正交的，故 ||uᵢ||=1）
+- ||ϕ uᵢ||_2 <= 1, ||v'ᵢ|| == 1 ⇒ v'ᵢ (ϕ uᵢ) = ||v'ᵢ (ϕ uᵢ)|| ≤ ||v'ᵢ ||⋅||(ϕ uᵢ)|| ≤ 1
 
+对于 $\sum_i^r \sigma_i v'_i (ϕ u_i) \le \sum_i^r \sigma_i$ 既然 $v'_i (ϕ u_i) \le 1$， 要使得等号成立，必须对任意 i 都有 $v'_i (ϕ u_i) = 1$。
 
-
-
-
+<img width="1410" height="1174" alt="image" src="https://github.com/user-attachments/assets/ec486978-9934-4e1e-943c-2edc50d48abe" />
 
 
 https://github.com/KellerJordan/Muon

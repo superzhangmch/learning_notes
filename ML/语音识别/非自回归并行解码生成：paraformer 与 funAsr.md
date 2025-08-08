@@ -24,7 +24,11 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 ![image](https://github.com/user-attachments/assets/49e58d87-3356-46e4-b834-b50491c38cae)
 
-【如图： 根据 Y' 和 ground-truth Y 对比的结果，而把 E_a 中一些用 E_c 中一些替代，从而构造出 E_s】
+【如图： 根据 Y' 和 ground-truth Y 对比的结果，而把 E_a 中一些用 E_c 中一些替代，从而构造出 E_s， 或者说 
+
+$$\text{GLM}(Y, Y') = \text{Sampler}(\text{E}_s \mid \text{E}_a, \text{E}_c, [\lambda d(Y, Y')])$$
+
+】
 
 在某一个 train step，先 inference 一步，看看和 ground  truth (这段语音的正确asr结果) 的差异：根据差异率把 CIF 的 embds 中的一些随机替换成 ground-truth token 的 embds。差异率越大，替换的越多。替换后做预测计算loss，而第一次的预测并不用于梯度回传。
 

@@ -112,7 +112,8 @@ $u'_i (ϕ v_i) = 1 \Rightarrow ϕ v_i = u_i \Rightarrow ϕ V = U \Rightarrow ϕ 
 
 note: 
 - 在参数更新的约束范数是 L_2, 步长是η 的约束下，单步最优方向等价于 $L_{new} = \lambda \lVert w - w_t \rVert_2^2 + L(w)$ λ=1/(2η) 的优化问题，可解出这时的最优方向正好是 L(w) 的梯度 gₜ（L_new 中对 L(w)用一阶展开，然后求导即可得）。在谱范数下，λ 与 η 的这种对应关系（λ=1/(2η)）不再成立。
-- 同一个矩阵的 F 范数比谱范数要大。这能意味着啥嘛？
+- 同一个矩阵的 F 范数比谱范数要大。这能意味着啥嘛？按 sujianl https://www.spaces.ac.cn/archives/10739 （为啥？）：
+  >跟SGD一样，Muon给出的同样是下降最快的方向，但它的谱范数约束比SGD的F 范数更为精准，所以有更佳的潜力
 
 ### UV' 的计算
 

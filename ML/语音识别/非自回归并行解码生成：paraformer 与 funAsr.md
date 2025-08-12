@@ -30,6 +30,13 @@ $$\text{GLM}(Y, Y') = \text{Sampler}(\text{E}_s \mid \text{E}_a, \text{E}_c, [\l
 
 】
 
+loss：
+
+MWER=minimum word error rate， CE= cross-entropy loss, MAE=the mean absolute error。
+
+<img width="938" height="668" alt="image" src="https://github.com/user-attachments/assets/1ac47ec0-d077-4c35-9fec-d9b51b7788c0" />
+
+
 在某一个 train step，先 inference 一步，看看和 ground  truth (这段语音的正确asr结果) 的差异：根据差异率把 CIF 的 embds 中的一些随机替换成 ground-truth token 的 embds。差异率越大，替换的越多。替换后做预测计算loss，而第一次的预测并不用于梯度回传。
 
 这样容易最终学到 output tokens 之间的依赖关系。infer 时流程只需要 pass-1。
@@ -58,7 +65,7 @@ $$\text{GLM}(Y, Y') = \text{Sampler}(\text{E}_s \mid \text{E}_a, \text{E}_c, [\l
 
 **loss 变动**: 去掉了 MWER loss，对 pass-1 也变得计算梯度（pass-1 结果接 CE-loss）.
 
-**hotwords**: 对 hotwords 处理获得 embedding 后给到 decoder 参与 cross attn。不过要decoder内部要独立分支处理之。
+**hotwords**: 对 hotwords （热词）处理获得 embedding 后给到 decoder 参与 cross attn。不过要decoder内部要独立分支处理之。
 
 **后处理**: 作为序列标注问题。(图中 B-RM，I-RM，E-RM 正是model的指示信息)
 

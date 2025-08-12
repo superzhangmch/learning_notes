@@ -25,4 +25,5 @@ FSMN 有点像是 RNN 一样的东西。不过它不是 $h_t = f(x_t, history)$�
 
 所谓 DFSMN=D+FSMN，其实就是好多 个 FSMN 上下摞起来。但是要用残差把这些 FSMN 连接：
 
-<img width="828" height="734" alt="image" src="https://github.com/user-attachments/assets/9a1ee459-12e6-461a-b266-57b8550b936a" />
+<img width="820" height="1028" alt="image" src="https://github.com/user-attachments/assets/109db07f-1ec8-40f5-81a5-547f5c427466" />
+

@@ -1,5 +1,6 @@
 # 《SAN-M: Memory Equipped Self-Attention for End-to-End Speech Recognition》 https://arxiv.org/pdf/2006.01713
 
+ SAN-M 表示 self-attention network with momory。
  
 <img width="982" height="1284" alt="image" src="https://github.com/user-attachments/assets/a2fe949d-199d-4b6d-b1a8-04dffd9931a4" />
 

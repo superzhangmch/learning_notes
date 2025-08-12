@@ -19,3 +19,50 @@ chatgpt 给出的对 mysql 集群，paxos 可以用来保证什么：
 - https://stackoverflow.com/questions/29619185/why-is-it-legit-to-use-no-op-to-fill-gaps-between-paxos-events
 - https://stackoverflow.com/questions/47013036/why-is-it-legit-to-take-the-next-two-commands-to-fill-gaps-between-paxos-events?noredirect=1&lq=1
 - https://max.book118.com/html/2019/0602/8121055051002026.shtm: PaxosStore分布式数据库的应用实践
+
+----
+
+下面是 chatgpt 给的资料：
+
+在分布式系统中，**Paxos** 和 **Raft** 是两类常用的强一致性共识算法，目标是在多个节点间，即使有节点或网络故障，也能就某个值或一系列操作达成一致。这种一致性是**逻辑顺序一致性**（logical order），而不是依赖真实时间的物理顺序。
+
+## 1. 典型应用场景
+
+* **分布式数据库 / 存储系统元数据一致性**：如表结构、分片位置、主节点信息等必须强一致的元信息。
+* **Leader 选举**：保证集群中同时只有一个有效 leader。
+* **分布式日志复制**：维护副本间完全相同的有序操作日志。
+* **分布式锁服务**：确保同一资源在同一时间只被一个客户端占用。
+* **关键配置管理**：动态更新全局配置，确保所有节点视图一致。
+
+## 2. 关键数据 vs 非关键数据
+
+一个大系统重，一般用他们保证的是关进数据的一致性。
+
+* **关键数据**：影响系统正确性，必须走 Paxos / Raft，保证强一致性。
+* **非关键数据**：可短暂不一致，常用异步复制、最终一致性等方式同步，以换取性能。
+
+## 3. 粒度问题：不是单个用户，单条记录，或者单个表。而是聚合后的某种数据分片上做数据一致性
+
+实际系统中，**共识协议的运行单位不是单个用户、记录或表，而是聚合后的数据分片**（Shard / Region / Tablet / Partition），每个分片有自己的副本组（Paxos group / Raft group）。
+原因：
+
+1. **降低固定开销**：维护一个共识组有常驻成本，不能为每条记录建组。
+2. **提高并行度**：多个分片的共识可同时进行，避免单 Leader 瓶颈。
+3. **负载均衡**：分片的 Leader 分布在不同节点，均衡资源消耗。
+
+所以关系数据库用它时，也不是针对具体的单个记录，或者是某个表，而是在更宏观的层次用。
+
+## 4. 共识组的工作方式
+
+* 每个分片的多个副本分布在不同节点 / 机房。
+* 写操作只需在该分片的多数派副本间达成一致（多数写入成功即可提交）。
+* 同一共识组内，所有写操作的顺序和内容一致（状态机复制原理）。
+* 不同共识组间没有天然的全局顺序，除非额外引入事务协调。
+
+## 5. 工程案例
+
+* **Spanner**：每个 Tablet 是一个 Paxos group，写操作在组内多数副本间达成一致；用 TrueTime 协调跨组事务。
+* **TiKV（TiDB）**：数据切为 Region，每个 Region 是一个 Raft group。
+* **MySQL Group Replication**：基于 Paxos 思路的多副本一致性协议。
+* **微信 PhxStore**：核心用户数据分片，每片是一个 Paxos group。
+* **Kafka KRaft**：每个 Topic 分区是一个 Raft group。

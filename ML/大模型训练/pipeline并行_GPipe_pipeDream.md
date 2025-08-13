@@ -72,7 +72,7 @@ startup stage：怎么确定 warm-up phase 长度？
 
 **（5）seq-1F1B**
 
-https://arxiv.org/pdf/2406.03488v1
+https://arxiv.org/pdf/2406.03488v1 据 ai，在普通 1F1B（包括 interleaved）里，最小调度单位是一个 micro-batch。对于单条样本的长序列，会作为一个整体，forward 完了才能 backward。在 Seq1F1B 里，这个长序列组成的 micro-batch 会沿着 token 维度切成多个 segment。具体得看 paper。
 
 ----
 
@@ -118,7 +118,7 @@ Vertical Sync 示意图如下（对当前微批在各个stage作 F 与 B时的�
 
 $$w^{(t+1)} = w^{(t)} - \nu \cdot \nabla f(w_1^{(t-n+1)}, w_2^{(t-n+1)}, \ldots, w_n^{(t-n+1)})$$
 
-上面这样的多数据版本导致的问题是，本来为了省显存采用 pipeline 并行，这下把省了的又弄回来了。不过其实还是省了，因为 ....
+上面这样的多数据版本导致的问题是，本来为了省显存采用 pipeline 并行，这下把省了的又弄回来了。不过其实还是省了，因为多版本存储的时候，每个节点这时候也只是参数部分占用的多了。而其它梯度、优化器状态、激活值等，都是非流水线并行的 1/N。而多版本参数，最多不过相当于存了全部参数（这是假设 model 终究还是不是那么那么大吧）。
 
 **（2）不是每个 backward 都更新参数，对参数双 buffer 方式，汇聚一批更新一批**
 

@@ -3,8 +3,9 @@
 ### 相关 paper 
 
 - gPipe（谷歌）：《GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism》 https://arxiv.org/abs/1811.06965
-- pipedream(微软）：《PipeDream: Fast and Efficient Pipeline Parallel DNN Training》 https://arxiv.org/pdf/1806.03377
-- pipeDream-2BW、pipeDream-flush（微软）：《Memory-Efficient Pipeline-Parallel DNN Training》 https://arxiv.org/pdf/2006.09503
+- pipedream(微软）：《PipeDream: Fast and Efficient Pipeline Parallel DNN Training》，简记为《PipeDream》 https://arxiv.org/pdf/1806.03377
+- pipeDream-2BW、pipeDream-flush（微软）：《Memory-Efficient Pipeline-Parallel DNN Training》，简记为《PipeDream-2BW》 https://arxiv.org/pdf/2006.09503
+- megatron-LM：《megatron-LM：Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM》，简记为《megatron-LM》 https://arxiv.org/pdf/2104.04473
 
 ---
 
@@ -57,9 +58,11 @@ pipeline 并行时，如果作 activation checkpointing，切分点很自然地�
 
 startup stage：怎么确定 warm-up phase 长度？
 
+当 1F1B 交错时，如图是假设时间上精确地 2个F = 1个B。而实际只是近似如此，会不会导致上图F与B格子对不齐，从而影响效率？实际上GPU之间并不要求非得对齐。每个 GPU 上，只要 1F-1B-1F-1B 这样交错着执行就行，只要任务来就执行；没任务等等，如果任务堆积，连续不停歇执行。
+
 **（4）interleaved 1F1B**
 
-《megatron-LM》中提到了 interleaved 1F1B 的方式。里面对于 model layers 的切分，不是直接每个设备认领一段，而是认领不相邻的两段，如图：
+《megatron-LM：Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM》中提到了 interleaved 1F1B 的方式。里面对于 model layers 的切分，不是直接每个设备认领一段，而是认领不相邻的两段（所以 interleaved 并不指的 1F-1B-1F-1B 的交错；而是 layers 的交错），如图：
 
 <img width="1116" height="514" alt="image" src="https://github.com/user-attachments/assets/cb303e9f-cda2-4940-a3bc-36c5c9f749b6" />
 
@@ -67,3 +70,32 @@ startup stage：怎么确定 warm-up phase 长度？
 
 <img width="1614" height="620" alt="image" src="https://github.com/user-attachments/assets/e0927137-d598-4dfb-9443-ffa92961fd21" />
 
+**（5）seq-1F1B**
+
+https://arxiv.org/pdf/2406.03488v1
+
+----
+
+## 不停歇的 pipeline-并行
+
+以上方式，都是要让效果完全等同于不走 pipeline。还有方式是，让流水线完全不停歇，一直流下去，不过会导致并等同于非流水线训练（而只是近似）。《PipeDream》、《PipeDream-2BW》中的方法，就是如此。
+
+当前的 LLM 训练一般不用这样方式。
+
+该方式下，起始的 startup 阶段后，进入稳定态。稳定态下，每个 gpu 实例上都是一直不停执行 1F-1B-1F-1B：《PipeDream》是 1F1B 中的每个 backward，都会当场更新参数，而《PipeDream-2BW》则稍等下再更新，但仍然没有上面那样的统一划线的参数更新的 flush。
+
+<img width="1094" height="442" alt="image" src="https://github.com/user-attachments/assets/4b7674ed-9203-4e2a-a9c4-4e4f329003fc" />
+
+如上图：稳定态后，不再有 bubble 存在，从而最大程度利用 gpu。
+
+<img width="1244" height="722" alt="image" src="https://github.com/user-attachments/assets/898bda98-2df0-40c1-b339-c5e2d8c694c4" />
+
+如上图：从 input stage => output stage, 每个微批的 B 与 F 之间的距离（等待时间，从最远线性变为 0。对 output stage（流水线最后一个 gpu）来说：当前微批才做完 forward，马上做它的 backward。
+
+关于不停流 pipeline 并行的参数更新方式，有这么几种：
+
+**（1）每个 backward都更新参数：需参数版本管理**
+
+如果参数不作版本管理，那么除了output stage GPU 外，其他 gpu 上，同一个 microbatch 的 F 与 B 之间有参数更新，导致 Backward 时的用到的参数值和 forward 时的参数值不一样，算出的梯度也有问题。所以需要参数版本化管理。核心就是保证：F 与 B 时用到了同样取值的参数。
+
+**（2）不是每个 backward 都更新参数，对参数双 buffer 方式，汇聚一批更新一批**

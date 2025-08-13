@@ -28,7 +28,7 @@
 
 <img width="810" height="554" alt="image" src="https://github.com/user-attachments/assets/1e4cee4a-1130-415c-b158-c1f7d9449c08" />
 
-如图，按层把 model 切分成多个组，每个组用一个 gpu。单个gpu内训练指定的这些 layers，和上下游的 gpu 联动，传递梯度或激活值。至于怎样切分更好，见《pipeDream》、《GPipe》二文。
+如图，按层把 model 切分成多个组，每个组用一个 gpu。单个gpu内训练指定的这些 layers，和上下游的 gpu 联动，传递梯度或激活值。至于怎样切分更好，见《pipeDream》、《GPipe》二文，AI总结道：GPipe：每层可以提供可选的计算成本估算函数，基于计算成本作切分，目标是最小化各partition间计算时间的方差。。pipeDream：自动剖析：先在单机上运行模型，测量每层的计算时间和输出大小；然后动态规划优化：用算法自动决定如何将连续的层分组成"阶段"，并分配给不同机器，目标是让各阶段工作量均衡、通信量最小。GPipe 看计算，pipeDream 看计算+通信】
 
 如下，pipeline 并行，可以和数据并行联合使用：
 
@@ -56,7 +56,7 @@ pipeline 并行时，如果作 activation checkpointing，切分点很自然地�
 
 <img width="1578" height="372" alt="image" src="https://github.com/user-attachments/assets/8b16efe2-506b-4ed6-af55-1e6899f73afc" />
 
-startup stage：怎么确定 warm-up phase 长度？
+warmup 阶段最佳微批数：据《pipeDream》，NUM_OPT_ACTIVE_MINIBATCHES= NOAM = ⌈(总机器数) / (输入阶段的机器数)⌉。目标:是让所有机器在稳态时都保持忙碌，而输入阶段是流水线的"瓶颈" - 它控制着新 minibatch 的注入速度。如果每个stage 平均切分，机器数也一样，则 NOAM=并行数。
 
 当 1F1B 交错时，如图是假设时间上精确地 2个F = 1个B。而实际只是近似如此，会不会导致上图F与B格子对不齐，从而影响效率？实际上GPU之间并不要求非得对齐。每个 GPU 上，只要 1F-1B-1F-1B 这样交错着执行就行，只要任务来就执行；没任务等等，如果任务堆积，连续不停歇执行。
 

@@ -29,6 +29,10 @@
 
 如图，按层把 model 切分成多个组，每个组用一个 gpu。单个gpu内训练指定的这些 layers，和上下游的 gpu 联动，传递梯度或激活值。至于怎样切分更好，见《pipeDream》、《GPipe》二文。
 
+如下，pipeline 并行，可以和数据并行联合使用：
+
+<img width="790" height="544" alt="image" src="https://github.com/user-attachments/assets/adbce50f-9910-4505-8f11-f2a04d0faf79" />
+
 pipeline 并行时，如果作 activation checkpointing，切分点很自然地选用 pipeline 切分点就行：每个 gpu 把 input 激活存下来用于重计算即可。另外 pipeline 没法精确还原 batch Norm，具体见《GPipe》。
 
 **（1）朴素做法**
@@ -39,15 +43,21 @@ pipeline 并行时，如果作 activation checkpointing，切分点很自然地�
 
 **（2）微批化**
 
-于是可以 micro-batch 的方式(上图中 (c), 即 GPipe 方法；或下图)，把大的 batch_size 拆小，这样 gpu 利用率会变大，但是仍然有 idle bubble 在（假设 K 路并行， 微批数是 M，则 bubble 占比是 $\frac {K-1}{M+K-1}$)。
+于是可以 micro-batch 的方式(上图中 (c), 即 GPipe 方法；或下图)，把大的 batch_size 拆小，这样 gpu 利用率会变大，但是仍然有 idle bubble 在（假设 P 路并行， 微批数是 M，则 bubble 占比是 $\frac {P-1}{M+P-1}$)。
 
 <img width="1540" height="444" alt="image" src="https://github.com/user-attachments/assets/c662cef2-a330-4bc0-996d-c0b0f9f9096e" />
 
-如上，按一个 backward 是 forward 的 2 倍时间算。一个 forward 算作一格时间，则一个完整周期共有 33 格时间，共36 格 idle。数得 bubble 率为 36/(4*33)=0.273， 或带入 $\frac {K-1}{M+K-1}$ 也可得。
+如上，按一个 backward 是 forward 的 2 倍时间算。一个 forward 算作一格时间，则一个完整周期共有 33 格时间，共36 格 idle。数得 bubble 率为 36/(4*33)=0.273， 或带入 $\frac {P-1}{M+P-1}$ 也可得。
 
 **（3）1F1B=（1 forward 1 backward）**
 
-《pipeDream》发现，可以令 forward 与 backward 按微批做交错。这时候的 bubble 率一样，但是对显存有好处。如下图，和上图一样的人物。可以看到数出的一个周期时间（33格），以及 idle（36格） 和 GPipe 方案一样。
+《pipeDream》发现，可以令 forward 与 backward 按微批做交错。这时候的 bubble 率一样，但是对显存有好处。如下图，和上图一样的任务。可以看到一个一个数出的一个周期时间（33格），以及 idle（36格） 和 上面 GPipe 方案一样。
 
 <img width="1578" height="372" alt="image" src="https://github.com/user-attachments/assets/8b16efe2-506b-4ed6-af55-1e6899f73afc" />
+
+startup stage：怎么确定 warm-up phase 长度？
+
+**（4）interleaved 1F1B**
+
+<img width="1614" height="620" alt="image" src="https://github.com/user-attachments/assets/e0927137-d598-4dfb-9443-ffa92961fd21" />
 

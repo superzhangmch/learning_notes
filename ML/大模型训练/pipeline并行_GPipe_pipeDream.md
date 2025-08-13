@@ -100,6 +100,14 @@ https://arxiv.org/pdf/2406.03488v1
 
 版本化方式有两种（《pipeDream》）：Weight Stashing 或 Vertical Sync。
 
-Weight Stashing 是记录下一个 microbatch 作 forward 时的参数镜像，到了作 backward 时任然用这一份。不同 stage gpu 上需要存下的参数版本不同：从 input stage => output stage 线性递减到 0。这样做没解决的问题是：同一个 microbatch，在不同的 stage，仍然用了不同版本的参数。而 Vertical Sync 就是要解决这个问题。它的方法是，记录下每个微批在 input stage 入口处的参数版本，在其他 stage 在forward 阶段也应该用同样的"历史"版本，这样它存的版本就更多了(output stage 也要存同样多的版本）。
+Weight Stashing 是记录下一个 microbatch 作 forward 时的参数镜像，到了作 backward 时仍然用这一份。不同 stage gpu 上需要同时存的参数数量不等（每个微批都需要存，但是需要存的生命周期不同。导致gpu 存的版本数不同）：从 input stage => output stage 线性递减到 0。这样做没解决的问题是：同一个 microbatch，在不同的 stage，仍然用了不同版本的参数。而 Vertical Sync 就是要解决这个问题。它的方法是，记录下每个微批在 input stage 入口处的参数版本，在其他 stage 在forward 阶段也应该用同样的"历史"版本，这样它存的版本就更多了(output stage 也要存同样多的版本）。
+
+weight stashing 示意图如下（对当前微批，用最新参数做 forward，顺便存下此参数；backward 的时候要用存下的参数；做完backward，马上更新参数）：
+
+<img width="1266" height="866" alt="image" src="https://github.com/user-attachments/assets/1dc6c2b0-cf8c-4017-babc-df31ca6361bd" />
+
+Vertical Sync 示意图如下（对当前微批在各个stage作 F 与 B时的参数版本，都是 input stage 时的最新参数的那个版本）：
+
+<img width="1240" height="586" alt="image" src="https://github.com/user-attachments/assets/0e178c06-806f-4adf-b66c-6ff0da957009" />
 
 **（2）不是每个 backward 都更新参数，对参数双 buffer 方式，汇聚一批更新一批**

@@ -106,8 +106,22 @@ weight stashing 示意图如下（对当前微批，用最新参数做 forward�
 
 <img width="1266" height="866" alt="image" src="https://github.com/user-attachments/assets/1dc6c2b0-cf8c-4017-babc-df31ca6361bd" />
 
+有全局 flush 时参数更新是 $w^{(t+1)} = w^{(t)} - \nu \cdot \nabla f(w_1^{(t)}, w_2^{(t)}, \ldots, w_n^{(t)})$, 而 weeight stashing 的参数更新等价于说(可以看到不同stage所基于的参数版本不同)：
+
+$$w^{(t+1)} = w^{(t)} - \nu \cdot \nabla f(w_1^{(t-n+1)}, w_2^{(t-n+2)}, \ldots, w_n^{(t-2)}, w_n^{(t-1)} w_n^{(t)})$$
+
 Vertical Sync 示意图如下（对当前微批在各个stage作 F 与 B时的参数版本，都是 input stage 时的最新参数的那个版本）：
 
 <img width="1240" height="586" alt="image" src="https://github.com/user-attachments/assets/0e178c06-806f-4adf-b66c-6ff0da957009" />
 
+它的参数更新等价于说（虽然不同 stage 所基于的参数版本一样，但是延后n步。每次都是用历史上某次参数的梯度，更新最新参数）：
+
+$$w^{(t+1)} = w^{(t)} - \nu \cdot \nabla f(w_1^{(t-n+1)}, w_2^{(t-n+1)}, \ldots, w_n^{(t-n+1)})$$
+
 **（2）不是每个 backward 都更新参数，对参数双 buffer 方式，汇聚一批更新一批**
+
+如下图。每跑一定数量（足够多的）微批，做一次参数更新。从此起，所有forward 都要用新参数，直到下一次参数更新。而对于 backward，都用 forward时的参数版本（要么是最新，要么是次新。总之两个版本足以。）
+
+<img width="1366" height="590" alt="image" src="https://github.com/user-attachments/assets/4f3a9100-6baa-4316-a1c8-ece9f9799e84" />
+
+它的参数更新，正好落后一步：总是用上上次参数的梯度更新上次参数，然后得到最新参数。

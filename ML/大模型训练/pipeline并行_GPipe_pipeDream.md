@@ -59,5 +59,11 @@ startup stage：怎么确定 warm-up phase 长度？
 
 **（4）interleaved 1F1B**
 
+《megatron-LM》中提到了 interleaved 1F1B 的方式。里面对于 model layers 的切分，不是直接每个设备认领一段，而是认领不相邻的两段，如图：
+
+<img width="1116" height="514" alt="image" src="https://github.com/user-attachments/assets/cb303e9f-cda2-4940-a3bc-36c5c9f749b6" />
+
+设备数不变，微批大小与数量都不变时，如下图这样执行。通过数格子，可以看到它的总执行时间更短（28.5 < 33)，且 bubble 率更小：
+
 <img width="1614" height="620" alt="image" src="https://github.com/user-attachments/assets/e0927137-d598-4dfb-9443-ffa92961fd21" />
 

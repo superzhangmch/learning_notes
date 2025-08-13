@@ -96,6 +96,10 @@ https://arxiv.org/pdf/2406.03488v1
 
 **（1）每个 backward都更新参数：需参数版本管理**
 
-如果参数不作版本管理，那么除了output stage GPU 外，其他 gpu 上，同一个 microbatch 的 F 与 B 之间有参数更新，导致 Backward 时的用到的参数值和 forward 时的参数值不一样，算出的梯度也有问题。所以需要参数版本化管理。核心就是保证：F 与 B 时用到了同样取值的参数。
+如果参数不作版本管理，那么除了output stage GPU 外，其他 gpu 上 同一个 microbatch 的 F 与 B 之间有其他微批做参数更新，导致 Backward 时的用到的参数值和 forward 时的参数值不一样，算出的梯度也有问题。所以需要参数版本化管理，核心就是保证：F 与 B 时用到了同样取值的参数。
+
+版本化方式有两种（《pipeDream》）：Weight Stashing 或 Vertical Sync。
+
+Weight Stashing 是记录下一个 microbatch 作 forward 时的参数镜像，到了作 backward 时任然用这一份。不同 stage gpu 上需要存下的参数版本不同：从 input stage => output stage 线性递减到 0。这样做没解决的问题是：同一个 microbatch，在不同的 stage，仍然用了不同版本的参数。而 Vertical Sync 就是要解决这个问题。它的方法是，记录下每个微批在 input stage 入口处的参数版本，在其他 stage 在forward 阶段也应该用同样的"历史"版本，这样它存的版本就更多了(output stage 也要存同样多的版本）。
 
 **（2）不是每个 backward 都更新参数，对参数双 buffer 方式，汇聚一批更新一批**

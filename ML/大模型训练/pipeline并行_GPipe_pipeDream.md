@@ -52,7 +52,7 @@ pipeline 并行时，如果作 activation checkpointing，切分点很自然地�
 
 **（3）1F1B=（1 forward 1 backward）**
 
-《pipeDream》发现，可以令 forward 与 backward 按微批做交错。这时候的 bubble 率一样，但是对显存有好处。如下图，和上图一样的任务。可以看到一个一个数出的一个周期时间（33格），以及 idle（36格） 和 上面 GPipe 方案一样。
+《pipeDream》发现，可以令一个个微批的 forward 与 backward 交错。bubble 率和不这样一样，但是对显存有好处（）。如下图，和上图一样的任务。可以看到一个一个数出的一个周期时间（33格），以及 idle（36格） 和 上面 GPipe 方案一样。
 
 <img width="1578" height="372" alt="image" src="https://github.com/user-attachments/assets/8b16efe2-506b-4ed6-af55-1e6899f73afc" />
 
@@ -70,9 +70,19 @@ startup stage：怎么确定 warm-up phase 长度？
 
 <img width="1614" height="620" alt="image" src="https://github.com/user-attachments/assets/e0927137-d598-4dfb-9443-ffa92961fd21" />
 
-**（5）seq-1F1B**
+**（5）zero-bubble**
 
-https://arxiv.org/pdf/2406.03488v1 据 ai，在普通 1F1B（包括 interleaved）里，最小调度单位是一个 micro-batch。对于单条样本的长序列，会作为一个整体，forward 完了才能 backward。在 Seq1F1B 里，这个长序列组成的 micro-batch 会沿着 token 维度切成多个 segment。具体得看 paper。
+《ZERO BUBBLE PIPELINE PARALLELISM》 https://arxiv.org/pdf/2401.10241
+
+<img width="1300" height="482" alt="image" src="https://github.com/user-attachments/assets/aab71194-17e6-456c-b281-9f67535c4c1d" />
+
+backward 时间为 forward 的 2 倍。这是基于 DNN 中大部分操作是 $W \cdot f(x)$ 矩阵乘法的缘故, 反向传播时要关于 W 求梯度，也要关于 input f(x) 求。时间各占一半。所以作者把 backward 分成了这两者，分别用 W 与 B 表示。从而 F，B，W 数量一样。然后基于此分解，精心设计了 zero-bubble 的调度法。另外paper中也有关于怎样做自动化编排。
+
+**（6）seq-1F1B**
+
+https://arxiv.org/pdf/2406.03488v1 据 ai，在普通 1F1B（包括 interleaved）里，最小调度单位是一个 micro-batch。对于单条样本的长序列，会作为一个整体，forward 完了才能 backward。在 Seq1F1B 里，这个长序列组成的 micro-batch 会沿着 token 维度切成多个 segment。最终也是要flush的。它还可以和 zero-bubble 技术结合。
+
+具体得看 paper。
 
 ----
 

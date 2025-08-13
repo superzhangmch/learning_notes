@@ -100,7 +100,7 @@ https://arxiv.org/pdf/2406.03488v1
 
 版本化方式有两种（《pipeDream》）：Weight Stashing 或 Vertical Sync。
 
-Weight Stashing 是记录下一个 microbatch 作 forward 时的参数镜像，到了作 backward 时仍然用这一份。不同 stage gpu 上需要同时存的参数数量不等（每个微批都需要存，但是需要存的生命周期不同。导致gpu 存的版本数不同）：从 input stage => output stage 线性递减到 0。这样做没解决的问题是：同一个 microbatch，在不同的 stage，仍然用了不同版本的参数。而 Vertical Sync 就是要解决这个问题。它的方法是，记录下每个微批在 input stage 入口处的参数版本，在其他 stage 在forward 阶段也应该用同样的"历史"版本，这样它存的版本就更多了(output stage 也要存同样多的版本）。
+**Weight Stashing** 是记录下一个 microbatch 作 forward 时的参数镜像，到了作 backward 时仍然用这一份。不同 stage gpu 上需要同时存的参数数量不等（每个微批都需要存，但是需要存的生命周期不同。导致gpu 存的版本数不同）：从 input stage => output stage 线性递减到 0。这样做没解决的问题是：同一个 microbatch，在不同的 stage，仍然用了不同版本的参数。而 **Vertical Sync** 就是要解决这个问题。它的方法是，记录下每个微批在 input stage 入口处的参数版本，在其他所有 stage 在forward 阶段也应该用同样的"历史"版本，这样它存的版本就更多了(output stage 也要存同样多的版本）。
 
 weight stashing 示意图如下（对当前微批，用最新参数做 forward，顺便存下此参数；backward 的时候要用存下的参数；做完backward，马上更新参数）：
 
@@ -110,18 +110,26 @@ weight stashing 示意图如下（对当前微批，用最新参数做 forward�
 
 $$w^{(t+1)} = w^{(t)} - \nu \cdot \nabla f(w_1^{(t-n+1)}, w_2^{(t-n+2)}, \ldots, w_n^{(t-2)}, w_n^{(t-1)} w_n^{(t)})$$
 
-Vertical Sync 示意图如下（对当前微批在各个stage作 F 与 B时的参数版本，都是 input stage 时的最新参数的那个版本）：
+Vertical Sync 示意图如下（对当前微批在各个stage作 F 与 B时的参数版本，都是 input stage 时的最新参数的那个版本，这个版本号随着pipeline 传到所有stage）：
 
 <img width="1240" height="586" alt="image" src="https://github.com/user-attachments/assets/0e178c06-806f-4adf-b66c-6ff0da957009" />
 
-它的参数更新等价于说（虽然不同 stage 所基于的参数版本一样，但是延后n步。每次都是用历史上某次参数的梯度，更新最新参数）：
+它的参数更新等价于说（虽然同一个微批在不同 stage 所基于的参数版本一样，但是延后n步。每次都是用历史上某次参数的梯度，更新最新参数）：
 
 $$w^{(t+1)} = w^{(t)} - \nu \cdot \nabla f(w_1^{(t-n+1)}, w_2^{(t-n+1)}, \ldots, w_n^{(t-n+1)})$$
 
+上面这样的多数据版本导致的问题是，本来为了省显存采用 pipeline 并行，这下把省了的又弄回来了。不过其实还是省了，因为 ....
+
 **（2）不是每个 backward 都更新参数，对参数双 buffer 方式，汇聚一批更新一批**
 
-如下图。每跑一定数量（足够多的）微批，做一次参数更新。从此起，所有forward 都要用新参数，直到下一次参数更新。而对于 backward，都用 forward时的参数版本（要么是最新，要么是次新。总之两个版本足以。）
+如下图。每跑一定数量（足够多的）微批，梯度累积后做一次参数更新。从此起，所有forward 都要用新参数，直到下一次参数更新。而对于 backward，都用 forward时的参数版本（要么是最新，要么是次新。总之两个版本足以。）
 
-<img width="1366" height="590" alt="image" src="https://github.com/user-attachments/assets/4f3a9100-6baa-4316-a1c8-ece9f9799e84" />
+<img width="1376" height="574" alt="image" src="https://github.com/user-attachments/assets/720b1927-c2fd-40d8-a5ed-7ccde541e0b7" />
 
-它的参数更新，正好落后一步：总是用上上次参数的梯度更新上次参数，然后得到最新参数。
+如上图如果梯度累积的步数刚刚好，则差不多所有微批都是横跨参数更新“斜线”的。这表现为它的参数更新，正好落后一步：总是用上上次参数的梯度更新上次参数，然后得到最新参数。
+
+如果梯度累积的步数很大（远超刚刚好；既上图两斜线距离很大），那么大部分微批用了最新版本参数做的backward。这时候就差不多就是一般train时的没有时延了。
+
+原始paper中图：
+
+<img width="1158" height="456" alt="image" src="https://github.com/user-attachments/assets/6008eb81-450c-4af5-945b-5eb4e876e87f" />

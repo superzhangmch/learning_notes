@@ -62,7 +62,7 @@ warmup 阶段最佳微批数：据《pipeDream》，NUM_OPT_ACTIVE_MINIBATCHES= 
 
 **（4）interleaved 1F1B**
 
-《megatron-LM：Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM》中提到了 interleaved 1F1B 的方式。里面对于 model layers 的切分，不是直接每个设备认领一段，而是认领不相邻的两段（所以 interleaved 并不指的 1F-1B-1F-1B 的交错；而是 layers 的交错），如图：
+《megatron 第2篇：Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM》中提到了 interleaved 1F1B 的方式。里面对于 model layers 的切分，不是直接每个设备认领一段，而是认领不相邻的两段（所以 interleaved 并不指的 1F-1B-1F-1B 的交错；而是 layers 的交错），如图：
 
 <img width="1116" height="514" alt="image" src="https://github.com/user-attachments/assets/cb303e9f-cda2-4940-a3bc-36c5c9f749b6" />
 

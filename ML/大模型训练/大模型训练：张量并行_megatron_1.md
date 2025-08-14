@@ -7,11 +7,11 @@
 
 ----
 
-### 怎么做
+## 怎么做
 
 假设要计算 $Y=XW$, W是weight矩阵，X 是 shape=(batch_size, dim) 的矩阵。
 
-#### 1. 只切一个矩阵：权重按列切分
+### （1）. 只切一个矩阵：权重按列切分
 
 权重 $W$ 按输出维度切分，每个gpu 存一份：
 
@@ -31,7 +31,7 @@ $$
 
 <img width="962" height="222" alt="image" src="https://github.com/user-attachments/assets/7bdd5e89-6241-4aff-9394-506702d257b6" />
 
-#### 2. 两个都切分：权重按行切分
+### （2）. 两个都切分：权重按行切分
 
 权重 $W$ 按输入维度切分（每 gpu 存一份）：
 
@@ -75,3 +75,20 @@ $$
 
 <img width="696" height="346" alt="image" src="https://github.com/user-attachments/assets/b318b605-3c4d-4eb2-a368-e1d1dc977067" />
 
+----
+
+## megatron-1 怎么用它处理 transformer 训练的
+
+它从 embedding、attention、FFN（MLP） 三个部分都做了张量并行。
+
+### （1）、embedding
+
+词表 tokens embedding 一般是存在同一个gpu上的，根据 one-hot 读取embeddings 其实就是矩阵乘法。
+
+对于 input emb: 可以按token 维度切分，不同的 token 存于不同的 gpu，用的时候通过 all-reduce 拉过来。
+
+对于 output emb：
+
+### （2）、attention
+
+### （3）、FFN/MLP

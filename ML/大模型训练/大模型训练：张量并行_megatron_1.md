@@ -110,7 +110,18 @@ megatron-1 通讯开销：对于 transformer 一层来说，训练时forward+bac
 
 <img width="962" height="572" alt="image" src="https://github.com/user-attachments/assets/b7295661-ef98-44d0-adc9-4a9912ed8944" />
 
-### （5）、megatron-1 的实践
+### （5） dropout, layer normalization, or residual connections
+
+> we maintain duplicate copies of layer normalization
+parameters on each GPU, and take the output of the model
+parallel region and run dropout and residual connection
+on these tensors before feeding them as input to the next
+model parallel regions. To optimize the model we allow
+each model parallel worker to optimize its own set of parameters. Since all values are either local to or duplicated
+on a GPU, there is no need for communicating updated
+parameter values in this formulation.
+
+### （6）、megatron-1 的实践
 
 megatron-1 的张量并行，可以和数据并行组合使用。一般张量并行示例部署到同一台机器的多卡上，这样通讯开销最小。
 

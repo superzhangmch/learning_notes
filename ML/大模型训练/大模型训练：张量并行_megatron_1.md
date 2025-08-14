@@ -106,10 +106,12 @@ $FFN(X) = W_2 \cdot \text{actFunc}(X \cdot W_1)$, 对于内部的 $Y=X \cdot W_1
 
 ### （4）、通讯开销
 
-megatron-1 通讯开销：对于 transformer 一层来说，训练时forward+backward 一共有额外 4 次 all-reduce（all-reduce：先把不同节点的值累加，然后所有节点都有该累加值）。
+megatron-1 通讯开销：对于 transformer 一层来说，训练时forward+backward 一共有额外 4 次 all-reduce（all-reduce：先把不同节点的值累加，然后所有节点都有该累加值）。增加通信，所以一般张量并行在单机多卡内进行。
 
 <img width="962" height="572" alt="image" src="https://github.com/user-attachments/assets/b7295661-ef98-44d0-adc9-4a9912ed8944" />
 
 ### （5）、megatron-1 的实践
 
 megatron-1 的张量并行，可以和数据并行组合使用。一般张量并行示例部署到同一台机器的多卡上，这样通讯开销最小。
+
+<img width="758" height="622" alt="image" src="https://github.com/user-attachments/assets/2ddfad58-07f7-4d14-8751-6a7ae1a62e8a" />

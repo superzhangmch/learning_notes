@@ -33,6 +33,8 @@ megatron 在其他地方都用的 [S, B, H], 但是 attn 最核心处，仍然�
 
 <img width="1250" height="1134" alt="image" src="https://github.com/user-attachments/assets/ea0e0cd2-cd2b-497b-871d-411b0177c175" />
 
+注意用了： torch.bmm/torch.baddbmm
+
 ----
 
 ### 关于 megatron
@@ -46,5 +48,73 @@ megatron 第二篇 [《Efficient Large-Scale Language Model Training on GPU Clus
 
 那么：
 - 是 megatron 研发人员后来发现还是 batch_first 更好，但是限于惯性不好改了，于是整体用 [B, S, H], 而在 attn 时临时 seq-first 一下吗?
-- 还是说上面呈现的 batch_first 的 torch.bmm/torch.baddbmm 内部，它又要给再转成物理连续的 seq-first（而原生[S, B, H] 在此处转的时候无成本）？
+- 还是说上面呈现的 batch_first 的 torch.bmm/torch.baddbmm 内部，它又要给再转成物理连续的 seq-first（而原生[S, B, H] 在此处转的时候无成本吗）？
 
+----
+
+### 矩阵乘法的补充知识
+
+**（1）torch.bmm：**
+
+atch Matrix Multiply，直接做批量矩阵乘法
+```
+A.shape = [Batch, M, K]
+B.shape = [Batch, K, N]
+output.shape = bmm(a,b).shape = [batch, M, N]
+output = [A[i] × B[i] for i in range(batch)]
+```
+
+note：
+
+- torch.dot → 只能 1D 向量点积。也就是只能两个向量（batchsize=1）， 若要 batchsize > 1, torch 中需要组合多算子来实现。
+- torch.mm → 只能 2D 矩阵乘。也就是两个矩阵乘法，或者说 batchsize=1
+- torch.bmm → 只能 3D 批量矩阵乘。batchsize > 1 时的矩阵乘法
+
+**（2）torch.baddbmm：**
+
+Batch Add + Matrix Multiply，在矩阵乘的基础上，还能把已有的矩阵结果加进去（带 alpha/beta 系数）。只是 torch.bmm 的一个拓展。
+```
+A.shape = [Batch, M, K]
+B.shape = [Batch, K, N]
+C.shape = [Batch, M, N] 为已有结果
+output = [βC[i] + α(A[i] × B[i]) for i in range(batch)]
+output.shape = torch.baddbmm(C, A, B).shape = [Batch, M, N]
+```
+
+**（3）strided batched GEMM：**
+
+前面两个都好理解。strided batched GEMM 是这样的矩阵乘法：
+```
+A.shape = [M, Batch, K] 连续存储
+B.shape = [N, Batch, K] 连续存储
+output.shape = bmm(A,B').shape = [M, batch, N]
+output = [A[:,i,:] × B'[:,i,:] for i in range(batch)].trans_shape_to([M, batch, N])
+```
+
+**（4）什么时候 tensor 的 reshape/transpose/permutate等操作会导致物理内存 copy**
+
+举几个 MHA 中的例子：
+
+```
+# 假设输入
+batch, seq, hid, num_heads = 2, 5, 16, 4
+head_dim = hid // num_heads
+q = torch.randn(batch, seq, hid)             # [batch, seq, hid], contiguous
+
+q = q.transpose(0, 1)                        # [seq, batch, hid], zero-copy (stride 改变)
+# 变成了 [seq, batch, hid]
+
+q = q.reshape(seq, batch, num_heads, head_dim)  # [seq, batch, num_heads, head_dim], zero-copy
+q = q.reshape(seq, batch * num_heads, head_dim) # [seq, batch*num_heads, head_dim], ⚠️ copy
+q = q.reshape(batch * num_heads, seq, head_dim) # [batch*num_heads, seq, head_dim], zero-copy
+```
+
+```
+batch, seq, hid, num_heads = 2, 5, 16, 4
+head_dim = hid // num_heads
+q = torch.randn(batch, seq, hid)             # [batch, seq, hid], contiguous
+
+q = q.view(batch, seq, num_heads, head_dim)  # [batch, seq, num_heads, head_dim], zero-copy
+q = q.permute(0, 2, 1, 3)                    # [batch, num_heads, seq, head_dim], zero-copy (stride 改变)
+q = q.reshape(batch * num_heads, seq, head_dim) # [batch*num_heads, seq, head_dim], ⚠️ copy
+```

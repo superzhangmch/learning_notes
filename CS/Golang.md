@@ -1,0 +1,85 @@
+### 一个 obj，怎么知道有哪些成员变量或成员函数
+```
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type Demo struct{}
+
+func (d Demo) FetchBody(a string, b int) (string, error) {
+    return "ok", nil
+}
+
+func main() {
+    obj := Demo{}
+    t := reflect.TypeOf(obj)
+
+    if m, ok := t.MethodByName("FetchBody"); ok {
+        fmt.Println("Method:", m.Name)
+        fmt.Println("Type :", m.Type)
+
+        // 参数
+        for i := 0; i < m.Type.NumIn(); i++ {
+            fmt.Printf("  Param %d: %s\n", i, m.Type.In(i))
+        }
+
+        // 返回值
+        for i := 0; i < m.Type.NumOut(); i++ {
+            fmt.Printf("  Return %d: %s\n", i, m.Type.Out(i))
+        }
+    }
+}
+```
+
+### 一个 obj 的成员函数，不知道参数与返回值，怎么判断：
+
+```
+package main
+
+import (
+	"fmt"
+	"reflect"
+)
+
+func InspectMethod(obj any, methodName string) {
+	t := reflect.TypeOf(obj)
+
+	m, ok := t.MethodByName(methodName)
+	if !ok {
+		fmt.Printf("Method %s not found on %T\n", methodName, obj)
+		return
+	}
+
+	fmt.Printf("== %T.%s ==\n", obj, methodName)
+	fmt.Println("Full Type:", m.Type)
+
+	// 参数
+	fmt.Println("Parameters:")
+	for i := 0; i < m.Type.NumIn(); i++ {
+		fmt.Printf("  Param %d: %s\n", i, m.Type.In(i))
+	}
+
+	// 返回值
+	fmt.Println("Returns:")
+	for i := 0; i < m.Type.NumOut(); i++ {
+		fmt.Printf("  Return %d: %s\n", i, m.Type.Out(i))
+	}
+}
+
+// --- 示例 ---
+
+type Demo struct{}
+
+func (d Demo) FetchBody(a string, b int) (string, error) {
+	return "ok", nil
+}
+
+func main() {
+	obj := Demo{}
+	InspectMethod(obj, "FetchBody")
+}
+
+```

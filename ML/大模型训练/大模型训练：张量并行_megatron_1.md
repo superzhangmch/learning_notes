@@ -112,6 +112,8 @@ megatron-1 通讯开销：对于 transformer 一层来说，训练时forward+bac
 
 ### （5） dropout, layer normalization, or residual connections
 
+paper 中说：
+
 > we maintain duplicate copies of layer normalization
 parameters on each GPU, and take the output of the model
 parallel region and run dropout and residual connection
@@ -120,6 +122,10 @@ model parallel regions. To optimize the model we allow
 each model parallel worker to optimize its own set of parameters. Since all values are either local to or duplicated
 on a GPU, there is no need for communicating updated
 parameter values in this formulation.
+
+总结来说：这些部分没法并行。因为每一段张量并行（mlp 或 attn）的最后一步（聚合前）结果，都是 $\[Y_1, Y_2]\ \cdot \[B_1, B_2\]^T = Y_1 B_1 + Y_2 B_2$ 形式, $Y_i\cdot B_i$ 都是在不同 gpu 上的。这个和乃 dropout/layernorm 的输入。
+
+正因 dropout/layernorm 的输入必须是最终聚合后结果，所以 paper 采用的方式是在每个gpu 上都保留张量并行的聚合后结果。然后分别作 dropout/layerNorm。这会带来问题是：（1）重复计算（2) 这部分的激活显存占用问题——反向传播时仍需要，但没法根据分摊于并行的 gpu 之间。于是《ZeRO》paper 之 ZeRO-R 一节，以及 《megatron-v3》都在努力解决这个问题（后者通过序列并行）。
 
 ### （6）、megatron-1 的实践
 

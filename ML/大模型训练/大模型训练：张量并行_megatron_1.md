@@ -1,9 +1,9 @@
 
 # 张量并行
 
-出于 《Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism》 https://arxiv.org/pdf/1909.08053 ， megatron-1（后续还有2,3）中。
+出于 《Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism》 https://arxiv.org/pdf/1909.08053 ， megatron-1（megatron 后续还有2,3）中。
 
-多余多层 model，pipeline并行时 对于层聚合划分。而张量并行则是保持层数不变，对于单层内的每个矩阵乘法作分布式计算（切分到多个 gpu 上）。它们俩都是把大模型拆散到多 gpu，所以常都被称为模型并行。
+对多层 model：pipeline并行是对层聚合划分；而张量并行则是保持层数不变，对于单层内的每个矩阵乘法作分布式计算（切分到多个 gpu 上）。它们俩都是把大模型拆散到多 gpu，所以常都被称为模型并行。
 
 张量并行是关于两个矩阵相乘的时候，通过对矩阵切分到不同 GPU 做分块矩阵乘法的并行方式。
 
@@ -125,7 +125,7 @@ parameter values in this formulation.
 
 总结来说：这些部分没法并行。因为每一段张量并行（mlp 或 attn）的最后一步（聚合前）结果，都是 $\[Y_1, Y_2]\ \cdot \[B_1, B_2\]^T = Y_1 B_1 + Y_2 B_2$ 形式, $Y_i\cdot B_i$ 都是在不同 gpu 上的。这个和乃 dropout/layernorm 的输入。
 
-正因 dropout/layernorm 的输入必须是最终聚合后结果，所以 paper 采用的方式是在每个gpu 上都保留张量并行的聚合后结果。然后分别作 dropout/layerNorm。这会带来问题是：（1）重复计算（2) 这部分的激活显存占用问题——反向传播时仍需要，但没法根据分摊于并行的 gpu 之间。于是《ZeRO》paper 之 ZeRO-R 一节，以及 《megatron-v3》都在努力解决这个问题（后者通过序列并行）。
+正因 dropout/layernorm 的输入必须是最终聚合后结果，所以 paper 采用的方式是在每个gpu 上都保留张量并行的聚合后结果。然后分别作 dropout/layerNorm。这会带来问题是：（1）重复计算（2) 这部分的激活显存占用问题——反向传播时仍需要，但没法根据分摊于并行的 gpu 之间。于是《ZeRO》paper 之 ZeRO-R 一节，以及 《megatron-v3》都在努力解决这个问题（后者通过序列并行。详见 [这里](https://github.com/superzhangmch/learning_notes/blob/main/ML/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%EF%BC%9A%E5%BA%8F%E5%88%97%E5%B9%B6%E8%A1%8C.md#%E4%B8%80megatron-3-%E7%9A%84%E5%BA%8F%E5%88%97%E5%B9%B6%E8%A1%8C%E9%9D%9E%E7%9C%9F%E5%BA%8F%E5%88%97%E5%B9%B6%E8%A1%8C%E5%8F%AA%E6%98%AF%E4%B8%BA%E4%BA%86%E9%99%8D%E6%BF%80%E6%B4%BB%E6%98%BE%E5%AD%98) ）。
 
 ### （6）、megatron-1 的实践
 

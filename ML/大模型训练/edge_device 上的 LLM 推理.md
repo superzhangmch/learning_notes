@@ -10,7 +10,7 @@ gpu 是通用的计算加速器。再复杂的操作，都可以用代码实现�
 
 而 npu，是以硬件方式实现了一些特殊的算子（比如 CNN），这样对同样操作，npu 比 gpu 快。如果原生不支持某种操作，那么要用 npu 来做这种操作，必然效果低下。
 
-npu 上一般做的是 int8 计算，它的算力用 TOPS（每秒多少 tera 的 int8 计算量）来衡量。 而 gpu 用 flops。
+npu 上一般做的是 int8 计算（当然不仅限于 int8，有些支持 int4、int16、甚至 fp16/bf16），它的算力用 TOPS（每秒多少 tera 的 int8 计算量）来衡量。 而 gpu 用 flops。
 
 ### 这类 edge device 上运行 llm，有啥限制
 

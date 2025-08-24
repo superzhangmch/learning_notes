@@ -54,6 +54,6 @@ accuracy achieved with floating point.
 
 fp8 train，不只是 gpu 内部计算时，即使在代码层，也需要结合高精度（比如主权重一般存 fp32），所以其实是混合精度训练。
 
-fp16 混合训练的时候，因为表示范围和 fp32 的差异，需要作 rescale。fp16主要是防止 underflow，主要是在 loss 处统一做 rescale。
+fp16 混合训练的时候，因为表示范围和 fp32 的差异，需要作 rescale。fp16主要是防止 underflow，主要是在 loss 处统一做 rescale。而 fp8 混合训练，则需要更细粒度的 rescale。一般是不同 tensor 不同的 rescale 因子，甚至tensor的不同片段不同的 rescale 因子（deepseek-v3 如此）。
 
-而 fp8 混合训练，则需要更细粒度的 rescale。一般是不同 tensor 不同的 rescale 因子，甚至tensor的不同片段不同的 rescale 因子（deepseek-v3 如此）。
+另外，优化器所托管的参数，以及优化器状态，都不是 fp8 存储，仍用原做法。

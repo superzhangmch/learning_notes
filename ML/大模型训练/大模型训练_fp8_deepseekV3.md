@@ -1,5 +1,7 @@
 
-### 《deepseek-v3》paper：3.3节 FP8 Training
+### 背景
+
+关于 deepseek-v3 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
 
 > Inspired by recent advances in low-precision training（见下面三个引文）, we propose a fine-grained mixed precision framework utilizing the FP8
 data format for training DeepSeek-V3.
@@ -22,7 +24,7 @@ data format for training DeepSeek-V3.
 - B：《Smoothquant: Accurate and efficient post-training quantization for large language models》 - 2022.11 - https://arxiv.org/abs/2211.10438
 - C：《Scaling FP8 training to trillion-token llms》- 2024.09 - （注意上面也出现了） https://arxiv.org/abs/2409.12517
 
-> To address this challenge and effectively extend the dynamic range of the FP8 format,
+> To address this challenge and effectively extend the dynamic range of the FP8 format, 【于是推出 deepseek-v3 的解法】
 >
 > （1）、we introduce a fine-grained quantization strategy: tile-wise grouping with 1 × 𝑁𝑐 elements or block-wise grouping with 𝑁𝑐 × 𝑁𝑐 elements. The associated dequantization overhead is largely mitigated under our increased-precision accumulation process, a critical aspect for achieving accurate FP8 General Matrix Multiplication (GEMM).
 >

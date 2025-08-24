@@ -1,5 +1,10 @@
 可以参 《FP8 FORMATS FOR DEEP LEARNING》（下面用《FP8》代替） by nvidia/intel/arm, https://arxiv.org/pdf/2209.05433 
 
+简单说
+- fp8 主要是和计算单元的接口层而言，存储于带宽效率高
+- 因 trian-inference 一致比 int8 量化好。
+- 需要更精细的 rescale 控制
+
 ### fp8 格式
 
 GPU 内， fp8 有 E5M2 与 E4M3 两种格式
@@ -51,4 +56,4 @@ fp8 train，不只是 gpu 内部计算时，即使在代码层，也需要结合
 
 fp16 混合训练的时候，因为表示范围和 fp32 的差异，需要作 rescale。fp16主要是防止 underflow，主要是在 loss 处统一做 rescale。
 
-而 fp8 混合训练，则需要更细粒度的 rescale，一般是不同 tensor 不同的 rescale 因子，甚至tensor的不同片段不同的 rescale 因子（deepseek-v3 如此）。
+而 fp8 混合训练，则需要更细粒度的 rescale。一般是不同 tensor 不同的 rescale 因子，甚至tensor的不同片段不同的 rescale 因子（deepseek-v3 如此）。

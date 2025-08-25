@@ -14,7 +14,9 @@ data format for training DeepSeek-V3.
 - B=《8-bit numerical formats for deep neural networks》- 2022.06 - https://arxiv.org/pdf/2206.02915
   - 关注训练。
   - 用浮点 fp8 比 fixed-point（int8）好。
-    - 定点 int8 可表示的数列，相邻间隔固定。而 fp8，则是间隔不一（0 附近精细，而绝对值越大，约粗）。而神经网络的参数激活梯度等都是零均值的。所以用 fp8 更好
+    - 定点 int8 可表示的数列，相邻间隔固定。而 fp8，则是间隔不一（0 附近精细，而绝对值越大，约粗）。而神经网络的参数激活梯度等都是零均值的。所以用 fp8 更好。
+    - <img width="1096" height="846" alt="image" src="https://github.com/user-attachments/assets/afd8684e-62aa-423f-87fd-1d14469d71b7" />
+    - fp8 表示的非线性性如图，可参 https://asawicki.info/articles/fp8_tables.php。注意 E4M3 还有一种算法范围是 -448~448.
   - 推荐：激活/权重用 fp8=E4M3，梯度用 fp8=E5M2
   - 它用了全局 loss scale 而非细粒度逐层或逐张量 scale
 - C=《FP8-LM: Training FP8 large language models》 - 2023.10 - https://arxiv.org/pdf/2310.18313

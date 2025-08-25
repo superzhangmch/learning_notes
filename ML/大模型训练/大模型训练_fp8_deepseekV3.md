@@ -16,13 +16,19 @@ data format for training DeepSeek-V3.
 > 【但是当前的 fp8 总是受困于 outlier 问题】
 - D=《Scaling FP8 training to trillion-token llms》- 2024.09 - https://arxiv.org/pdf/2409.12517
 - E=《Massive activations in large language models》 - 2024.02 - https://arxiv.org/pdf/2402.17762
+  - 极少数超大 outlier 激活值普遍存在于各 LLM（乃至大出 10 万倍），文中称此 outliers 为 massive activations（且见于标题）。
+    - 此文并不是讲 FP8 训练才如此。而是各种精度的都有可能
+  - 对具体 outliers 来说，无论 input 是啥，总是存在，且充当具体功能而不可省(we find their values largely stay constant regardless of the input, and theyfunction as indispensable bias terms in LLMs)
+  - massive activations 总是出现在某些特定 token 上，而不是任意位置 (these massive activations lead to the concentration of attention probabilities to their corresponding tokens)
 
 > Although significant progress has been made in inference quantization (见下面引文F,G), there are relatively few studies demonstrating successful application of low-precision techniques in large-scale language model pre-training (见下面引文 D).
 >
 > 【推理量化有进展，但是大规模低精度训练的成功还未见】
-- F：《Gptq: Accurate post-training quantization for generative pre-trained transformers》- 2022.10 - https://arxiv.org/pdf/2210.17323
-- G：《Smoothquant: Accurate and efficient post-training quantization for large language models》 - 2022.11 - https://arxiv.org/pdf/2211.10438
+- 推理时量化：
+  - F：《Gptq: Accurate post-training quantization for generative pre-trained transformers》- 2022.10 - https://arxiv.org/pdf/2210.17323
+  - G：《Smoothquant: Accurate and efficient post-training quantization for large language models》 - 2022.11 - https://arxiv.org/pdf/2211.10438
 - D：《Scaling FP8 training to trillion-token llms》- 2024.09 - （注意上面也出现了） https://arxiv.org/pdf/2409.12517
+  - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
 
 > To address this challenge and effectively extend the dynamic range of the FP8 format, 【于是推出 deepseek-v3 的解法】
 >

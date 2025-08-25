@@ -20,6 +20,11 @@ data format for training DeepSeek-V3.
   - 推荐：激活/权重用 fp8=E4M3，梯度用 fp8=E5M2
   - 它用了全局 loss scale 而非细粒度逐层或逐张量 scale
 - C=《FP8-LM: Training FP8 large language models》 - 2023.10 - https://arxiv.org/pdf/2310.18313
+  - Nvidia Transformer Engine只对矩阵乘法用 fp8，本文把 FP8 应用到计算、存储和通信全过程，包括梯度、优化器状态和分布式训练。
+  - per-tensor scaling
+  - 精度分配
+    - 主权重 fp16, 优化器adam状态：fp8（一阶）+fp16（二阶）；梯度 fp8。这些本来一个参数需要16字节，变成了 6字节
+    - forward、backward 时，关键地方外（GELU、Softmax、LayerNorm, dropout等），都是 fp8
 
 > While low-precision training holds great promise, it is often limited by the presence of outliers in activations, weights, and gradients（见下面引文D,E）.
 >

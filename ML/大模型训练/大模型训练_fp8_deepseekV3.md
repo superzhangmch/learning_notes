@@ -12,8 +12,11 @@ data format for training DeepSeek-V3.
   - 发现特征维度中有一些 outliers 影响量化效果：于是分而治之。
   - <img width="1000" alt="image" src="https://github.com/user-attachments/assets/752d7062-b186-474e-b1b9-5962ecde0542" />
 - B=《8-bit numerical formats for deep neural networks》- 2022.06 - https://arxiv.org/pdf/2206.02915
-  - 关注训练。用浮点 fp8 比 fixed-point（int8） 好。并推荐：激活/权重用 1.4.3，梯度用 1.5.2
-  - 用全局 loss scale 而非细粒度 scale（且正因此比定点的好：定点情况，需要逐层细粒度 scale）
+  - 关注训练。
+  - 用浮点 fp8 比 fixed-point（int8）好。
+    - 定点 int8 可表示的数列，相邻间隔固定。而 fp8，则是间隔不一（0 附近精细，而绝对值越大，约粗）。而神经网络的参数激活梯度等都是零均值的。所以用 fp8 更好
+  - 推荐：激活/权重用 fp8=E4M3，梯度用 fp8=E5M2
+  - 它用了全局 loss scale 而非细粒度逐层或逐张量 scale
 - C=《FP8-LM: Training FP8 large language models》 - 2023.10 - https://arxiv.org/pdf/2310.18313
 
 > While low-precision training holds great promise, it is often limited by the presence of outliers in activations, weights, and gradients（见下面引文D,E）.

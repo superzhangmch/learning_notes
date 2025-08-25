@@ -8,18 +8,27 @@ data format for training DeepSeek-V3.
 >
 > 【受到别的 fp8 方案启发】
 - A=《Gpt3. int8 (): 8-bit matrix multiplication for transformers at scale》- 2022.08 - https://arxiv.org/pdf/2208.07339
+  - int8 量化来提速推理：Int8 矩阵乘法方案，用在 Transformer FFN 和 Attn proj。
+  - 发现特征维度中有一些 outliers 影响量化效果：于是分而治之。
+  - <img width="1000" alt="image" src="https://github.com/user-attachments/assets/752d7062-b186-474e-b1b9-5962ecde0542" />
 - B=《8-bit numerical formats for deep neural networks》- 2022.06 - https://arxiv.org/pdf/2206.02915
+  - 关注训练。用浮点 fp8 比 fixed-point（int8） 好。并推荐：激活/权重用 1.4.3，梯度用 1.5.2
+  - 用全局 loss scale 而非细粒度 scale（且正因此比定点的好：定点情况，需要逐层细粒度 scale）
 - C=《FP8-LM: Training FP8 large language models》 - 2023.10 - https://arxiv.org/pdf/2310.18313
 
 > While low-precision training holds great promise, it is often limited by the presence of outliers in activations, weights, and gradients（见下面引文D,E）.
 >
 > 【但是当前的 fp8 总是受困于 outlier 问题】
 - D=《Scaling FP8 training to trillion-token llms》- 2024.09 - https://arxiv.org/pdf/2409.12517
+  - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
 - E=《Massive activations in large language models》 - 2024.02 - https://arxiv.org/pdf/2402.17762
-  - 极少数超大 outlier 激活值普遍存在于各 LLM（乃至大出 10 万倍），文中称此 outliers 为 massive activations（且见于标题）。
+  - 极少数超大 outlier 激活值普遍存在于各 LLM（乃至大出 10 万倍），文中叫这 outliers 为 massive activations（且见于 paper 标题）。
     - 此文并不是讲 FP8 训练才如此。而是各种精度的都有可能
-  - 对具体 outliers 来说，无论 input 是啥，总是存在，且充当具体功能而不可省(we find their values largely stay constant regardless of the input, and theyfunction as indispensable bias terms in LLMs)
-  - massive activations 总是出现在某些特定 token 上，而不是任意位置 (these massive activations lead to the concentration of attention probabilities to their corresponding tokens)
+  - 某些维、某些 token 才容易发生
+    - 不是所有 channel 都 massive：outliers 总是出现在某些 channel 维度（且出现几率很小）。
+    - 不是所有 token 都 massive：在一些特殊 token 上（起始 <BOS>、句号 “.”、换行符 \n、分隔符等）才如此。
+    - <img width="1162" height="658" alt="image" src="https://github.com/user-attachments/assets/293d84b3-e8b3-471c-a250-1d7633336fb2" />
+  - 他们起的作用是 biases，若去掉之会性能下降（Massive activations act as fixed but important biases in LLMs）。attn 中相当于隐式 bias
 
 > Although significant progress has been made in inference quantization (见下面引文F,G), there are relatively few studies demonstrating successful application of low-precision techniques in large-scale language model pre-training (见下面引文 D).
 >

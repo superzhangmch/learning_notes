@@ -103,3 +103,7 @@ $$
 把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
 
 对应上图中, 这个 GEMM 同样在 FP8 执行，并在 FP32 累加(图中 Σ), 并 cast 维 FP16 供上一层求梯度用。
+
+换个形式看：
+
+<img width="852" height="650" alt="image" src="https://github.com/user-attachments/assets/fc7df4bd-e13f-4c2f-ac29-916942bc24f8" />

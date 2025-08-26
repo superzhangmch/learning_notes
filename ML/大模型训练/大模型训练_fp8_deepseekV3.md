@@ -56,3 +56,50 @@ data format for training DeepSeek-V3.
 > （2）、Moreover, to further reduce memory and communication overhead in MoE training, we cache and dispatch activations in FP8, while storing low-precision optimizer states in BF16.
 >
 > （3）、We validate the proposed FP8 mixed precision framework on two model scales similar to DeepSeek-V2-Lite and DeepSeekV2, training for approximately 1 trillion tokens (see more details in Appendix B.1). Notably, compared with the BF16 baseline, the relative loss error of our FP8-training model remains consistently below 0.25%, a level well within the acceptable range of training randomness.
+
+从以上的启示是，用 fp8 有好处，但是总是有异常大值（outliers）问题。deepseek-v3 试图解决这点。
+
+### deepseek-v3 的解法
+
+#### （1）整体做法
+
+<img width="1658" height="668" alt="image" src="https://github.com/user-attachments/assets/054cf088-55d2-4bab-9e0f-a4a17eb2e660" />
+
+如上图只考虑 **Linear 层**（全连接层）。令 $y=XW$, $Loss = L(y, ..)$, 其中 X = g(..) 是 y 的输入，W 是权重。
+
+注意对 Loss 求梯度时，不但要对 W 求，还要对 X=g(..) 内的参数求。而为求后者，必须先求 $\partial L / \partial X$。于是一次 backward 既要对 W 也要对 X 求梯度。
+
+下面看 $XW$ 在训练时涉及的三类 GEMM（矩阵乘加运算）：
+
+(1) **Fprop (Forward propagation)**
+
+涉及计算是 $XW$, 把输入激活 $X$ 与权重 $W$ 相乘。
+
+对应上图中，这个 GEMM 在 FP8 计算，但结果会在 FP32 中累加 (图中 Σ)，最后存成 BF16/FP32。
+
+(2) **Wgrad (Weight gradient)**
+
+反向传播里计算权重的梯度, 涉及计算是
+
+$$
+\begin{cases}
+\nabla y &= \frac{\partial \mathcal{L}}{\partial y} \\
+\nabla W &= X^{\top} \nabla y
+\end{cases}
+$$
+
+即用输入 $X$ 和损失对输出的梯度 $\nabla y$ 反向计算权重更新方向。
+
+对应上图中，这个 GEMM 在FP8 执行，然后进入 FP32 累加(Σ), 并最终用于更新 FP32 主参数。
+
+(3) **Dgrad (Data gradient / Activation gradient)**
+
+这一步进行反向传播里计算输入的梯度, 即
+
+$$
+\nabla X = \nabla y W^{\top}
+$$
+
+把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
+
+对应上图中, 这个 GEMM 同样在 FP8 执行，并在 FP32 累加(图中 Σ), 并 cast 维 FP16 供上一层求梯度用。

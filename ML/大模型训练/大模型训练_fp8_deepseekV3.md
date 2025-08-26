@@ -85,8 +85,6 @@ data format for training DeepSeek-V3.
 
 涉及计算是 $XW$, 把输入激活 $X$ 与权重 $W$ 相乘。
 
-对应上图中，这个 GEMM 在 FP8 计算，但结果会在 FP32 中累加 (图中 Σ)，最后存成 BF16/FP32。
-
 (b) **Wgrad (Weight gradient)**
 
 反向传播里计算权重的梯度, 涉及计算是
@@ -100,19 +98,11 @@ $$
 
 即用输入 $X$ 和损失对输出的梯度 $\nabla y$ 反向计算权重更新方向。
 
-对应上图中，这个 GEMM 在FP8 执行，然后进入 FP32 累加(Σ), 并最终用于更新 FP32 主参数。
-
 (c) **Dgrad (Data gradient / Activation gradient)**
 
-这一步进行反向传播里计算输入的梯度, 即
+这一步进行反向传播里计算输入的梯度, 即 $\nabla X = \nabla y W^{\top}$，把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
 
-$$
-\nabla X = \nabla y W^{\top}
-$$
-
-把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
-
-对应上图中, 这个 GEMM 同样在 FP8 执行，并在 FP32 累加(图中 Σ), 并 cast 维 FP16 供上一层求梯度用。
+注意看图中，GEMM 在 FP8 计算，但结果会在 FP32 中累加 (图中 Σ)，最后存成 BF16或FP32。 为什么要 fp32 累加，见下文。
 
 ### （2）实际操作中的细节
 

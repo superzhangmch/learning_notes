@@ -1,7 +1,7 @@
 
 ## 背景
 
-关于 deepseek-v3 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
+关于 deepseek-v3 （ https://arxiv.org/pdf/2412.19437v1 ） 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
 
 > Inspired by recent advances in low-precision training（见下面引文A,B,C）, we propose a fine-grained mixed precision framework utilizing the FP8
 data format for training DeepSeek-V3.
@@ -62,7 +62,7 @@ data format for training DeepSeek-V3.
 
 ## deepseek-v3 的解法
 
-### （1）整体做法
+### 一、整体做法
 
 大体上和 fp16、fp32 混合精度训练的思路是一样的：forward、backward 用低精度。而优化器内部用高精度：
 
@@ -85,30 +85,33 @@ attention operators
 
 如上图是只考虑 Linear 全连接层的情形。注意看 FP8 GEMM 计算过程：会在 FP32 中累加 (图中 Σ)，这是为了防止低精度时的累加时精度不够，乃 deepseek-v3 的创新之一。另一创新则是为解决 outlier 问题，对矩阵tensor 分小块作 scale。
 
-令 $y=XW$, $Loss = L(y, ..)$, 其中 X = g(..) 是 y 的输入，W 是权重。对 Loss 求梯度时，不但要对 W 求，还要对 X=g(..) 内的参数求。而为求后者，必须先求 $\partial L / \partial X$。于是一次 backward 既要对 W 也要对 X 求梯度。
-
-下面看 $XW$ 在训练时涉及的三类 GEMM（矩阵乘加运算）：
+令 $y=XW$, $Loss = L(y, ..)$, 其中 X = g(..) 是 y 的输入，W 是权重。对 Loss 求梯度时，不但要对 W 求，还要对 X=g(..) 内的参数求。而为求后者，必须先求 $\partial L / \partial X$。于是一次 backward 既要对 W 也要对 X 求梯度。则 $XW$ 在训练时涉及的三类 GEMM（矩阵乘加运算）：
 
 (a) **Fprop (Forward propagation)**
 
-涉及计算是 $XW$, 把输入激活 $X$ 与权重 $W$ 相乘。
+计算是 $XW$, 把输入激活 $X$ 与权重 $W$ 相乘。
 
 (b) **Wgrad (Weight gradient)**
 
-反向传播里计算权重的梯度, 涉及计算是
-
-$$
-\begin{cases}
-\nabla y &= \frac{\partial \mathcal{L}}{\partial y} \\
-\nabla W &= X^{\top} \nabla y
-\end{cases}
-$$
-
-即用输入 $X$ 和损失对输出的梯度 $\nabla y$ 反向计算权重更新方向。
+反向传播计算权重的梯度, 计算是 $\nabla W = X^{\top} \nabla y$, 其中 $\nabla y = \frac{\partial \mathcal{L}}{\partial y}$。
 
 (c) **Dgrad (Data gradient / Activation gradient)**
 
 这一步进行反向传播里计算输入的梯度, 即 $\nabla X = \nabla y W^{\top}$，把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
 
-### （2）实际操作中的细节
+### 二、实际操作中的细节
+
+(1) outlier 怎么解决
+
+<img width="712" height="420" alt="image" src="https://github.com/user-attachments/assets/1bdfbe04-0125-4ec1-9c15-998e7d1cf756" />
+
+如图, 假设是要算 $XW = \[ x_1, x_2, .., x_n\] \cdot \[W_1, W_2, .., W_n\]^T$（且本来也不需要分块算）。
+
+如果 X 或者 W 有一两个 outlier，做 tensor-wise scale 会导致绝大部分值归零。于是采用的方法是，矩阵分块：对于 X，按 1 x 128 分，对于权重 W，按 128x128 分，每一块分别 scale：
+
+<img width="860" height="710" alt="image" src="https://github.com/user-attachments/assets/e7247d0d-4c00-4534-b5e8-07f353058060" />
+
+假设每个分块的 scaling 是 $x_i = \lambda_i a_i$, $W_i = \gamma_i B_i$，则本来 $XW = \sum_i x_i W_i$, 现在就变成了 $XW = \sum_i \[(\lambda_i \gamma_i) (a_i\cdot B_i)\]$。
+
+note：X、W 都是矩阵形式（如果 batch=1，则 X成为向量），那么 X 为什么不按 $N_c \times N_c = 128 \times 128$ 分块呢？paper中实验结果是效果不如 1 x 128。
 

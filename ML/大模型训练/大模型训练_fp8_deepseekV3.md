@@ -93,7 +93,7 @@ attention operators
 
 (b) **Wgrad (Weight gradient)**
 
-反向传播计算权重的梯度, 计算是 $\nabla W = X^{\top} \nabla y$, 其中 $\nabla y = \frac{\partial \mathcal{L}}{\partial y}$。
+反向传播计算权重的梯度, 计算是 $\nabla W = X^{\top} \nabla y$, 乃外积，其中 $\nabla y = \frac{\partial \mathcal{L}}{\partial y}$。
 
 (c) **Dgrad (Data gradient / Activation gradient)**
 
@@ -101,7 +101,7 @@ attention operators
 
 ### 二、实际操作中的细节
 
-(1) outlier 怎么解决
+**(1) outlier 怎么解决**
 
 <img width="712" height="420" alt="image" src="https://github.com/user-attachments/assets/1bdfbe04-0125-4ec1-9c15-998e7d1cf756" />
 
@@ -113,5 +113,18 @@ attention operators
 
 假设每个分块的 scaling 是 $x_i = \lambda_i a_i$, $W_i = \gamma_i B_i$，则本来 $XW = \sum_i x_i W_i$, 现在就变成了 $XW = \sum_i \[(\lambda_i \gamma_i) (a_i\cdot B_i)\]$。
 
-note：X、W 都是矩阵形式（如果 batch=1，则 X成为向量），那么 X 为什么不按 $N_c \times N_c = 128 \times 128$ 分块呢？paper中实验结果是效果不如 1 x 128。
+**关于 block size 的选取：**
+
+见上文可见，一共牵扯到三个 GEMM（XW， $\nabla y W^T$, $X^T\nabla y$)，参与的矩阵有
+- X=上一层的activation，同时是本层的input
+  - block 大小是 $1 \times N_c = 1 \times 128$，构成了 tile-wise
+- $\nabla y$=下一层传来的激活梯度(即 Dgrad)。
+  - block 大小是 $1 \times N_c = 1 \times 128$
+- W=weight
+  - block 大小是 $N_c \times N_c = 128 \times 128$
+
+都是矩阵，为什么不统一按 128x128呢？paper中实验结果是就应该不同处理。paper 推测，对 Dgrad 来说：不同 token 的 Dgrad 差异较大，所以 outlier 与token相关吧，因此要不同 token 不能在同一个 block 内。如上导致 $X^T\nabla y$ 是 [128x1] 分块和 [1x128] 分块的两个矩阵相乘。
+
+**(1) 矩阵乘累加精度**
+
 

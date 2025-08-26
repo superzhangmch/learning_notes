@@ -106,4 +106,7 @@ $$
 
 换个形式看：
 
+<img width="678" height="616" alt="image" src="https://github.com/user-attachments/assets/11824955-e551-49ce-b022-03e403755594" />
+
 <img width="852" height="650" alt="image" src="https://github.com/user-attachments/assets/fc7df4bd-e13f-4c2f-ac29-916942bc24f8" />
+

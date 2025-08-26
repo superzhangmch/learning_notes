@@ -1,5 +1,5 @@
 
-### 背景
+## 背景
 
 关于 deepseek-v3 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
 
@@ -59,15 +59,23 @@ data format for training DeepSeek-V3.
 
 从以上的启示是，用 fp8 有好处，但是总是有异常大值（outliers）问题。deepseek-v3 试图解决这点。
 
-### deepseek-v3 的解法
 
-#### （1）整体做法
+## deepseek-v3 的解法
+
+### （1）整体做法
 
 大体上和 fp16、fp32 混合精度训练的思路是一样的：forward、backward 用低精度。而优化器内部用高精度：
 
 <img width="852" height="650" alt="image" src="https://github.com/user-attachments/assets/fc7df4bd-e13f-4c2f-ac29-916942bc24f8" />
 
-主要是对于矩阵乘法做了 FP8。具体说来，如下图：
+主要是对于矩阵乘法做了 FP8，而对下面部分保持高的精度：
+- the embedding module
+- the output head
+- MoE gating modules,
+- normalization operators
+attention operators
+
+其细节如下图：
 
 <img width="1658" height="668" alt="image" src="https://github.com/user-attachments/assets/054cf088-55d2-4bab-9e0f-a4a17eb2e660" />
 
@@ -75,9 +83,9 @@ data format for training DeepSeek-V3.
 
 <img width="678" height="616" alt="image" src="https://github.com/user-attachments/assets/11824955-e551-49ce-b022-03e403755594" />
 
-如上图只考虑 **Linear 层**（全连接层）。令 $y=XW$, $Loss = L(y, ..)$, 其中 X = g(..) 是 y 的输入，W 是权重。
+如上图是只考虑 Linear 全连接层的情形。注意看 FP8 GEMM 计算过程：会在 FP32 中累加 (图中 Σ)，这是为了防止低精度时的累加时精度不够，乃 deepseek-v3 的创新之一。另一创新则是为解决 outlier 问题，对矩阵tensor 分小块作 scale。
 
-注意对 Loss 求梯度时，不但要对 W 求，还要对 X=g(..) 内的参数求。而为求后者，必须先求 $\partial L / \partial X$。于是一次 backward 既要对 W 也要对 X 求梯度。
+令 $y=XW$, $Loss = L(y, ..)$, 其中 X = g(..) 是 y 的输入，W 是权重。对 Loss 求梯度时，不但要对 W 求，还要对 X=g(..) 内的参数求。而为求后者，必须先求 $\partial L / \partial X$。于是一次 backward 既要对 W 也要对 X 求梯度。
 
 下面看 $XW$ 在训练时涉及的三类 GEMM（矩阵乘加运算）：
 
@@ -101,8 +109,6 @@ $$
 (c) **Dgrad (Data gradient / Activation gradient)**
 
 这一步进行反向传播里计算输入的梯度, 即 $\nabla X = \nabla y W^{\top}$，把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
-
-注意看图中，GEMM 在 FP8 计算，但结果会在 FP32 中累加 (图中 Σ)，最后存成 BF16或FP32。 为什么要 fp32 累加，见下文。
 
 ### （2）实际操作中的细节
 

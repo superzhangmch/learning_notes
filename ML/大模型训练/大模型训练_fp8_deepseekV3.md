@@ -63,7 +63,17 @@ data format for training DeepSeek-V3.
 
 #### （1）整体做法
 
+大体上和 fp16、fp32 混合精度训练的思路是一样的：forward、backward 用低精度。而优化器内部用高精度：
+
+<img width="852" height="650" alt="image" src="https://github.com/user-attachments/assets/fc7df4bd-e13f-4c2f-ac29-916942bc24f8" />
+
+主要是对于矩阵乘法做了 FP8。具体说来，如下图：
+
 <img width="1658" height="668" alt="image" src="https://github.com/user-attachments/assets/054cf088-55d2-4bab-9e0f-a4a17eb2e660" />
+
+拆解开看：
+
+<img width="678" height="616" alt="image" src="https://github.com/user-attachments/assets/11824955-e551-49ce-b022-03e403755594" />
 
 如上图只考虑 **Linear 层**（全连接层）。令 $y=XW$, $Loss = L(y, ..)$, 其中 X = g(..) 是 y 的输入，W 是权重。
 
@@ -71,13 +81,13 @@ data format for training DeepSeek-V3.
 
 下面看 $XW$ 在训练时涉及的三类 GEMM（矩阵乘加运算）：
 
-(1) **Fprop (Forward propagation)**
+(a) **Fprop (Forward propagation)**
 
 涉及计算是 $XW$, 把输入激活 $X$ 与权重 $W$ 相乘。
 
 对应上图中，这个 GEMM 在 FP8 计算，但结果会在 FP32 中累加 (图中 Σ)，最后存成 BF16/FP32。
 
-(2) **Wgrad (Weight gradient)**
+(b) **Wgrad (Weight gradient)**
 
 反向传播里计算权重的梯度, 涉及计算是
 
@@ -92,7 +102,7 @@ $$
 
 对应上图中，这个 GEMM 在FP8 执行，然后进入 FP32 累加(Σ), 并最终用于更新 FP32 主参数。
 
-(3) **Dgrad (Data gradient / Activation gradient)**
+(c) **Dgrad (Data gradient / Activation gradient)**
 
 这一步进行反向传播里计算输入的梯度, 即
 
@@ -104,9 +114,5 @@ $$
 
 对应上图中, 这个 GEMM 同样在 FP8 执行，并在 FP32 累加(图中 Σ), 并 cast 维 FP16 供上一层求梯度用。
 
-换个形式看：
-
-<img width="678" height="616" alt="image" src="https://github.com/user-attachments/assets/11824955-e551-49ce-b022-03e403755594" />
-
-<img width="852" height="650" alt="image" src="https://github.com/user-attachments/assets/fc7df4bd-e13f-4c2f-ac29-916942bc24f8" />
+### （2）实际操作中的细节
 

@@ -101,7 +101,7 @@ attention operators
 
 ### 二、实际操作中的细节
 
-**(1) outlier 怎么解决**
+#### **(1) outlier 怎么解决**
 
 <img width="712" height="420" alt="image" src="https://github.com/user-attachments/assets/1bdfbe04-0125-4ec1-9c15-998e7d1cf756" />
 
@@ -125,6 +125,44 @@ attention operators
 
 都是矩阵，为什么不统一按 128x128呢？paper中实验结果是就应该不同处理。paper 推测，对 Dgrad 来说：不同 token 的 Dgrad 差异较大，所以 outlier 与token相关吧，因此要不同 token 不能在同一个 block 内。如上导致 $X^T\nabla y$ 是 [128x1] 分块和 [1x128] 分块的两个矩阵相乘。
 
-**(1) 矩阵乘累加精度**
+#### **(2) 矩阵乘累加精度**
 
+**问题产生的原因：**
+
+对 FP8 矩阵 A 与 B，矩阵乘积 AB 的单个元素 $AB_{ij} = \sum_{k=1}^{K} a_{ik} b_{kj}$，累加项中的单项 $a_{ik} \cdot b_{kj}$ 需要比 FP8 更高的精度；鉴于是多项求和，那么其实需要比单项更高的精度。在 GPU 硬件内部，浮点数其实不用 FP16，FP32 这样的格式，而是内部私有格式。就英伟达 H800 GPU 而言，作 FP8 矩阵乘法的时候， $\sum_{k=1}^{K} a_{ik} b_{kj}$ 累积所用的累加器的精度只有 14 bits，并没达到 FP32 的精度。这样累加过程中就有舍入误差。按其文，K=4096 则可能有 2% 的误差。于是 deepseek-v3 的解法是，需要更高的累加精度。
+
+- FP32 作为累加器：FP32 有效数字（mantissa） = 23 + 1(hidden) = 24 bits → 十进制大约能保证 7–8 位有效数字
+- H800 FP8 GEMM 累加器：14 bits → 十进制大约只能保证 4–5 位有效数字
+
+如上，若用 14bits，超出14 bit 部分会有舍入误差，如果累加项较小，则直接被丢弃。从而有结果精度问题。
+
+**结合硬件再阐述下**
+
+用英伟达 GPU 计算大矩阵乘法的时候，你是通过 CUDA 这样的东西进行的。你把两个大矩阵传给了它，但是 GPU 核心其实并不支持那么大的矩阵相乘。所以是 CUDA 内部做了分块矩阵乘法，通过代码层循环方式。
+
+也就是说对于 A*B，它大约是这样做的：假设矩阵分块维 A=[A1,A2, ..An], B=[B1,B2,.., Bn]ᵀ, $A \cdot B=\sum_i A_i \cdot B_i$，执行每个 $A_i \cdot B_i$ 是直接调用的 GPU，而 $\sum_i$ 循环是代码层做的。代码层会是循环执行 $C_{i+1} = A_i \cdot B_i + C_i$ "乘&加" 的形式。这个 "乘&加" 可由 gpu 一次完成。
+
+NVIDIA GPU 硬件层面提供的矩阵乘法指令（只记下助理解）：
+
+- FMA (Fused Multiply-Add)：标量级单点计算，如果作矩阵乘法，需要自己写所有循环。
+- MMA (Matrix Multiply-Accumulate)
+  - V100引入，指令族: mma.sync.* ，warp 级别的矩阵乘加指令。
+  - 可计算 shape=[16, 16] x shape=[16, 16] 大小的矩阵乘
+- WGMMA (Warp Group MMA)
+  - H100/H800，指令族：wgmma.mma_async.* ，**异步**（从指令名可看出）执行，允许流水线化。
+  - 可计算 [64, 16] x [16, 128] 或 [64, 32] x [32, 128] 大小的矩阵乘
+  ```
+  function GEMM(A[M,K], B[K,N]) -> C[M,N]:
+    for bm in 0..M step 64:         # 按 64 行分块
+        for bn in 0..N step 128:    # 按 128 列分块
+            acc = zeros(64,128)     # 累加器寄存器
+
+            for k0 in 0..K step 16: # 沿 K 维分块
+                A_tile = A[bm:bm+64, k0:k0+16]
+                B_tile = B[k0:k0+16, bn:bn+128]
+
+                acc = WGMMA(acc, A_tile, B_tile)  # 核心：一次 64×128×16 乘加。对于 MMA，伪代码和这个一样。只需 WGMMA=> MMA, 并缩小 tile 大小
+
+            C[bm:bm+64, bn:bn+128] = acc
+  ```
 

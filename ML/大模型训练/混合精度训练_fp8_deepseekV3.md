@@ -150,7 +150,7 @@ NVIDIA GPU 硬件层面提供的矩阵乘法指令（只记下助理解）：
   - 可计算 shape=[16, 16] x shape=[16, 16] 大小的矩阵乘
 - WGMMA (Warp Group MMA)
   - H100/H800，指令族：wgmma.mma_async.* ，**异步**（从指令名可看出）执行，允许流水线化。
-  - 可计算 [64, 16] x [16, 128] 或 [64, 32] x [32, 128] 大小的矩阵乘
+  - 可计算 [64, 16] x [16, 128] 或 [64, 32] x [32, 128] 等大小的矩阵乘
   ```
   function GEMM(A[M,K], B[K,N]) -> C[M,N]:
     for bm in 0..M step 64:         # 按 64 行分块
@@ -161,13 +161,14 @@ NVIDIA GPU 硬件层面提供的矩阵乘法指令（只记下助理解）：
                 A_tile = A[bm:bm+64, k0:k0+16]
                 B_tile = B[k0:k0+16, bn:bn+128]
 
-                acc = WGMMA(acc, A_tile, B_tile) # 核心：一次 64×128×16 乘加。对于 MMA，伪代码和这个一样。只需 WGMMA=> MMA, 并缩小 tile 大小
+                acc = WGMMA(acc, A_tile, B_tile) # 乃一条 GPU instruction，一次 64×128×16 乘加。对于 MMA，伪代码和这个一样，只需 WGMMA=> MMA, 并缩小 tile 大小。
                 # 上面 WGMMA(acc, A_tile, B_tile) = A_tile*B_tile + acc, 对 FP8 gemm A_tile*B_tile 是 14bit精度，而 更高精度的 acc 会转成 14bit 精度，然后二者求和，
                 #     14bit 精度的结果，会重新 copy 到 acc。这样导致的 fp8 GEMM 精度问题
             C[bm:bm+64, bn:bn+128] = acc
   ```
 
-看上面伪代码可知 deepseek-v3 所说的 fp8 gemm 内部的 14bit 累加精度怎么产生的。deepseek 的破解法是，WGMMA 的累加每发生若干次，就把该结果另外累加，而 WGMMA 的 acc 参数清零。也就是：
+看上面伪代码可知 deepseek-v3 所说的 fp8 gemm 内部的 WGMMA 14bit 累加精度怎么产生的。deepseek 的破解法是，WGMMA 对 acc 的累加每发生若干次，就把该结果另外高精度累加，而 WGMMA 的 acc 参数清零。也就是这样：
+
 ```
   function GEMM_new(A[M,K], B[K,N]) -> C[M,N]:
     for bm in 0..M step 64:         # 按 64 行分块
@@ -187,4 +188,8 @@ NVIDIA GPU 硬件层面提供的矩阵乘法指令（只记下助理解）：
                     pending = 0 
             C[bm:bm+64, bn:bn+128] = acc_hi
   ```
+
+paper 中示意图如下（它 4 个 wgmma 对应 128个 累加，那么每个 wgmma 相乘小矩阵的 K=32）：
+
+<img width="1006" height="884" alt="image" src="https://github.com/user-attachments/assets/38d846b6-4aac-435d-92aa-35f979be8db7" />
 

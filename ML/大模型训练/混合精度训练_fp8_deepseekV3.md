@@ -99,6 +99,15 @@ attention operators
 
 这一步进行反向传播里计算输入的梯度, 即 $\nabla X = \nabla y W^{\top}$，把损失梯度 $\nabla y$ 反向传播到输入，供前一层使用。
 
+**关于激活显存的处理**
+
+激活如果只用作推进 forward，可以随用随丢。但是往往反向传播时也会用到它。backward 用到它的时候，适用于 Wgrad = $X^{\top} \nabla y$ 计算的时候，而此时只需要它以 FP8 的形态出现。所以激活按说都可以存为 FP8 格式。但有个例外：attn 之后的 proj 的 input 是：attnRes=softmax(QK')V'，即它参与 attn_layer_final_out = $attnRes \cdot W_o$ 计算。但是backward 时它会传给 attn，而这里需要高精度。所以对此激活 attnRes，需要保留较高精度 
+
+另外对于 $SwiGLU(X)=(X W_1​)⊙σ(X W_2​)$，会不存 $X W_1$ 与 $X W_2$，而是在backward 时，重计算。
+
+MOE 层：对单个专家 FFN，一入口就是linear，它的 input 要求是 fp8，所以 dispatch 到 MOE input 可以是 fp8 的。而 backward 时，传入 MOE 的激活梯度，也是一样 FP8 即可。但对于 MOE 的输出，要保持 fp16.
+> For both the forward and backward combine components, we retain them in BF16 to preserve training precision in critical parts of the training pipeline.
+
 ### 二、实际操作中的细节
 
 #### **(1) outlier 怎么解决**

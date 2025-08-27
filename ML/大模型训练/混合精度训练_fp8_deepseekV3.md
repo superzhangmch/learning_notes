@@ -150,7 +150,7 @@ NVIDIA GPU 硬件层面提供的矩阵乘法指令（只记下助理解）：
   - 可计算 shape=[16, 16] x shape=[16, 16] 大小的矩阵乘
 - WGMMA (Warp Group MMA)
   - H100/H800，指令族：wgmma.mma_async.* ，**异步**（从指令名可看出）执行，允许流水线化。
-  - 可计算 [64, 16] x [16, 128] 或 [64, 32] x [32, 128] 等大小的矩阵乘
+  - 可计算 shape=[m=64, k=16] x [k=16, n=128] 或 [64, 32] x [32, 128] 等大小的矩阵乘
   ```
   function GEMM(A[M,K], B[K,N]) -> C[M,N]:
     for bm in 0..M step 64:         # 按 64 行分块
@@ -181,15 +181,29 @@ NVIDIA GPU 硬件层面提供的矩阵乘法指令（只记下助理解）：
                 B_tile = B[k0:k0+16, bn:bn+128]
 
                 acc = WGMMA(acc, A_tile, B_tile) # WGMMA 内部只是局部累加。
-                pending += 16
-                if pending > XX:
+                pending += 1
+                if pending == 4: # wgmma 累积4次，则做一次 acc_hi 累加。4次正好对应矩阵的 128 个 a_i*b_i 的累加，和它的 block-wise scaling 粒度能对齐
                     acc_hi += acc # 不在 WGMMA 内部作全局累加
                     acc = 0
                     pending = 0 
             C[bm:bm+64, bn:bn+128] = acc_hi
   ```
 
-paper 中示意图如下（它 4 个 wgmma 对应 128个 累加，那么每个 wgmma 相乘小矩阵的 K=32）：
+paper 中示意图如下【它 4 个 wgmma 对应 128个 累加，那么每个 wgmma 相乘小矩阵的 K=32, 看 https://zhuanlan.zhihu.com/p/32383172703 ，其代码中应该是用了 wgmma.mma_async.sync.aligned.m64n128k32， 也就是 [m=64, k=32] x [k=32, n=128] 大小的矩阵乘法。但是最新的 deepGEEM 代码中搜不到 m64n128k32 了】：
 
 <img width="1006" height="884" alt="image" src="https://github.com/user-attachments/assets/38d846b6-4aac-435d-92aa-35f979be8db7" />
 
+另外paper 说，H800 上一次可以并行两个 WGMMA，于是可以一个做精度提升累加，同时另一个做 MMA，从而很高效。
+> However, on the H800 architecture, it is typical for two WGMMA to persist concurrently: while one warpgroup
+performs the promotion operation, the other is able to execute the MMA operation. This design
+enables overlapping of the two operations, maintaining high utilization of Tensor Cores.
+
+#### （3）、其他
+
+**只用一种 fp8格式**
+
+一般建议 fp8 E4M3 用于 Fprop ，fp8 E5M2 用于 Dgrad and Wgrad。有了这样的细粒度的 scale 控制后，deepseek 只用了就只用 E4M3 这一种 fp8 格式了。
+
+**在线 fp8 量化**
+
+一般用 fp8 时，scale 因子是从历史统计出的（滑动平均，或者取最近 n 个的 max 之类）。而 deepseek 的 fp8 从当前的 1x128 或者 128x128 block 中当场算出 scale 因子。

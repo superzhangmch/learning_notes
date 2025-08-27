@@ -1,64 +1,12 @@
+deepseek-v3 乃第一个成功的 fp8 精度训练的超大 LLM。
 
-## 背景
+之前人们也有尝试 fp8，但是规模小，且方法上也不如 deepseek。不过之前的那些探索指明了几件事（详见文末）
+- fp8 量化方式训练，比 int8 更好。
+- fp8 训练时，容易有异常大的值的问题。
 
-关于 deepseek-v3 （ https://arxiv.org/pdf/2412.19437v1 ） 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
+deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。虽然如此，inference 时只需要还原 training 的 forward 即可，于是 inference 的 checkpoint 可以是 fp8 的。这也可以在 https://modelscope.cn/models/deepseek-ai/DeepSeek-V3 看到，671B 参数的 model，磁盘占据大约 700G。而非一般 fp16 的 671x2 GB。
 
-> Inspired by recent advances in low-precision training（见下面引文A,B,C）, we propose a fine-grained mixed precision framework utilizing the FP8
-data format for training DeepSeek-V3.
->
-> 【受到别的 fp8 方案启发】
-- A=《Gpt3. int8 (): 8-bit matrix multiplication for transformers at scale》- 2022.08 - https://arxiv.org/pdf/2208.07339
-  - int8 量化来提速推理：Int8 矩阵乘法方案，用在 Transformer FFN 和 Attn proj。
-  - 发现特征维度中有一些 outliers 影响量化效果：于是分而治之。
-  - <img width="1000" alt="image" src="https://github.com/user-attachments/assets/752d7062-b186-474e-b1b9-5962ecde0542" />
-- B=《8-bit numerical formats for deep neural networks》- 2022.06 - https://arxiv.org/pdf/2206.02915
-  - 关注训练。
-  - 用浮点 fp8 比 fixed-point（int8）好。
-    - 定点 int8 可表示的数列，相邻间隔固定。而 fp8，则是间隔不一（0 附近精细，而绝对值越大，约粗）。而神经网络的参数激活梯度等都是零均值的。所以用 fp8 更好。
-    - <img width="1096" height="846" alt="image" src="https://github.com/user-attachments/assets/afd8684e-62aa-423f-87fd-1d14469d71b7" />
-    - fp8 表示的非线性性如图，可参 https://asawicki.info/articles/fp8_tables.php。注意 E4M3 还有一种算法范围是 -448~448.
-  - 推荐：激活/权重用 fp8=E4M3，梯度用 fp8=E5M2
-  - 它用了全局 loss scale 而非细粒度逐层或逐张量 scale
-- C=《FP8-LM: Training FP8 large language models》 - 2023.10 - https://arxiv.org/pdf/2310.18313
-  - Nvidia Transformer Engine只对矩阵乘法用 fp8，本文把 FP8 应用到计算、存储和通信全过程，包括梯度、优化器状态和分布式训练。
-  - per-tensor scaling
-  - 精度分配
-    - 主权重 fp16, 优化器adam状态：fp8（一阶）+fp16（二阶）；梯度 fp8。这些本来一个参数需要16字节，变成了 6字节
-    - forward、backward 时，关键地方外（GELU、Softmax、LayerNorm, dropout等），都是 fp8
-
-> While low-precision training holds great promise, it is often limited by the presence of outliers in activations, weights, and gradients（见下面引文D,E）.
->
-> 【但是当前的 fp8 总是受困于 outlier 问题】
-- D=《Scaling FP8 training to trillion-token llms》- 2024.09 - https://arxiv.org/pdf/2409.12517
-  - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
-- E=《Massive activations in large language models》 - 2024.02 - https://arxiv.org/pdf/2402.17762
-  - 极少数超大 outlier 激活值普遍存在于各 LLM（乃至大出 10 万倍），文中叫这 outliers 为 massive activations（且见于 paper 标题）。
-    - 此文并不是讲 FP8 训练才如此。而是各种精度的都有可能
-  - 某些维、某些 token 才容易发生
-    - 不是所有 channel 都 massive：outliers 总是出现在某些 channel 维度（且出现几率很小）。
-    - 不是所有 token 都 massive：在一些特殊 token 上（起始 <BOS>、句号 “.”、换行符 \n、分隔符等）才如此。
-    - <img width="1162" height="658" alt="image" src="https://github.com/user-attachments/assets/293d84b3-e8b3-471c-a250-1d7633336fb2" />
-  - 他们起的作用是 biases，若去掉之会性能下降（Massive activations act as fixed but important biases in LLMs）。attn 中相当于隐式 bias
-
-> Although significant progress has been made in inference quantization (见下面引文F,G), there are relatively few studies demonstrating successful application of low-precision techniques in large-scale language model pre-training (见下面引文 D).
->
-> 【推理量化有进展，但是大规模低精度训练的成功还未见】
-- 推理时量化：
-  - F：《Gptq: Accurate post-training quantization for generative pre-trained transformers》- 2022.10 - https://arxiv.org/pdf/2210.17323
-  - G：《Smoothquant: Accurate and efficient post-training quantization for large language models》 - 2022.11 - https://arxiv.org/pdf/2211.10438
-- D：《Scaling FP8 training to trillion-token llms》- 2024.09 - （注意上面也出现了） https://arxiv.org/pdf/2409.12517
-  - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
-
-> To address this challenge and effectively extend the dynamic range of the FP8 format, 【于是推出 deepseek-v3 的解法】
->
-> （1）、we introduce a fine-grained quantization strategy: tile-wise grouping with 1 × 𝑁𝑐 elements or block-wise grouping with 𝑁𝑐 × 𝑁𝑐 elements. The associated dequantization overhead is largely mitigated under our increased-precision accumulation process, a critical aspect for achieving accurate FP8 General Matrix Multiplication (GEMM).
->
-> （2）、Moreover, to further reduce memory and communication overhead in MoE training, we cache and dispatch activations in FP8, while storing low-precision optimizer states in BF16.
->
-> （3）、We validate the proposed FP8 mixed precision framework on two model scales similar to DeepSeek-V2-Lite and DeepSeekV2, training for approximately 1 trillion tokens (see more details in Appendix B.1). Notably, compared with the BF16 baseline, the relative loss error of our FP8-training model remains consistently below 0.25%, a level well within the acceptable range of training randomness.
-
-从以上的启示是，用 fp8 有好处，但是总是有异常大值（outliers）问题。deepseek-v3 试图解决这点。
-
+----
 
 ## deepseek-v3 的解法
 
@@ -133,6 +81,37 @@ MOE 层：对单个专家 FFN，一入口就是linear，它的 input 要求是 f
   - block 大小是 $N_c \times N_c = 128 \times 128$
 
 都是矩阵，为什么不统一按 128x128呢？paper中实验结果是就应该不同处理。paper 推测，对 Dgrad 来说：不同 token 的 Dgrad 差异较大，所以 outlier 与token相关吧，因此要不同 token 不能在同一个 block 内。如上导致 $X^T\nabla y$ 是 [128x1] 分块和 [1x128] 分块的两个矩阵相乘。
+
+在文件 https://modelscope.cn/models/deepseek-ai/DeepSeek-V3/file/view/master/inference%2Fkernel.py 里，有关于 deepseek-v3 进行fp8 量化、反量化有关函数，提炼如下：
+```
+# 输入: x (float32/bf16), block_size
+# 输出: y (fp8), s (scale因子)
+
+for each block in x:
+    s = max(abs(block)) / 448
+    y_block = (block / s).to(FP8)
+    save(y_block, s)
+return y, s
+
+# -----
+# 输入: y (fp8), s (scale)
+# 输出: x_hat (bf16/float32)
+
+for each block in y:
+    x_hat_block = (y_block.to(float32)) * s
+return x_hat
+
+# -----
+# 输入: A_fp8, sA, B_fp8, sB
+# 输出: C (bf16/float32)
+
+C = zeros(M, N)
+for i in range(K):
+    A_block = A_fp8[:, i].to(float32) * sA
+    B_block = B_fp8[i, :].to(float32) * sB
+    C += A_block @ B_block   # 普通矩阵乘法
+return C
+```
 
 #### **(2) 矩阵乘累加精度**
 
@@ -216,3 +195,66 @@ enables overlapping of the two operations, maintaining high utilization of Tenso
 **在线 fp8 量化**
 
 一般用 fp8 时，scale 因子是从历史统计出的（滑动平均，或者取最近 n 个的 max 之类）。而 deepseek 的 fp8 从当前的 1x128 或者 128x128 block 中当场算出 scale 因子。
+
+---
+
+## 附录：deepseek-v3 fp4 训练的背景
+
+关于 deepseek-v3 （ https://arxiv.org/pdf/2412.19437v1 ） 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
+
+> Inspired by recent advances in low-precision training（见下面引文A,B,C）, we propose a fine-grained mixed precision framework utilizing the FP8
+data format for training DeepSeek-V3.
+>
+> 【受到别的 fp8 方案启发】
+- A=《Gpt3. int8 (): 8-bit matrix multiplication for transformers at scale》- 2022.08 - https://arxiv.org/pdf/2208.07339
+  - int8 量化来提速推理：Int8 矩阵乘法方案，用在 Transformer FFN 和 Attn proj。
+  - 发现特征维度中有一些 outliers 影响量化效果：于是分而治之。
+  - <img width="1000" alt="image" src="https://github.com/user-attachments/assets/752d7062-b186-474e-b1b9-5962ecde0542" />
+- B=《8-bit numerical formats for deep neural networks》- 2022.06 - https://arxiv.org/pdf/2206.02915
+  - 关注训练。
+  - 用浮点 fp8 比 fixed-point（int8）好。
+    - 定点 int8 可表示的数列，相邻间隔固定。而 fp8，则是间隔不一（0 附近精细，而绝对值越大，约粗）。而神经网络的参数激活梯度等都是零均值的。所以用 fp8 更好。
+    - <img width="1096" height="846" alt="image" src="https://github.com/user-attachments/assets/afd8684e-62aa-423f-87fd-1d14469d71b7" />
+    - fp8 表示的非线性性如图，可参 https://asawicki.info/articles/fp8_tables.php。注意 E4M3 还有一种算法范围是 -448~448.
+  - 推荐：激活/权重用 fp8=E4M3，梯度用 fp8=E5M2
+  - 它用了全局 loss scale 而非细粒度逐层或逐张量 scale
+- C=《FP8-LM: Training FP8 large language models》 - 2023.10 - https://arxiv.org/pdf/2310.18313
+  - Nvidia Transformer Engine只对矩阵乘法用 fp8，本文把 FP8 应用到计算、存储和通信全过程，包括梯度、优化器状态和分布式训练。
+  - per-tensor scaling
+  - 精度分配
+    - 主权重 fp16, 优化器adam状态：fp8（一阶）+fp16（二阶）；梯度 fp8。这些本来一个参数需要16字节，变成了 6字节
+    - forward、backward 时，关键地方外（GELU、Softmax、LayerNorm, dropout等），都是 fp8
+
+> While low-precision training holds great promise, it is often limited by the presence of outliers in activations, weights, and gradients（见下面引文D,E）.
+>
+> 【但是当前的 fp8 总是受困于 outlier 问题】
+- D=《Scaling FP8 training to trillion-token llms》- 2024.09 - https://arxiv.org/pdf/2409.12517
+  - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
+- E=《Massive activations in large language models》 - 2024.02 - https://arxiv.org/pdf/2402.17762
+  - 极少数超大 outlier 激活值普遍存在于各 LLM（乃至大出 10 万倍），文中叫这 outliers 为 massive activations（且见于 paper 标题）。
+    - 此文并不是讲 FP8 训练才如此。而是各种精度的都有可能
+  - 某些维、某些 token 才容易发生
+    - 不是所有 channel 都 massive：outliers 总是出现在某些 channel 维度（且出现几率很小）。
+    - 不是所有 token 都 massive：在一些特殊 token 上（起始 <BOS>、句号 “.”、换行符 \n、分隔符等）才如此。
+    - <img width="1162" height="658" alt="image" src="https://github.com/user-attachments/assets/293d84b3-e8b3-471c-a250-1d7633336fb2" />
+  - 他们起的作用是 biases，若去掉之会性能下降（Massive activations act as fixed but important biases in LLMs）。attn 中相当于隐式 bias
+
+> Although significant progress has been made in inference quantization (见下面引文F,G), there are relatively few studies demonstrating successful application of low-precision techniques in large-scale language model pre-training (见下面引文 D).
+>
+> 【推理量化有进展，但是大规模低精度训练的成功还未见】
+- 推理时量化：
+  - F：《Gptq: Accurate post-training quantization for generative pre-trained transformers》- 2022.10 - https://arxiv.org/pdf/2210.17323
+  - G：《Smoothquant: Accurate and efficient post-training quantization for large language models》 - 2022.11 - https://arxiv.org/pdf/2211.10438
+- D：《Scaling FP8 training to trillion-token llms》- 2024.09 - （注意上面也出现了） https://arxiv.org/pdf/2409.12517
+  - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
+
+> To address this challenge and effectively extend the dynamic range of the FP8 format, 【于是推出 deepseek-v3 的解法】
+>
+> （1）、we introduce a fine-grained quantization strategy: tile-wise grouping with 1 × 𝑁𝑐 elements or block-wise grouping with 𝑁𝑐 × 𝑁𝑐 elements. The associated dequantization overhead is largely mitigated under our increased-precision accumulation process, a critical aspect for achieving accurate FP8 General Matrix Multiplication (GEMM).
+>
+> （2）、Moreover, to further reduce memory and communication overhead in MoE training, we cache and dispatch activations in FP8, while storing low-precision optimizer states in BF16.
+>
+> （3）、We validate the proposed FP8 mixed precision framework on two model scales similar to DeepSeek-V2-Lite and DeepSeekV2, training for approximately 1 trillion tokens (see more details in Appendix B.1). Notably, compared with the BF16 baseline, the relative loss error of our FP8-training model remains consistently below 0.25%, a level well within the acceptable range of training randomness.
+
+从以上的启示是，用 fp8 有好处，但是总是有异常大值（outliers）问题。deepseek-v3 试图解决这点。
+

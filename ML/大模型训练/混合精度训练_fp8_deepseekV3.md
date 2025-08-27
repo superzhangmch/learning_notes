@@ -4,7 +4,8 @@ deepseek-v3 乃第一个成功的 fp8 精度训练的超大 LLM。
 - fp8 量化方式训练，比 int8 更好。
 - fp8 训练时，容易有异常大的值的问题。
 
-deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。虽然如此，inference 时只需要还原 training 的 forward 即可，于是 inference 的 checkpoint 可以是 fp8 的。这也可以在 https://modelscope.cn/models/deepseek-ai/DeepSeek-V3 看到，671B 参数的 model，磁盘占据大约 700G。而非一般 fp16 的 671x2 GB。
+
+note：本文用词不区分 bf16 与 fp16，都称为 fp16.
 
 ----
 
@@ -21,7 +22,7 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
 - the output head
 - MoE gating modules,
 - normalization operators
-attention operators
+- attention operators
 
 其细节如下图：
 
@@ -49,12 +50,30 @@ attention operators
 
 **关于激活显存的处理**
 
-激活如果只用作推进 forward，可以随用随丢。但是往往反向传播时也会用到它。backward 用到它的时候，适用于 Wgrad = $X^{\top} \nabla y$ 计算的时候，而此时只需要它以 FP8 的形态出现。所以激活按说都可以存为 FP8 格式。但有个例外：attn 之后的 proj 的 input 是：attnRes=softmax(QK')V'，即它参与 attn_layer_final_out = $attnRes \cdot W_o$ 计算。但是backward 时它会传给 attn，而这里需要高精度。所以对此激活 attnRes，需要保留较高精度 
+激活如果只用作推进 forward，可以随用随丢。但是往往反向传播时也会用到它。backward 用到它的时候，适用于 Wgrad = $X^{\top} \nabla y$ 计算的时候，而此时只需要它以 FP8 的形态出现。所以激活按说都可以存为 FP8 格式。但有个例外：attn 之后的 proj 的 input 是：attnRes=softmax(QK')V，即它参与 attn_layer_final_out = $attnRes \cdot W_o$ 计算。但是backward 时它会传给 attn，而这里需要高精度。所以对此激活 attnRes，需要保留较高精度 
 
 另外对于 $SwiGLU(X)=(X W_1​)⊙σ(X W_2​)$，会不存 $X W_1$ 与 $X W_2$，而是在backward 时，重计算。
 
 MOE 层：对单个专家 FFN，一入口就是linear，它的 input 要求是 fp8，所以 dispatch 到 MOE input 可以是 fp8 的。而 backward 时，传入 MOE 的激活梯度，也是一样 FP8 即可。但对于 MOE 的输出，要保持 fp16.
 > For both the forward and backward combine components, we retain them in BF16 to preserve training precision in critical parts of the training pipeline.
+
+**反映到模型参数文件**
+
+deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。虽然如此，inference 时只需要还原 training 的 forward 即可，于是 inference 的 checkpoint 可以是 fp8 的。这也可以在 https://modelscope.cn/models/deepseek-ai/DeepSeek-V3 看到，671B 参数的 deepseek-v3 model，磁盘占据大约 700G，也就是说几乎所有参数都是 fp8 的。而非一般 fp16 的 671x2 GB。
+
+这也印证出，它确实是几乎所有参数都是 fp8 化了（除了 input embedding, output head, router等外），且 inference 计算过程中，绝大部分计算也都 fp8 化了：
+- FP8 覆盖的计算：
+  - Q/K/V 投影（Linear）
+  - Attention 输出投影（Linear）
+  - FFN / MoE 的上投影、下投影（Linear）
+  - 这些都是 GEMM，推理中完全可以 FP8 化。
+- 非 FP8（保高精度）：
+  - soft(QKᵀ)V 
+  - Norm
+  - Gating/Embedding/Head
+
+另外，kimi-k2，1T参数量，开源的 model 文件大小也是 1T，那么看起来是 fp8 训练的， 根据 https://huggingface.co/moonshotai/Kimi-K2-Instruct/discussions/30 ， 它是 fp16 训练，但是inference 时按deepseek 的方式 group-scaling 整到了 fp8。
+
 
 ### 二、实际操作中的细节
 
@@ -70,6 +89,8 @@ MOE 层：对单个专家 FFN，一入口就是linear，它的 input 要求是 f
 
 假设每个分块的 scaling 是 $x_i = \lambda_i a_i$, $W_i = \gamma_i B_i$，则本来 $XW = \sum_i x_i W_i$, 现在就变成了 $XW = \sum_i \[(\lambda_i \gamma_i) (a_i\cdot B_i)\]$。
 
+这和硬件层支持的 microscaling formats（即 MXFP4， MXFP8等格式； gpt-oss 即用到了 MXFP4）思路是一样的，英伟达 Blackwell 系列支持（H100 不支持）。
+
 **关于 block size 的选取：**
 
 见上文可见，一共牵扯到三个 GEMM（XW， $\nabla y W^T$, $X^T\nabla y$)，参与的矩阵有
@@ -81,6 +102,8 @@ MOE 层：对单个专家 FFN，一入口就是linear，它的 input 要求是 f
   - block 大小是 $N_c \times N_c = 128 \times 128$
 
 都是矩阵，为什么不统一按 128x128呢？paper中实验结果是就应该不同处理。paper 推测，对 Dgrad 来说：不同 token 的 Dgrad 差异较大，所以 outlier 与token相关吧，因此要不同 token 不能在同一个 block 内。如上导致 $X^T\nabla y$ 是 [128x1] 分块和 [1x128] 分块的两个矩阵相乘。
+
+**deepseek 实操**
 
 在文件 https://modelscope.cn/models/deepseek-ai/DeepSeek-V3/file/view/master/inference%2Fkernel.py 里，有关于 deepseek-v3 进行fp8 量化、反量化有关函数，提炼如下：
 ```

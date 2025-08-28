@@ -15,6 +15,8 @@ MXFP_n 低精度浮点数据格式的提出在 https://arxiv.org/pdf/2310.10537 
 
 它的 scaling factor 是 E8M0 的，也就是都是 2 的幂次数。这使得 MXFP_n 的表示范围和 FP32 一样大——因为 fp32 的指数是 8bit 的。
 
+deepseek-v3 也是分组 scaling factor, 它的 scaling factor 并非E8M0，只有少数情况如此。而在 deepseek-v3.1 中，看起来都用了 E8M0。
+
 **需要注意的一点：**
 
 对于矩阵来说，他一次只能处理某一维的连续 32个数，如果对矩阵 transpose，则这 32 个数不再连续。因此 transpose 后，原 scaling 生效。也就是说： MXFP 量化与 transpose 顺序不可交换：

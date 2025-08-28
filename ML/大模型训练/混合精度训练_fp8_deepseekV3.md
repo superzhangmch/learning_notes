@@ -77,8 +77,8 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
 
 特别地，deepseek-v3 作为 MOE 模型，大部分参数是 矩阵乘法有关的 MoE。从这点也可感性感觉到，它的 FP3 在计算量、存储、带宽上提效很猛。
 
-另外，kimi-k2，1T参数量，开源的 model 文件大小也是 1T，那么看起来是 fp8 训练的， 根据 https://huggingface.co/moonshotai/Kimi-K2-Instruct/discussions/30 ， 它是 fp16 训练，但是inference 时按deepseek 的方式 group-scaling 整到了 fp8。
-
+另外，kimi-k2，1T参数量，开源的 model 文件大小也是 1T，那么看起来是 fp8 训练的， 根据 https://huggingface.co/moonshotai/Kimi-K2-Instruct/discussions/30 ， 它是 fp16 训练，但是inference 时按deepseek 的方式 group-scaling 整到了 fp8。另外，kimi-k2没用 fp8 训练，因为他们发现可能有性能下降：
+> Due to potential risks of performance degradation that we observed during preliminary study, we do not apply FP8 in computation.
 
 ### 二、实际操作中的细节
 

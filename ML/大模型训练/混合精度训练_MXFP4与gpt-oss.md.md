@@ -27,7 +27,7 @@ of the shared scale — i.e., conversion to MX format and transposing are not co
 这导致，训练或推理中，如果同时用到一个矩阵与其转置，必须分别存一份：
 Due to non-commutative nature of transpose and quantization into MX formats (see Section 3), the quantized weights Wᵢ and their transpose Wᵢᵀ must be stored as two separate tensors
 
-### 用于训练的实例
+### paper 中怎么用它的
 
 《Microscaling Data Formats for Deep Learning》中有它的具体使用例子。和 deepseek-v3 的 fp8 训练还是很像的。
 
@@ -37,7 +37,69 @@ Due to non-commutative nature of transpose and quantization into MX formats (see
 
 可以看到都是 gemm 矩阵乘法时，两个矩阵转低精度，而乘法结果是较高精度。
 
-
+和 deepseek-v3 一样，norm，softmax 等是在高精度进行的。训练主参数是 fp32 的：
+> Vector operations (e.g., layernorm, Softmax, GELU, and residual add) are performed in a scalar floating-point format like Bfloat16 or FP32.
+>
+> ...
+> 
+> A master copy of the weights is kept in FP32, and this copy is updated in each training step. 
 
 ----
 
+### openai gpt-oss 怎么用的 MXFP4
+
+从这里 https://huggingface.co/openai/gpt-oss-120b/tree/main 可看到， gpt-oss-120b，参数是 120B，但是模型文件大小是 65G——如果是你 fp16 存储应该是 240GB 的，按 fp8 也应该有 120GB。这正是因为它在后训练时用了 MXFP4 做了微调。
+
+它也不是所有参数都 MXFP4，但是鉴于 MOE 参数在总参数的占比极大（gpt-oss-120B 中占比 90%），只冲这点，模型文件就应该是120 的差不多一半了。
+
+模型详情在： https://cdn.openai.com/pdf/419b6906-9da6-406c-a19d-1bb078ac7637/oai_gpt-oss_model_card.pdf
+
+| 部件  | 参数量 |
+| -------- | ------- |
+| MOE：MLP | 114.71B |
+| Attention(Q K V O 四映射) | 0.96B |
+| Embed + output head | 1.16B |
+| 总共 | 116.83B |
+
+只是 MOE 做了 MXFP4，那么估算模型文件大小：
+- moe 层一个参数 mxfp4 后占用 4.25 bits；
+  - 每32个4bit FP4 共享一个 8bit 的 scaling factor，于是每个数存储占用为： $(32 \times 4 + 8) / 32 = 4.25$
+- attn 与 emb 按每参数2字节算。
+- 则模型文件为： $114.71 \times 4.25 / 8 + (0.96+1.16) \times 2 = 65.18 GB$, 和他发布的文件大小吻合。
+
+**其他信息：**
+
+根据 https://huggingface.co/openai/gpt-oss-120b/blob/main/config.json，只对 MOE 部分做了 MXFP4 的量化：
+```
+  "quantization_config": {
+    "modules_to_not_convert": [
+      "model.layers.*.self_attn",
+      "model.layers.*.mlp.router",
+      "model.embed_tokens",
+      "lm_head"
+    ],
+    "quant_method": "mxfp4"
+  },
+```
+
+根据 https://huggingface.co/openai/gpt-oss-120b/blob/main/original/dtypes.json，没有 mxfp4 量化的参数具体为：
+```
+{
+ "embedding.weight": "BF16",
+ "norm.scale": "BF16",
+ "unembedding.weight": "BF16"
+  ...
+ "block.0.attn.norm.scale": "BF16",
+ "block.0.attn.qkv.weight": "BF16",
+ "block.0.attn.qkv.bias": "BF16",
+ "block.0.attn.sinks": "BF16",
+ "block.0.attn.out.weight": "BF16",
+ "block.0.attn.out.bias": "BF16",
+ "block.0.mlp.norm.scale": "BF16",
+ "block.0.mlp.gate.weight": "BF16",
+ "block.0.mlp.gate.bias": "BF16",
+ "block.0.mlp.mlp1_bias": "BF16",
+ "block.0.mlp.mlp2_bias": "BF16",
+ ...
+}
+```

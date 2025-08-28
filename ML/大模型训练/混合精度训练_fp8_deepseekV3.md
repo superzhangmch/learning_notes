@@ -112,6 +112,20 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
 
 细粒度的 scaling factor，用的实数（精度未确）。但是对于特殊位置的激活（attn算子的输出，MOE的 input），用的 2^x 形式的 scaling factor——而这和 MXFP_x 方案中的 scaling 因子（E8M0）很像。
 
+在 deepseek-v3.1 https://huggingface.co/deepseek-ai/DeepSeek-V3.1/blob/main/config.json 里，看起来所有地方都用了 E8M0:
+
+```
+  "quantization_config": {
+    "activation_scheme": "dynamic",
+    "fmt": "e4m3",
+    "quant_method": "fp8",
+    "weight_block_size": [
+      128,
+      128
+    ],
+    "scale_fmt": "ue8m0"
+  },
+```
 **deepseek 实操**
 
 在文件 https://modelscope.cn/models/deepseek-ai/DeepSeek-V3/file/view/master/inference%2Fkernel.py 里，有关于 deepseek-v3 进行fp8 量化、反量化有关函数，提炼如下：

@@ -4,11 +4,69 @@
 
 ---
 
-by chatgpt
+by chatgpt，并作一些调整或补充 （可参 https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/usage/collectives.html ）
+
+## All-Reduce（全归约）
+
+**功能**：所有 GPU 数据聚合 → 每个 GPU 都有全部聚合结果（常用于分布式训练的梯度同步）。
+
+<img width="1318" height="476" alt="image" src="https://github.com/user-attachments/assets/19bad0ab-8ee5-41ed-b479-19f87d1dc694" />
+
+
+**工作原理**（NCCL 默认用 **Ring All-Reduce**）：
+
+all-reduce 由 Reduce-Scatter + All-Gather 两阶段组成，如图：
+<img width="954" height="1128" alt="image" src="https://github.com/user-attachments/assets/c8087222-560a-4016-aaeb-1651c2c6be99" />
+
+1. **阶段 1：Reduce-Scatter**
+
+   * 数据分成 N 片。
+   * 沿环路传递，每个 GPU 只保留一片聚合结果。
+2. **阶段 2：All-Gather**
+
+   * 把每个 GPU 聚合好的那片数据再沿环路广播回去。
+3. 完成后，所有 GPU 都有全量聚合结果。
+
+**优化**：
+
+* 对小数据用 **Tree All-Reduce**（延迟低）。
+* 对大数据用 **Ring All-Reduce**（带宽利用率接近 100%）。
+* 大规模集群用 **分层 All-Reduce**：节点内（NVLink）+ 节点间（InfiniBand）。
+ 
+## All-Gather（全收集）
+
+**功能**：所有 GPU 收集到所有 GPU 的数据。
+
+<img width="1382" height="480" alt="image" src="https://github.com/user-attachments/assets/798e6dd9-84b5-4570-b770-be0408728cc0" />
+
+**工作原理**（Ring All-Gather）：
+
+1. 数据分成 N 片（每个 GPU 初始只有 1 片）。
+2. 每一轮将自己已有的片发给下一个 GPU，并接收来自上一个 GPU 的片。
+3. N-1 轮后，所有 GPU 都有全量数据。
+
+📌 **特点**：All-Gather = Gather + Broadcast 的组合。
+ 
+## Reduce-Scatter（归约分发）
+
+**功能**：所有 GPU 数据先归约，然后将结果分片发给不同 GPU。
+
+<img width="1406" height="522" alt="image" src="https://github.com/user-attachments/assets/cf22fcaa-865d-4d49-81ca-573d497cfd1a" />
+
+**工作原理**（Ring Reduce-Scatter）：
+
+1. 数据分成 N 片。
+2. 沿环路传递时，每个 GPU 对收到的对应分片做归约。
+3. 最终每个 GPU 只保留一片聚合好的数据（分布在不同 GPU 上）。
+
+📌 **用途**：All-Reduce 的第一阶段就是 Reduce-Scatter，可节省内存和带宽。
+
 
 ## Broadcast（广播）
 
 **功能**：一个 GPU 的数据 → 所有 GPU。
+
+<img width="1338" height="494" alt="image" src="https://github.com/user-attachments/assets/87a59cc4-ab3b-4d5e-9048-0aa391cfd126" />
 
 **工作原理**：
 
@@ -29,6 +87,8 @@ by chatgpt
 
 **功能**：所有 GPU 的数据 → 聚合到一个 GPU（root），例如做求和、最大值等。
 
+<img width="1320" height="486" alt="image" src="https://github.com/user-attachments/assets/4f0b2b26-5061-4b13-896b-b373a4a6c666" />
+
 **工作原理**：
 
 * **Tree Reduce**：
@@ -42,28 +102,7 @@ by chatgpt
   2. 沿环路传递时，每个 GPU 把收到的数据和自己本地的对应分片做归约。
   3. 最终 root GPU 拥有完整归约结果。
   4. 带宽利用率高，但延迟较高。
- 
-## All-Reduce（全归约）
 
-**功能**：所有 GPU 数据聚合 → 每个 GPU 都有聚合结果（常用于分布式训练的梯度同步）。
-
-**工作原理**（NCCL 默认用 **Ring All-Reduce**）：
-
-1. **阶段 1：Reduce-Scatter**
-
-   * 数据分成 N 片。
-   * 沿环路传递，每个 GPU 只保留一片聚合结果。
-2. **阶段 2：All-Gather**
-
-   * 把每个 GPU 聚合好的那片数据再沿环路广播回去。
-3. 完成后，所有 GPU 都有全量聚合结果。
-
-**优化**：
-
-* 对小数据用 **Tree All-Reduce**（延迟低）。
-* 对大数据用 **Ring All-Reduce**（带宽利用率接近 100%）。
-* 大规模集群用 **分层 All-Reduce**：节点内（NVLink）+ 节点间（InfiniBand）。
- 
 ## Gather（收集）
 
 **功能**：所有 GPU 数据 → 一个 GPU 上的完整集合。
@@ -79,19 +118,6 @@ by chatgpt
   1. 分片沿环路送到 root。
   2. 适合大数据量传输，但实现较少用 ring，因为单 root 会成为瓶颈。
  
-
-## All-Gather（全收集）
-
-**功能**：所有 GPU 收集到所有 GPU 的数据。
-
-**工作原理**（Ring All-Gather）：
-
-1. 数据分成 N 片（每个 GPU 初始只有 1 片）。
-2. 每一轮将自己已有的片发给下一个 GPU，并接收来自上一个 GPU 的片。
-3. N-1 轮后，所有 GPU 都有全量数据。
-
-📌 **特点**：All-Gather = Gather + Broadcast 的组合。
- 
 ## Scatter（分发）
 
 **功能**：一个 GPU 的数据分片 → 不同 GPU（每 GPU 得到一部分）。
@@ -103,19 +129,7 @@ by chatgpt
   1. Root GPU 先发一半数据给另一 GPU。
   2. 每个收到数据的 GPU 再将其中一部分发给别人，直到完成分发。
 * 对称于 Gather，延迟 \~log₂(N)。
- 
-## Reduce-Scatter（归约分发）
 
-**功能**：所有 GPU 数据先归约，然后将结果分片发给不同 GPU。
-
-**工作原理**（Ring Reduce-Scatter）：
-
-1. 数据分成 N 片。
-2. 沿环路传递时，每个 GPU 对收到的对应分片做归约。
-3. 最终每个 GPU 只保留一片聚合好的数据（分布在不同 GPU 上）。
-
-📌 **用途**：All-Reduce 的第一阶段就是 Reduce-Scatter，可节省内存和带宽。
- 
 
 ## 🔍 总结性能比较
 
@@ -128,3 +142,14 @@ by chatgpt
 | All-Gather     | Ring | -    | ✔    | 推理数据全量化 |
 | Scatter        | Tree | ✔    | -    | 数据分片    |
 | Reduce-Scatter | Ring | -    | ✔    | 内存优化同步  |
+
+----
+
+另外还有个 all-to-all：
+
+## all-to-all：
+
+<img width="1064" height="720" alt="image" src="https://github.com/user-attachments/assets/b1994742-3248-4ced-9655-235398bf0801" />
+
+如图： all-to-all 不是广播， （像是矩阵转置）， 像是把数据 hash 后分别发送到 hash 桶里。
+

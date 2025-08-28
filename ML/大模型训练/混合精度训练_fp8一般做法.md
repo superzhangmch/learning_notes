@@ -2,7 +2,7 @@
 
 简单说
 - fp8 主要是和计算单元的接口层而言，存储于带宽效率高
-- 因 trian-inference 一致比 int8 量化好。
+- 因 trian-inference 一致，比 int8 训练后量化好。
 - 需要更精细的 rescale 控制
 - 需要专门硬件支持。Hopper 架构 (H100 GPU, 2022 年 3 月发布) 才开始正式支持 FP8 (8-bit floating point) 精度。
   - 而一般 edge 芯片，比如 NPU，支持 int8，并不支持 fp8.

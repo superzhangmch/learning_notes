@@ -4,7 +4,9 @@ deepseek-v3 乃第一个成功的 fp8 精度训练的超大 LLM。
 - fp8 量化方式训练，比 int8 更好。
 - fp8 训练时，容易有异常大的值的问题。
 
-最终，deeseek 成功地令绝大部分参数都 fp8，大部分计算也都 fp8化，使得计算量、模型磁盘大小、显存、内存带宽需求都极大变小。特别地，MOE 专家并行时网络带宽是个问题，但是fp8 化后，带宽问题也得到了缓解。
+最终，deepseek 成功地令绝大部分参数都 fp8，大部分计算也都 fp8化，使得计算量、模型磁盘大小、显存、内存带宽需求都极大变小。特别地，MOE 专家并行时网络带宽是个问题，但是fp8 化后，带宽问题也得到了缓解。
+
+deepseek 的方案的核心（下文的细粒度 scaling + fp8 gemm 累加精度优化），根本来说，是针对硬件不足，用软件方式做了硬件做的事。
 
 note：本文用词不区分 bf16 与 fp16，都称为 fp16.
 
@@ -78,7 +80,7 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
 
 ### 二、实际操作中的细节
 
-#### **(1) outlier 怎么解决**
+#### **(1) outlier 怎么解决：细粒度 scaling**
 
 <img width="712" height="420" alt="image" src="https://github.com/user-attachments/assets/1bdfbe04-0125-4ec1-9c15-998e7d1cf756" />
 
@@ -90,7 +92,7 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
 
 假设每个分块的 scaling 是 $x_i = \lambda_i a_i$, $W_i = \gamma_i B_i$，则本来 $XW = \sum_i x_i W_i$, 现在就变成了 $XW = \sum_i \[(\lambda_i \gamma_i) (a_i\cdot B_i)\]$。
 
-这和硬件层支持的 microscaling formats（即 MXFP4， MXFP8等格式； gpt-oss 即用到了 MXFP4）思路是一样的，英伟达 Blackwell 系列支持（H100 不支持）。
+这和硬件层支持的 microscaling formats（ https://arxiv.org/pdf/2310.10537 ，即 MXFP4， MXFP8等格式； gpt-oss 即用到了 MXFP4）思路是一样的，英伟达 Blackwell 系列支持（H100 不支持）。
 
 **关于 block size 的选取：**
 
@@ -137,7 +139,7 @@ for i in range(K):
 return C
 ```
 
-#### **(2) 矩阵乘累加精度**
+#### **(2) FP8 gemm 累加精度优化**
 
 **问题产生的原因：**
 

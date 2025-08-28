@@ -3,7 +3,9 @@ MXFP_n 低精度浮点数据格式的提出在 https://arxiv.org/pdf/2310.10537 
 
 它的思路和后来的 deepseek-v3 （ https://arxiv.org/pdf/2412.19437 2024.12）的 fp8 精度训练是很像的。
 
-note： FP4 E2M1 表示的数字集合为：{0.0, ±0.5, ±1.0, ±1.5, ±2.0, ±3.0, ±4.0, ±6.0}, 为非等间隔的（否则用 int4就行了）
+note： FP4 E2M1 表示的数字集合为：{0.0, ±0.5, ±1.0, ±1.5, ±2.0, ±3.0, ±4.0, ±6.0}, 为非等间隔的（否则用 int4就行了），见下图：
+
+<img width="502" height="280" alt="image" src="https://github.com/user-attachments/assets/e5764bae-718a-4fa1-9895-38dea0c7aac0" />
 
 ----
 

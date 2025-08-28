@@ -53,7 +53,7 @@ note：本文用词不区分 bf16 与 fp16，都称为 fp16.
 
 **关于激活显存的处理**
 
-激活如果只用作推进 forward，可以随用随丢。但是往往反向传播时也会用到它。backward 用到它的时候，适用于 Wgrad = $X^{\top} \nabla y$ 计算的时候，而此时只需要它以 FP8 的形态出现。所以激活按说都可以存为 FP8 格式。但有个例外：attn 之后的 proj 的 input 是：attnRes=softmax(QK')V，即它参与 attn_layer_final_out = $attnRes \cdot W_o$ 计算。但是backward 时它会传给 attn，而这里需要高精度。所以对此激活 attnRes，需要保留较高精度 
+激活如果只用作推进 forward，可以随用随丢。但是往往反向传播时也会用到它。backward 用到它的时候，适用于 Wgrad = $X^{\top} \nabla y$ 计算的时候，而此时只需要它以 FP8 的形态出现。所以激活按说都可以存为 FP8 格式。但有个例外：attn算子的输出，即 attn 之后的 proj 的 input：attnRes=softmax(QK')V（它参与 attn_layer_final_out = $attnRes \cdot W_o$ 计算)。但是backward 时它会传给 attn，而这里需要高精度。所以对此激活 attnRes，需要保留较高精度（自定义的 E5M6）
 
 另外对于 $SwiGLU(X)=(X W_1​)⊙σ(X W_2​)$，会不存 $X W_1$ 与 $X W_2$，而是在backward 时，重计算。
 
@@ -107,6 +107,10 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
   - block 大小是 $N_c \times N_c = 128 \times 128$
 
 都是矩阵，为什么不统一按 128x128呢？paper中实验结果是就应该不同处理。paper 推测，对 Dgrad 来说：不同 token 的 Dgrad 差异较大，所以 outlier 与token相关吧，因此要不同 token 不能在同一个 block 内。如上导致 $X^T\nabla y$ 是 [128x1] 分块和 [1x128] 分块的两个矩阵相乘。
+
+**scaling factor的选取**
+
+细粒度的 scaling factor，用的实数（精度未确）。但是对于特殊位置的激活（attn算子的输出，MOE的 input），用的 2^x 形式的 scaling factor——而这和 MXFP_x 方案中的 scaling 因子（E8M0）很像。
 
 **deepseek 实操**
 

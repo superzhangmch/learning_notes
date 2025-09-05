@@ -10,7 +10,7 @@ GPTQ 继承自 OBQ(Optimal Brain Quantization，2022), 而 OBQ 又是来自 OBS�
 
 GPTQ 文中试了 4 bit, 乃至于 2 bit 量化。但是只针对参数，对激活仍然保持高精度(FP16)，没有量化。
 
-GPTQ 的问题是容易过拟合，导致泛化性能差（见：《AWQ》 https://arxiv.org/pdf/2306.00978 ）
+比它晚，但是基本精神一样【都是降低 $\hat{W}X$ 误差】的是 AWQ。AWQ 指出，GPTQ 的问题是容易过拟合，导致泛化性能差（见：《AWQ》 https://arxiv.org/pdf/2306.00978 ）
 
 ----
 

@@ -244,7 +244,7 @@ enables overlapping of the two operations, maintaining high utilization of Tenso
 
 ---
 
-## 附录：deepseek-v3 fp4 训练的背景
+## 附录：deepseek-v3 fp8 训练的背景
 
 关于 deepseek-v3 （ https://arxiv.org/pdf/2412.19437v1 ） 的 fp8 训练的背景介绍，原文摘录如下（3.3节 《FP8 Training》）：
 

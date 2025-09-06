@@ -88,7 +88,7 @@ deepseek-v3 是 fp8 训练的，但是主参数更新是在 fp32 下进行的。
 
 如图, 假设是要算 $XW = \[ x_1, x_2, .., x_n\] \cdot \[W_1, W_2, .., W_n\]^T$（且本来也不需要分块算）。
 
-如果 X 或者 W 有一两个 outlier，做 tensor-wise scale 会导致绝大部分值归零。于是采用的方法是，矩阵分块：对于 X，按 1 x 128 分，对于权重 W，按 128x128 分，每一块分别 scale：
+如果 X 或者 W 有一两个 outlier(主要是 X 可能这样），做 tensor-wise scale 会导致绝大部分值归零。于是采用的方法是，矩阵分块：对于 X，按 1 x 128 分，对于权重 W，按 128x128 分，每一块分别 scale：
 
 <img width="860" height="710" alt="image" src="https://github.com/user-attachments/assets/e7247d0d-4c00-4534-b5e8-07f353058060" />
 
@@ -254,7 +254,7 @@ data format for training DeepSeek-V3.
 > 【受到别的 fp8 方案启发】
 - A=《Gpt3. int8 (): 8-bit matrix multiplication for transformers at scale》- 2022.08 - https://arxiv.org/pdf/2208.07339
   - int8 量化来提速推理：Int8 矩阵乘法方案，用在 Transformer FFN 和 Attn proj。
-  - 发现特征维度中有一些 outliers 影响量化效果：于是分而治之。
+  - 发现激活的特征维度中有一些 outliers 影响量化效果：于是分而治之。
   - <img width="1000" alt="image" src="https://github.com/user-attachments/assets/752d7062-b186-474e-b1b9-5962ecde0542" />
 - B=《8-bit numerical formats for deep neural networks》- 2022.06 - https://arxiv.org/pdf/2206.02915
   - 关注训练。
@@ -273,14 +273,14 @@ data format for training DeepSeek-V3.
 
 > While low-precision training holds great promise, it is often limited by the presence of outliers in activations, weights, and gradients（见下面引文D,E）.
 >
-> 【但是当前的 fp8 总是受困于 outlier 问题】
+> 【但是当前的 fp8 总是受困于激活 outlier】
 - D=《Scaling FP8 training to trillion-token llms》- 2024.09 - https://arxiv.org/pdf/2409.12517
   - 用 2T token 训了个 7B model，发现 fp8 的训练不稳来自 SwiGLU 导致的异常值放大，并用 Smooth-SwiGLU 改进之。
 - E=《Massive activations in large language models》 - 2024.02 - https://arxiv.org/pdf/2402.17762
   - 极少数超大 outlier 激活值普遍存在于各 LLM（乃至大出 10 万倍），文中叫这 outliers 为 massive activations（且见于 paper 标题）。
     - 此文并不是讲 FP8 训练才如此。而是各种精度的都有可能
   - 某些维、某些 token 才容易发生
-    - 不是所有 channel 都 massive：outliers 总是出现在某些 channel 维度（且出现几率很小）。
+    - 不是所有 channel 都 massive：outliers 总是出现在某些激活 channel 维度（且出现几率很小）。
     - 不是所有 token 都 massive：在一些特殊 token 上（起始 <BOS>、句号 “.”、换行符 \n、分隔符等）才如此。
     - <img width="1162" height="658" alt="image" src="https://github.com/user-attachments/assets/293d84b3-e8b3-471c-a250-1d7633336fb2" />
   - 他们起的作用是 biases，若去掉之会性能下降（Massive activations act as fixed but important biases in LLMs）。attn 中相当于隐式 bias

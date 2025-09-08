@@ -28,7 +28,22 @@ GPTQ 文中试了 4 bit, 乃至于 2 bit 量化。但是只针对参数，对激
 
 **可以对 W 每行独立量化：**
 
-权重 W 一般是矩阵，WX 计算时，W 的每一行独立和 X 计算，且 $∥W X − \hat{W} X∥_2^2 = \sum_{row} ∥W_{row} X − \hat{W}_{row} X∥_2^2$, 所以可以对 W 每行独立量化：仿佛权重矩阵本来只是 1 x n 的。
+权重 W 一般是矩阵，WX 计算时，W 的每一行独立和 X 计算，且 $∥W X − \hat{W} X∥_2^2 = \sum_{row} ∥W_{row} X − \hat{W}_{row} X∥_2^2$, 所以可以对 W 每行独立量化：仿佛权重矩阵本来只是 1 x n 的。也就是如下形式的 W，可以独立处理每行：
+
+$$
+W \cdot X =
+\begin{bmatrix}
+w_{11} & w_{12} & \cdots & w_{1n} \\
+w_{21} & w_{22} & \cdots & w_{2n} \\
+\vdots & \vdots & \ddots & \vdots \\
+w_{m1} & w_{m2} & \cdots & w_{mn}
+\end{bmatrix} \cdot \begin{bmatrix}
+x_1 \\
+x_2 \\
+\vdots \\
+x_n
+\end{bmatrix}
+$$
 
 OBQ 正是一次只考虑 W 的一行，这样 Wx 是 scalar 数字。除非说明，下面都假设 W 是列向量。
 

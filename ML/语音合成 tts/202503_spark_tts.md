@@ -22,11 +22,12 @@
 - 风格像 ViT（LN、GELU、大感受野、深宽设计）。
 - 性能接近或超过 ViT，同时保持 CNN 的高效性。
 
-### 语音怎么生成的
+### 语音怎么生成的：BiCodec decoder
 
-用 BiCodec decoder。
+用 BiCodec 的 decoder。
 
-一般方法用 gan 或者 diffusion 类（比如 flow matching）。而 BiCodec 不是 GAN 也不是 diffusion，它本质上是一个 基于 VQ-VAE 的 autoencoder。
+一般做生成，是用 gan 或者 diffusion 类（比如 flow matching）。而 BiCodec 乃基于 VQ-VAE 的 autoencoder，但用了 GAN 训练方法：
+> BiCodec is trained end-to-end employing a **Generative Adversarial Network (GAN)** methodology to minimize reconstruction loss, together with L1 feature matching loss (via discriminators) while simultaneously optimizing the VQ codebook.
 
 ### 主流程
 
@@ -37,6 +38,10 @@
 训练 loss 如下：
 
 <img width="914" height="570" alt="image" src="https://github.com/user-attachments/assets/b1f9d0a1-9074-4967-9ad7-bbe6cb447580" />
+
+两种 loss 分别在预测下面部分：
+
+<img width="800" height="522" alt="image" src="https://github.com/user-attachments/assets/9951e552-1adb-4009-81ea-fc5a905deead" />
 
 ### 怎么做的语音迁移
 

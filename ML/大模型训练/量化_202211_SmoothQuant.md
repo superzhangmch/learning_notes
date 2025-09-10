@@ -6,9 +6,10 @@ smoothQuant 要解决这问题（AWQ-202306 也是要解决这问题）。作者
 
 和 awq 对比：
 - awq 只是量化 weight（且是3、4 bit 的量化)；矩阵乘法仍然在 fp16 上做(乃W4A16)。而 smoothQuant 是同时量化 weight 与 activation 到 int8（W8A8）。
-- 大方向说，两者的量化策略简直一模一样(s 是对角矩阵）：都是做的outlier 分摊：
+- 大方向说，两者的量化策略简直一模一样(s 是对角矩阵）：都是做的outlier 分摊（分摊方式不同）：
   - smoothQuant: $Y = XW = X s^{-1} s W \approx \text{unquant} \circ \text{quant}(X s^{-1}) \cdot \text{unquant} \circ \text{quant}(s W)$
   - AWQ: $Y = XW = X s^{-1} s W \approx (X s^{-1}) \cdot \text{unquant} \circ \text{quant}(s W)$
+- smoothQuant 是迁移后，大粒度对 W 与X 量化；awq 是对 W 作 gorup & per-channel 小粒度量化。
 
 ---
 
@@ -66,7 +67,7 @@ $$
 
 到这一步，只是对 XW 做了等价变换，使得 outliers 也被 weight 分摊。
 
-接下来就是怎么量化 $\hat{X}$ 与 $\hat{W}$。
+接下来就是怎么量化 $\hat{X}$ 与 $\hat{W}$。注意：不能把 $\hat{X}$ 的 $s^{-1}$ 当做反量化时的 scaling 因子。
 
 **三种粒度的量化**
 

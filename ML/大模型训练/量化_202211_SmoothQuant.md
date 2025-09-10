@@ -6,7 +6,7 @@ smoothQuant 要解决这问题（AWQ-202306 也是要解决这问题）。作者
 
 和 awq 对比：
 - awq 只是量化 weight（且是3、4 bit 的量化)；矩阵乘法仍然在 fp16 上做(乃W4A16)。而 smoothQuant 是同时量化 weight 与 activation 到 int8（W8A8）。
-- 大方向说，两者的量化策略简直一模一样(s 是对角矩阵）：
+- 大方向说，两者的量化策略简直一模一样(s 是对角矩阵）：都是做的outlier 分摊：
   - smoothQuant: $Y = XW = X s^{-1} s W \approx \text{quant}(X s^{-1}) \cdot \text{quant}(s W)$
   - AWQ: $Y = XW = X s^{-1} s W \approx (X s^{-1}) \cdot \text{quant}(s W)$
 
@@ -22,9 +22,11 @@ smoothQuant 要解决这问题（AWQ-202306 也是要解决这问题）。作者
 
 <img width="1294" height="826" alt="image" src="https://github.com/user-attachments/assets/af949051-0818-44c3-aa41-28f81a607893" />
 
+注意：这只是说改写 XW，还没涉及到具体怎么量化那步。
+
 **（2）、做法**
 
-对 $Y \approx \text{quant}(X s^{-1}) \cdot \text{quant}(s W)$，展开下 $X s^{-1}$: 
+对展开 $X s^{-1}$: 
 
 $$
 X \cdot \mathrm{diag}(s^{-1}) =
@@ -56,13 +58,47 @@ $$
 
 它通过 $\alpha$ outliers 在 X 与 W 上的分布。一般 $\alpha=0.5$ 就可以。
 
-**（3）、计算加速**
+**（3）、具体怎么操作**
 
-一般来说，令 s、t 是对角矩阵对角元素， $(\text{diag} _ s X) \cdot (W \text{diag} _ t)$ 这样对 X 与 W 作 缩放，才是硬件友好的。因为这是对 X 与 W 的连续存储施加同样的 scaling （X 是行元素连续，W 会是列连续）。
+对于 $\hat{W}=s W$, 可以提前离线算，而对于 $\hat{X} = X s^{-1}$ 来说，X 一般是上一层的 output——假设 $X = X_1 W_1$, 于是 $X s^{-1} = X_1 (W_1 s^{-1})$，则 s^{-1} 可以离线计算吸收到 $W_1$ 里，也就是并不需要专门乘 $s^{-1}$ 以便得到 $\hat{X}$。按【paper，若 X = norm（..) 也可以类似操作，未深入研究】
 
-而 $X s^{-1}$ 与 $s W$ 都是逆此而行，计算效率低下。
+总之按这样的 outliers 分摊法，可以得到新的 
 
-**作者发现，可以这样提速：** 对于 $quant(s W)$, 可以提前离线算，而对于 $quant(X s^{-1})$ 来说，X 一般是上一层的 output——假设 $X = X_1 W_1$, 于是 $X s^{-1} = X_1 (W_1 s^{-1})$，则 s^{-1} 可以离线计算吸收到 $W_1$ 里。按 paper，若 X = norm（..) 也可以类似操作，未深入研究。
+$$
+Y=XW = \hat{X} \hat{W}
+$$
+
+接下来就是怎么量化 $\hat{X}$ 与 $\hat{W}$。
+
+**三种粒度的量化**
+
+<img width="1164" height="316" alt="image" src="https://github.com/user-attachments/assets/e46a252d-f2cd-4427-9691-b3edc7bd6e83" />
+
+该 paper 中提到了三种量化（见上图），对 XW 来说：
+- per-tensor: 可针对 X（激活），可针对 W（weight）
+- per-token：针对 X 的行的量化
+- per-channel：针对 X 的列；或 W 的列。
+  - 对 W：per-channel 量化就是 OBQ/GPTQ 的量化方式
+  - 对 X：鉴于outlier总出现于某些激活channel，所以如果对 X 作 per-channel 量化，smoothQuant 等一众算法要解决的问题就迎刃而解了。
+    - 但是这有硬件计算效率问题, 对 X、W 都量化则：
+      - 对 X-per-token，计算是 $Y = \text{diag}(\Delta_{x}^{\text{FP16}}) \cdot (\bar{\mathbf{X}}^{\text{INT8}} \cdot \bar{W}^{\text{INT8}}) \cdot \text{diag}(\Delta_{w}^{\text{FP16}})$ ，它对硬件优化，这时X（W）的行（列）连续存储，对行（列）施加同一个 scaling 因子，计算高效。
+      - 对 X-per-channel，计算是 $Y = \bar{\mathbf{X}}^{\text{INT8}} \cdot \text{diag}(\Delta_{x}^{\text{FP16}}) \cdot \text{diag}(\Delta_{w}^{\text{FP16}}) \cdot \bar{W}^{\text{INT8}} $，缩放因子在内部，计算效率低
+
+这上一段可见，做 X 双量化时，X-per-channel 效果好，但计算不友好。所以别的实现只好 X-per-token。那么 smooth-quant 呢？
+
+它把缩放因子放到了量化算子内部，而且 $\hat{X}$ 与 $\hat{W}$ 内部取值已经相对均匀，所以它来做各种粒度量度都是没问题的（包括 X-per-channel）。它一口气给了三种（o1, o2, o3)：
+
+| Method              | Weight       | Activation                  |
+|---------------------|-------------|-----------------------------|
+| W8A8                | per-tensor  | per-tensor dynamic          |
+| ZeroQuant           | group-wise  | per-token dynamic           |
+| LLM.int8()          | per-channel | per-token dynamic + FP16    |
+| Outlier Suppression | per-tensor  | per-tensor static           |
+|---------------------|-------------|-----------------------------|
+| SmoothQuant-O1      | per-tensor  | per-token dynamic           |
+| SmoothQuant-O2      | per-tensor  | per-tensor dynamic          |
+| SmoothQuant-O3      | per-tensor  | per-tensor static           |
+
 
 ---
 
@@ -72,15 +108,12 @@ $$
 
 <img width="752" height="500" alt="image" src="https://github.com/user-attachments/assets/7a6c4ea3-e2bf-4648-84d7-26dace055163" />
 
----
+----
 
-### other
+### 知识点
 
-该 paper 中提到了三种量化，对 XW 来说：
-- per-tensor: 可针对 X（激活），可针对 W（weight）
-- per-token：针对 X 的行
-- per-channel：针对 X 的列；或 W 的列。
-  - 对 W：per-channel 量化就是 OBQ/GPTQ 的量化方式
-  - 对 X：per-channel 量化才能解决 outlier 问题，也是 smooth-quant 的优化方向
-
-<img width="1164" height="316" alt="image" src="https://github.com/user-attachments/assets/e46a252d-f2cd-4427-9691-b3edc7bd6e83" />
+1. Activations are harder to quantize than weights：
+   - Activations 取值有 outliers；而weight 分布良好
+2. Outliers make activation quantization difficult：
+   - activation 中的 outliers 是起作用的，不能压制它。但是它导致 int 量化时，正常值都被挤压成 0 了
+3. Outliers persist in fixed activation channels

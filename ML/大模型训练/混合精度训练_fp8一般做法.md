@@ -18,7 +18,11 @@ GPU 内， fp8 有 E5M2 与 E4M3 两种格式
   - 不表示 ±∞，只有一个 NaN 编码，从而多出一段动态范围
   - 动态范围较小(-448 ~ 448)，但精度高，用于权重与激活
 
-### gpu 内怎么做的
+与 MXFPx 区别：
+- MXFPx 在硬件层有 32 个数共享一个 scale 的支持：MX (mixed-precision) FP4 在 Hopper 的 Transformer Engine 里即如此，scaling 是 硬件强制的粒度，用户和 CUDA 库都不能改。
+- FP8 (E4M3 / E5M2)：对于 FP8，NVIDIA 没有在硬件里强制固定分组 scale。Tensor Core 本身直接支持 E4M3 和 E5M2 两种 FP8 格式运算，就像 FP16/BF16 那样，输入是什么它就算什么。其“分组策略”（per-tensor、per-channel、per-tile 等）并不是硬件定死的，而是 由 Transformer Engine 等软件层决定。
+
+### gpu 内怎么做的 
 
 gpu (H100) 内部作 fp8 计算的时候，其实是先把 input tensor 转为高精度表示（这个高精度并不一定就是 FP16 而是特殊内部专用格式，因为fp16 是 gpu 对外接口层表示， gpu 内部犯不着也用这样格式），然后在高精度表示上做的计算。也就是说 FP8 只是**存储和接口**格式。这样看，不算真正的 fp8。
 

@@ -37,6 +37,13 @@ prediction. （解释：当前token如果有足够多的信息，不需要 atten
 > A similar observation has been made in the realm of quantization outliers (Xiao et al., 2023; Bondarenko
 et al., 2023), leading to the proposal of SoftMax-Off-by-One (Miller, 2023 即 quietAttention) as a potential remedy. （解释：SoftMax-Off-by-One 也是当前token，不想要 attend 到东西，要摆脱其他token对当前的影响。二者异曲同工）
 
+那么为什么sink 的都是prompt 头部的 token 呢？
+> Why do various autoregressive LLMs, such as Llama-2, MPT, Falcon, and Pythia consistently focus on initial tokens as their attention sinks, rather than other tokens? (为啥是 initial tokens？）
+>
+> Our explanation is straightforward: (因为 inital tokens 被见得多)
+>
+> Due to the sequential nature of autoregressive language modeling, initial tokens are visible to all subsequent tokens, while later tokens are only visible to a limited set of subsequent tokens. As a result, initial tokens are more easily trained to serve as attention sinks, capturing unnecessary attention.
+
 **（2）、《Why do LLMs attend to the first token?》 https://arxiv.org/pdf/2504.02732 也在讲为什么**
 
 

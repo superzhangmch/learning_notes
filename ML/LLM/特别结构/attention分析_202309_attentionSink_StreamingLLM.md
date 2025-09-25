@@ -46,8 +46,29 @@ et al., 2023), leading to the proposal of SoftMax-Off-by-One (Miller, 2023 即 q
 
 **（2）、《Why do LLMs attend to the first token?》 https://arxiv.org/pdf/2504.02732 也在讲为什么**
 
-这篇 paper 是从信息mix的角度来看。它的解释是：attention 会导致每个token的表示，都会混入前面token的信息，但是不是混入的越多越好；而是要有个度。而控制这个度的就在于 attention sinks tokens，这些sinks 能把token 不需要的 softmax score 吸收。
+这篇 paper 是从信息mix的角度来看。它的解释是：attention 会导致每个token的表示，都会混入前面token的信息，但是不是混入的越多越好；而是要有个度。而控制这个度的就在于 attention sinks tokens，这些sinks 能把 token 不需要的 softmax score 吸收。
+
+这篇 paper 有一些复杂公式与理论的解释。不看这些，则其实就是说：tokens hidden states，应该在融合其他token基础上，保有独立性，而不是各个token states 看起来都差不多了——这样的话，就发生了paper中说的 rank collapse / representational collapse 了——这时候模式单一，表现力当然就差了。而 sink 的存在，正好能消除这一点。
 
 <img width="1206" height="480" alt="image" src="https://github.com/user-attachments/assets/7123dfea-f0fb-4851-b09a-6a4d5a914d31" />
 
+<img width="1394" height="460" alt="image" src="https://github.com/user-attachments/assets/4608f323-7c77-48be-aba9-c7102f580f02" />
 
+- sink 是普遍存在的，而且规模越大、上下文越长，sink 现象越明显
+  - <img width="666" height="138" alt="image" src="https://github.com/user-attachments/assets/8627d2a4-ec3a-4f4c-921b-790b2cb5cde4" />
+  - 长上下文训练的模型 sink 更明显，而短上下文（128）的模型几乎没有 sink
+- <bos> 作为 sink：
+  - 如果训练时总是在开头放 ⟨bos⟩，推理时去掉它 → sink 消失，性能大幅下降。
+  - 如果训练时没有 ⟨bos⟩，sink 依然会在第一个 token 出现，但稍微弱一些（既要承担语义表示，又要被部分注意力浪费掉，没 ⟨bos⟩ 那么纯粹）
+    - 说明 sink 的形成几乎是“不可避免”的
+
+---- 
+
+### 关于它的实际例子： openai 的 gpt-oss-120b
+
+《gpt-oss-120b & gpt-oss-20b Model Card》 https://arxiv.org/pdf/2508.10925
+
+在每个 attn head 的 softmax 的分母位置，有一个 learned bias。这样 softmax 总和就不是 1 了。
+
+> Each attention head has a learned bias in the denominator of the softmax, similar to off-by-one attention and attention sinks, which enables the attention
+mechanism to pay no attention to any tokens.

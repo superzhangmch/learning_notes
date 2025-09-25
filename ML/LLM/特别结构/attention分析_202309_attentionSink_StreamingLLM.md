@@ -46,5 +46,8 @@ et al., 2023), leading to the proposal of SoftMax-Off-by-One (Miller, 2023 即 q
 
 **（2）、《Why do LLMs attend to the first token?》 https://arxiv.org/pdf/2504.02732 也在讲为什么**
 
+这篇 paper 是从信息mix的角度来看。它的解释是：attention 会导致每个token的表示，都会混入前面token的信息，但是不是混入的越多越好；而是要有个度。而控制这个度的就在于 attention sinks tokens，这些sinks 能把token 不需要的 softmax score 吸收。
+
+<img width="1206" height="480" alt="image" src="https://github.com/user-attachments/assets/7123dfea-f0fb-4851-b09a-6a4d5a914d31" />
 
 

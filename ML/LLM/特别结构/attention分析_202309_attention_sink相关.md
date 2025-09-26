@@ -64,7 +64,7 @@ et al., 2023), leading to the proposal of SoftMax-Off-by-One (Miller, 2023 即 q
 
 ---- 
 
-### 关于它的实际例子： openai 的 gpt-oss-120b
+### attention sink 的实际例子： openai 的 gpt-oss-120b
 
 《gpt-oss-120b & gpt-oss-20b Model Card》 https://arxiv.org/pdf/2508.10925
 
@@ -72,3 +72,60 @@ et al., 2023), leading to the proposal of SoftMax-Off-by-One (Miller, 2023 即 q
 
 > Each attention head has a learned bias in the denominator of the softmax, similar to off-by-one attention and attention sinks, which enables the attention
 mechanism to pay no attention to any tokens.
+
+代码实现是（ https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt_oss/modeling_gpt_oss.py#L258 ）：
+
+```
+self.sinks = nn.Parameter(torch.empty(config.num_attention_heads)) # 每个 attn_heads 一个 sink bias 参数
+...
+
+attn_weights = torch.matmul(query, key_states.transpose(2, 3)) * scaling # QK'
+...
+    sinks = module.sinks.reshape(1, -1, 1, 1).expand(query.shape[0], -1, query.shape[-2], -1)
+    combined_logits = torch.cat([attn_weights, sinks], dim=-1) # attn_w 增加 bias 项
+
+    combined_logits = combined_logits - combined_logits.max(dim=-1, keepdim=True).values # 在新增的 logits 上开算
+    probs = F.softmax(combined_logits, dim=-1, dtype=combined_logits.dtype)
+    scores = probs[..., :-1]  # we drop the sink here
+```
+
+或者用式子表示：
+
+（1）、标准注意力：普通情况下，每个 query $q_i$ 对 key $k_j$ 的注意力是：
+
+$$
+\alpha_{i,j} = \frac{e^{s_{i,j}}}{\sum_{t=1}^{T} e^{s_{i,t}}}
+\quad \text{其中 } s_{i,j} = \tfrac{q_i \cdot k_j}{\sqrt{d}}
+$$
+
+这里 $\sum_j \alpha_{i,j} = 1$，必须把权重分配出去。
+
+（2）、GPT-OSS 加入 sink
+
+GPT-OSS 给每个 head 增加一个可学习参数 $b$，并在 softmax 里拼一个“虚拟槽位”：
+
+$$
+\widetilde{\alpha} _ {i,j} = \frac{e^{s_{i,j}}}{e^{b} + \sum_{t=1}^{T} e^{s_{i,t}}}\quad (j=1,\dots,T)
+$$
+
+$$
+p_{\text{sink}}(i) = \frac{e^{b}}{e^{b} + \sum_{t=1}^{T} e^{s_{i,t}}}
+$$
+
+其中 $p_{\text{sink}}$ 是“把注意力分给 sink”的概率。 $e^b$ 相当于是个常数，但是不同 heads 取值不同。
+
+（3）、丢掉 sink 概率
+
+真正用于加权 value 的分布是：
+
+$$
+\alpha_{i,j} = \widetilde{\alpha}_{i,j},\quad j=1,\dots,T
+$$
+
+于是总和变成：
+
+$$
+\sum_{j=1}^{T} \alpha_{i,j}
+= 1 - p_{\text{sink}}
+= \frac{\sum_{t=1}^{T} e^{s_{i,t}}}{e^{b} + \sum_{t=1}^{T} e^{s_{i,t}}} \le 1
+$$

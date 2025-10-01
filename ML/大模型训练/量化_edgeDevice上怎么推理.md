@@ -1,6 +1,6 @@
 # 苹果-2025《Apple Intelligence Foundation Language Models》 https://arxiv.org/pdf/2507.13575
 
-它的方案是两个模型：服务端与设备端相结合，都支持 vision input。
+它的方案是两个模型：服务端与设备端相结合(都支持 vision as input)。
 - On-device Model 能做到隐私保护
 - Server Model 能处理复杂任务，注重处理能力和可扩展性。该设计使得苹果能够根据不同的使用场景提供最合适的解决方案。
 
@@ -14,17 +14,25 @@ rk-3588 这样的设备，官方 rknn-llm 运行 1.5B model 运行速度大约 1
 
 将模型分为两个块，块1包含62.5%的Transformer层，而块2包含剩余的37.5%层，但不生成键值对（key-value）。通过共享缓存（KV-cache），块2的计算可以直接使用块1生成的缓存，减少了内存使用。具体待深究。
 
-（2）、量化感知训练（QAT）：将模型参数压缩到2比特
+（2）、量化感知训练（QAT）：整体上来说和一般的 QAT 是一样的
+- 将模型参数压缩到2比特
+- 2bit: 用更平衡的 {-1.5, -0.5, 0.5, 1.5} 4值
+- 缩放因子是学习出的： $s = f · max(|W|) / q_{max}$, f 是学出的; 并通过一种特殊方式初始化 f
+  - 而 s 用于模拟量化： $W \leftarrow s · (clamp(⌊ W s + z⌉, q_{min}, q_{max}) − z)$
+- 反向传播时，忽略量化操作（即用 STE=Straight-Through Estimator，而一般 QAT 都是这样操作的)。
 
 （3）用 lora 作量化精度修复：也就是先量化，然后用 lora 作量化误差补偿。
 
 > To recover model quality lost during the compression stages, we apply Low-Rank Adaptation (LoRA) adapters to both models and further fine-tune these adapters using the same data recipe as the base model training.
 
-（4）、硬件适配
+（4）、硬件适配：是否有针对 2bit 或 transformer 的特殊优化？paper 没提到
+
+
+note： ASTC 只用于 server model。（ASTC：Adaptive Scalable Texture Compression (ASTC) is a block-based lossy compression format originally developed for efficient texture representation in GPU graphics pipelines ）
 
 ### 3B LLM 怎么扩展新能力的
 
-用 lora 插件（注意不同于上面的精度回复的 lora）
+用 lora 插件（注意不同于上面的精度回复的 lora)。开发者在 base model 上可以训练自己的 lora。
 
 > We’ve carefully designed the framework to help app developers get the most
 out of the on-device model. For specialized use cases that require teaching the∼3B

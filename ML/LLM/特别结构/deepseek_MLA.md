@@ -20,4 +20,4 @@
    - 为啥不兼容：施加 rope 后需要在 ` (latent_q x proj_q_up x RRR x proj_k_upᵀ) x latent_kᵀ` 这里的  RRR 位置插入 rope 的变换矩阵。q 和 k 都是位置有关的，RRR 将会是与q 和 k 的位置都有关。这样导致没法把 (latent_q x proj_q_up x RRR x proj_k_upᵀ) 当做一个新定义的 q 看待。
    - 怎么解决：拉出一个 rope 分支。为了与非 rope 兼容（能改写成 MQA 模式）， rope 分支需要是 k 只有一个 head。
 
-
+<img width="1790" height="904" alt="image" src="https://github.com/user-attachments/assets/0cc7725f-97f9-4367-85ac-842ab4d9193e" />

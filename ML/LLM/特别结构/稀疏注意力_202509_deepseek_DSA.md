@@ -95,4 +95,4 @@ class Indexer(torch.nn.Module):
 
 ### 怎么训练的
 
-
+### 用于 train/prefill 和用于 decoding 的区别

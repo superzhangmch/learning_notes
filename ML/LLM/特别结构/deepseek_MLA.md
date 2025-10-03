@@ -1,4 +1,4 @@
-- 我对原始deepseek-v3 代码加了注释的代码：https://github.com/superzhangmch/learn_DeepSeek-V3/blob/main/inference/model.py
+- 我对原始deepseek-v3 代码加了注释的代码：https://github.com/superzhangmch/learn_DeepSeek-V3/blob/main/inference/model.py#L397
 - 所做笔记：https://zhuanlan.zhihu.com/p/1889957077524407359
 
 上面笔记记载很多，但是是把学习过程记录进去了（而非彻底学通后的总结），比较乱。不想重新整理了，这里简单补充几句，作为总结。

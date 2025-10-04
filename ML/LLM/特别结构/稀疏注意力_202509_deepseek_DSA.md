@@ -154,9 +154,30 @@ class MLA(nn.Module):
   - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); dtype=fp32（attn 需要高精度），则 总共 (512+64)*4=2304
   - 新增显存占用 129/2304 = 5.6%，确实新增不多
 - 计算量：
-  - 
+  - xx
 
 
 ### 怎么训练的
+
+在已经用 MLA 训练的模型上，新增 indexer 继续训练即可新增该功能。分预训练与后训练。
+
+**预训练分两步：**
+
+（1）、冻结其他参数，只训练 indexer：令 indexer 预测 MLA 的 attn softmax 的 input QK' score。indexer 不选取top2048，而是选取所有 token
+
+$$
+Loss = \sum_t D _ {KL}( p _ {t,:} || softmax(I _ {t,:}))
+$$
+
+$p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ 应该逼近它。学习率 1e-3，训练 1000 步，每步 16 个 128K token 序列，总计 21 亿 token。
+
+（2）、在全量参数上训，且 indexer 选取 topK=2048
+
+**后训练：**
+
+流程和 DeepSeek-V3.1-Terminus 保持一致，以便严格对比 DSA 稀疏注意力的影响。
+
+- Specialist Distillation（专家蒸馏），为不同任务单独训练专家模型（数学、竞赛编程、逻辑推理、智能代码、智能搜索）。
+- Mixed RL Training：使用 GRPO 算法。
 
 ### 用于 train/prefill 和用于 decoding 的区别

@@ -154,7 +154,7 @@ class MLA(nn.Module):
   - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); dtype=fp32（attn 需要高精度），则 总共 (512+64)*4=2304
   - 新增显存占用 129/2304 = 5.6%，确实新增不多
 - 计算量：推理成本降低很多
-  > DSA reduces the core attention complexity of the main model from O(𝐿^2) to O(𝐿𝑘), where 𝑘(≪𝐿) is the number of selected tokens. Although the lightning indexer still has a complexity of O(𝐿^2), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus
+  > DSA reduces the core attention complexity of the main model from O(𝐿²) to O(𝐿𝑘), where 𝑘(≪𝐿) is the number of selected tokens. Although the lightning indexer still has a complexity of O(𝐿²), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus
   - <img width="1294" height="604" alt="image" src="https://github.com/user-attachments/assets/97a782af-19d6-430f-8004-6913475bdb9c" />
   - 从图看，短序列推理成本会略上升
 
@@ -185,8 +185,18 @@ $p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ �
 
 ### 用于 train/prefill 和用于 decoding
 
-prefill: 
+**prefill:** 重点在于要 batch 而不是一个一个
 - 短序列：走 MHA 模式的 DSA。在标准 MHA 上，干预 attention mask 的方式（应该就是上面所引述的代码的方式； training 时，应该也是这样）。
   > for short-sequence prefilling, we specially implement a masked MHA mode to simulate DSA, which can achieve higher efficiency under short-context conditions.
-- 长序列：如何做的？
+- 长序列：
+  - Indexer 的 score 计算，是可以像 attn 中 QK' 这样一次性 batch 算出来的，所以可以并行
+  - 下一步是每个 token 位置分别选 topK=top_2048, 按 ai 解释，这一步硬件上也是可以并行算的。
+    - ai：现代 GPU/TPU 实现（如 PyTorch 的 torch.topk 或 CUDA 内核）都是把输入矩阵的每一行分配到一个 warp/block；每行独立地执行 top-k 排序；
+  - 每个 token 位置的 top2048 的位置不同且不连续，因此需要把每个位置的2048 个 top 位置的 kv 收集起来。按 ai，可以高效 Gather，把稀疏变“稠密小块”
+    - ai：不是“一个 token 一个 token” 地循环 gather，而是可以高度并行的。收集完，得到了 $K_{sel}、V_{sel} \in \mathbb{R}^{batch \times seq \times 2048 \times dim}$
+  - 前面的可以并行并得到连续的 $K_{sel}, V_{sel}$，则 $\text{softmax}(Q \cdot K' _ {sel}) \cdot V _ {sel}$ 按一般 attn 那样 batch 计算就是了。
 
+training 时，和 prefill 一样。
+
+**decoding:**
+- MQA 模式逐 token 生成。

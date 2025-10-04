@@ -6,7 +6,7 @@ MLA 有两种等价模式： MHA 或 MQA
 
 deepseek-DSA 着眼于 MQA 模式：在 MQA 模式上的示意图如下：
 
-<img width="1366" height="596" alt="image" src="https://github.com/user-attachments/assets/688ae9c1-abf2-43d6-8a42-98fb61f718ef" />
+<img width="1384" height="626" alt="image" src="https://github.com/user-attachments/assets/0023b5ff-ef78-48b1-b992-01bec4c53c23" />
 
 简单说：当前位置的 q 和历史所有的 k 计算出 k 的重要性 score，然后根据 score 取 top，过滤出要实际参与 attn 的 kv。
 
@@ -101,6 +101,7 @@ class MLA(nn.Module):
         self.indexer = Indexer(args)
 
         # MLA 显存占用，每个元素是 fp32 四字节，kv_lora_rank+qk_rope_head_dim=512+64, 一个 token的显存占用是（512+64）*4；而一个token在indexer 上只占用 129个字节。可见新增的显存占用不多
+        #   note: attn 一般需要高精度。实际中，高效推理到底是 fp16，还是 fp32？
         self.register_buffer("kv_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.kv_lora_rank), persistent=False)
         self.register_buffer("pe_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.qk_rope_head_dim), persistent=False)
         ...
@@ -149,11 +150,12 @@ class MLA(nn.Module):
 
 - indexer 相比 MLA attn： head数减半（128=>64), head_dim 变三分之二(128+64 => 128).
 - cache 显存占用：indexer 也需要有类似 kv-cache 一样的东西，它是 k-cache。
-  - indexer 对单个 token 用 129字节（128字节的 fp8 格式的 k，以及1字节的 fp8量化 scale 因子）
-  - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); 官方推理代码 dtype=fp32，则 总共 (512+64)*4=2304
+  - indexer 对单个 token 用 129字节（包括 128字节的 fp8 格式的 k，以及1字节的 fp8量化 scale 因子）
+  - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); dtype=fp32（attn 需要高精度），则 总共 (512+64)*4=2304
   - 新增显存占用 129/2304 = 5.6%，确实新增不多
 - 计算量：
   - 
+
 
 ### 怎么训练的
 

@@ -153,9 +153,10 @@ class MLA(nn.Module):
   - indexer 对单个 token 用 129字节（包括 128字节的 fp8 格式的 k，以及1字节的 fp8量化 scale 因子）
   - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); dtype=fp32（attn 需要高精度），则 总共 (512+64)*4=2304
   - 新增显存占用 129/2304 = 5.6%，确实新增不多
-- 计算量：
-  - xx
-
+- 计算量：推理成本降低很多
+  > DSA reduces the core attention complexity of the main model from O(𝐿^2) to O(𝐿𝑘), where 𝑘(≪𝐿) is the number of selected tokens. Although the lightning indexer still has a complexity of O(𝐿^2), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus
+  - <img width="1294" height="604" alt="image" src="https://github.com/user-attachments/assets/97a782af-19d6-430f-8004-6913475bdb9c" />
+  - 从图看，短序列推理成本会略上升
 
 ### 怎么训练的
 
@@ -171,7 +172,7 @@ $$
 
 $p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ 应该逼近它。学习率 1e-3，训练 1000 步，每步 16 个 128K token 序列，总计 21 亿 token。
 
-（2）、在全量参数上训，且 indexer 选取 topK=2048
+（2）、在全量参数上训，且 indexer 选取 topK=2048。loss 和上一步一样，只是限制在 topK scored tokens 上。
 
 **后训练：**
 
@@ -180,4 +181,12 @@ $p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ �
 - Specialist Distillation（专家蒸馏），为不同任务单独训练专家模型（数学、竞赛编程、逻辑推理、智能代码、智能搜索）。
 - Mixed RL Training：使用 GRPO 算法。
 
-### 用于 train/prefill 和用于 decoding 的区别
+最终效果看起来没退化。
+
+### 用于 train/prefill 和用于 decoding
+
+prefill: 
+- 短序列：走 MHA 模式的 DSA。在标准 MHA 上，干预 attention mask 的方式（应该就是上面所引述的代码的方式； training 时，应该也是这样）。
+  > for short-sequence prefilling, we specially implement a masked MHA mode to simulate DSA, which can achieve higher efficiency under short-context conditions.
+- 长序列：如何做的？
+

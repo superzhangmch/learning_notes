@@ -10,27 +10,32 @@ deepseek-DSA 着眼于 MQA 模式：在 MQA 模式上的示意图如下：
 
 简单说：当前位置的 q 和历史所有的 k 计算出 k 的重要性 score，然后根据 score 取 top，过滤出要实际参与 attn 的 kv。
 
-## kv 重要性 indexer score
+## kv 重要性 score 怎么算 （indexer score）
 
-score 公式是：
+score 计算公式是：
 
 $$
 I_{t,s} = \sum_{j=1}^{H^I} w_{t,j}^I \cdot \text{ReLU} (q_{t,j}^I \cdot k_s^I)
 $$
 
-- 其中所需各项：w, k 从 hidden_states 经线性变换得到, q 从 q_latent_lora 经线性变换得到。q 是多 heads 的，所以上式 $\sum$ 就是遍历 q 的各个 head。
+- 其中所需各项： $w_{t,j}^I$, $k_s^I$ 从 hidden_states 经线性变换得到, $q_{t,j}^I$ 从 MLA 压缩后的 q_latent 经线性变换得到。q 是多 heads 的，所以上式 $\sum$ 就是遍历 q 的各个 head。
+  - $H^I$ 是 q head 数。
 - 上图中的 "partially apply RoPE"，其实就是和 MLA 一样，分成 rope 与 非rope 两个分支。
 - 上面score 算的时候，是在 fp8 上算的，为此要做 fp8 量化。
   - 量化一般会遇到数据的 outliers 问题，从代码中看到它是通过对 q、k 施加 hadamard 变换完成的。更多参考：https://zhuanlan.zhihu.com/p/1908616046874699007 、 https://github.com/deepseek-ai/FlashMLA/pull/54 （打开后搜 hadamard)
   - hadamard 变换有关知识，看下面代码。
-- 从公式看，这就仿佛 q 和 历史 {k} 算了一遍 softmax 一样，按说也不是轻量级的，但是它没算 softmax，所以还是容易了很多。
+- 从公式看，q 和 历史 {k} 会遍历算相关性，按说也不是轻量级的，但是它没算 softmax，所以还是容易了很多。
 
-计算重要性 score 的 Indexer 的我加了注释的代码： https://github.com/superzhangmch/learn_DeepSeek-V3.2-Exp/blob/main/inference/model.py#L431 ，并摘录如下：
+我加了注释后的 forked 的代码在： https://github.com/superzhangmch/learn_DeepSeek-V3.2-Exp/blob/main/inference/model.py#L431 ，并摘录如下：
 
 ```
 class Indexer(torch.nn.Module):
     def __init__(self, args: ModelArgs):
         ...
+        
+        # 这是是类似 kv-cache 一样的 indexer-k-cache，需要把历史都存下来。存的是 fp8 的，k 一个head，head_dim=128, 这样一个token 占 128字节的cache；再加上1字节的 scale，共129字节。
+        self.register_buffer("k_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.head_dim, dtype=torch.float8_e4m3fn), persistent=False)
+        self.register_buffer("k_scale_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.head_dim // block_size, dtype=torch.float32), persistent=False) # block_size=128
 
     def forward(self, x: torch.Tensor, # x: hidden_state
                      qr: torch.Tensor, # qr: MLA 的 latent_lora_q
@@ -41,7 +46,7 @@ class Indexer(torch.nn.Module):
         q = self.wq_b(qr)                                                # qr: latent_lora_q; 这一样把它升维到 index_n_heads * index_head_dim，也就是 Index 内把 q 转成了多个 heads.
                                                                          # index_n_heads = 64, index_head_dim=128
         q = rearrange(q, 'b s (h d) -> b s h d', d=self.head_dim)
-        q_pe, q_nope = torch.split(q, [self.rope_head_dim, self.head_dim - self.rope_head_dim], dim=-1)
+        q_pe, q_nope = torch.split(q, [self.rope_head_dim, self.head_dim - self.rope_head_dim], dim=-1)  # 各占 64 维
         q_pe = apply_rotary_emb(q_pe, freqs_cis)
         q = torch.cat([q_pe, q_nope], dim=-1)
         
@@ -89,9 +94,66 @@ class Indexer(torch.nn.Module):
         dist.broadcast(topk_indices_, src=0)
         assert torch.all(topk_indices == topk_indices_), f"{topk_indices=} {topk_indices_=}"
         return topk_indices
+
+class MLA(nn.Module):
+    def __init__(self, args: ModelArgs):
+        ...
+        self.indexer = Indexer(args)
+
+        # MLA 显存占用，每个元素是 fp32 四字节，kv_lora_rank+qk_rope_head_dim=512+64, 一个 token的显存占用是（512+64）*4；而一个token在indexer 上只占用 129个字节。可见新增的显存占用不多
+        self.register_buffer("kv_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.kv_lora_rank), persistent=False)
+        self.register_buffer("pe_cache", torch.zeros(args.max_batch_size, args.max_seq_len, self.qk_rope_head_dim), persistent=False)
+        ...
+
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
+        ...
+
+        scores = torch.einsum("bshd,bthd->bsht", q.float(), k.float()) * self.softmax_scale # 全序列的 QK'
+
+        # indexer： 怎么在 MLA 中使用
+        topk_indices = self.indexer(x, qr, start_pos, freqs_cis, mask)
+        index_mask = torch.full((bsz, seqlen, seqlen), float("-inf"), device=x.device).scatter_(-1, topk_indices, 0) # topk_indices位置为0其余是 -inf
+        index_mask += mask                                                                                           # mask：0 和 -inf 组成。所以这一句相当于是两个 mask 求交集
+        scores += index_mask.unsqueeze(2)                                                                            # exp(-inf) = 0, 所以把 mask 加进 score
+
+        scores = scores.softmax(dim=-1, dtype=torch.float32)                                                         # 按说这里需要作稀疏计算，这里通过施加 mask的方式，只是模拟了稀疏计算。真正线上并不能用这句，它不提速
+        # 上面 scores 已经是经过 indexer 过滤后的只针对 2048 个 token的（其余的是0）
+
+        ... go on ..
+        return ..
+
 ```
 
-### 算 indexer score 看起来也挺重的，为啥总计算量是大大减少的
+超参数配置：
+
+```
+{
+    ...
+    # MLA 的配置
+    "n_heads": 128,
+
+    "q_lora_rank": 1536,       # q 被压成 1536 维 
+    "kv_lora_rank": 512,       # k 被压成 512 维
+
+    "qk_nope_head_dim": 128,   # 非rope 分支 head dim
+    "qk_rope_head_dim": 64,    # rope 分支 head dim
+
+    "v_head_dim": 128,
+
+    # indexer 的配置
+    "index_n_heads": 64,
+    "index_head_dim": 128,     # indexer 总 head_dim=128。其中会分 rope、 非rope 两部分，看代码是各占64维
+    "index_topk": 2048         # 序列再长，也只一次优选出 2048 个 token 作attn
+}
+```
+
+- indexer 相比 MLA attn： head数减半（128=>64), head_dim 变三分之二(128+64 => 128).
+- cache 显存占用：indexer 也需要有类似 kv-cache 一样的东西，它是 k-cache。
+  - indexer 对单个 token 用 129字节（128字节的 fp8 格式的 k，以及1字节的 fp8量化 scale 因子）
+  - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); 官方推理代码 dtype=fp32，则 总共 (512+64)*4=2304
+  - 新增显存占用 129/2304 = 5.6%，确实新增不多
+- 计算量：
+  - 
 
 ### 怎么训练的
 

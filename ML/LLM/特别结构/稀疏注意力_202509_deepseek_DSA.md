@@ -153,10 +153,7 @@ class MLA(nn.Module):
   - indexer 对单个 token 用 129字节（包括 128字节的 fp8 格式的 k，以及1字节的 fp8量化 scale 因子）
   - 而 MLA 的 kv-cache 一个token 用 （512+64）* sizeof(dtype); dtype=fp32（attn 需要高精度），则 总共 (512+64)*4=2304
   - 新增显存占用 129/2304 = 5.6%，确实新增不多
-- 计算量：推理成本降低很多
-  > DSA reduces the core attention complexity of the main model from O(𝐿²) to O(𝐿𝑘), where 𝑘(≪𝐿) is the number of selected tokens. Although the lightning indexer still has a complexity of O(𝐿²), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus
-  - <img width="1294" height="604" alt="image" src="https://github.com/user-attachments/assets/97a782af-19d6-430f-8004-6913475bdb9c" />
-  - 从图看，短序列推理成本会略上升
+- 计算量：推理成本降低很多。具体看下面
 
 ### 怎么训练的
 
@@ -200,3 +197,60 @@ training 时，和 prefill 一样。
 
 **decoding:**
 - MQA 模式逐 token 生成。
+
+---
+
+### 计算成本
+
+长序列时，推理成本下降很多，无论是 prefill 还是单 step inference。
+> DSA reduces the core attention complexity of the main model from O(𝐿²) to O(𝐿𝑘), where 𝑘(≪𝐿) is the number of selected tokens. Although the lightning indexer still has a complexity of O(𝐿²), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus
+
+<img width="1294" height="604" alt="image" src="https://github.com/user-attachments/assets/97a782af-19d6-430f-8004-6913475bdb9c" />
+
+（从图看，短序列推理成本会略上升）
+
+计算量分析（FLOPS，ai 辅助计算）：
+
+**（1）FFN（MOE) 层**
+
+- Dense-FFN 每层为（前 3 层）：三次线性 3 × dim × ffn_hid = 3 × 7168 × 18432 = 396361728 
+- MOE 每层为（后 58 层）：
+  - 每个专家计算量： 3 × dim × moe_hid = 3 × 7168 × 2048 = 44040192 【silu 激活的 FFN: $\text{MLP}(x) = W_2 \big( \text{SiLU}(W_1 x) \odot (W_3 x) \big)$ 】
+  - 每 token 激活 8 个专家： 8 × 44040192 = 352321536
+  - 一个共享专家：承上为 44040192
+  - 路由打分：dim × n_experts = 7168 × 256 = 1835008
+  - 合计：352321536 + 44040192 + 1835008 = 398196736
+- 61层总计算量：58 * 398196736 + 3 * 396361728 = 24284495872
+
+**（2）LM Head（最后 logits）**
+- dim × vocab = 7168 × 129280 = 926679040
+
+**（3）注意力**
+
+不随 n 增长的部分：
+
+**MLA（MQA 模式计算）**
+- Q：
+  - Wq_a : dim × q_rank = 7168 × 1536 = 11010048    【得到 q 的压缩 latent 表示】
+  - Wq_b : q_rank → (heads × (rope_head_dim + non_rope_head_dim)) = 1536 × (128 × (64+128)) = 37748736 【q 解压还原】
+  - q_nope × W(128 → 512): 128头 × 128 × 512 = 8388608  【获得 MQA 的 Q := q_no_rope × k_up_proj】
+- K：
+  - Wkv_a : dim → (k_rank + k_rope) = (512 + 64) = 576 : 7168 × 576 = 4128768  【得到 kv 的压缩 latent 表示， 作为下一个token 计算 MLA 的 MQA 的 K的一部分（本轮放入 kv-cache）】
+- V：
+  - value 回投 (512 → 128): 同上 8388608  【解压还原 v】
+- 输出投影 Wo : (head_num × head_dim) = (128 × 128) = 16384 → 7168 : 16384 × 7168 = 117440512 【attn 之后的 output proj】
+
+**indexer 中的定值开销:**
+- Wq_b : q_rank → (index_head_num × index_head_dim): 1536 → (64 × 128) = 8192 : 1536 × 8192 = 12582912 【得到参与 index score 计算的多head的 q】
+- Wk: hidden_dim → index_head_dim: 7168 → 128 : 7168 × 128 = 917504 【得到参与 index score 计算的单head 的 k】
+- weights_proj : hidden_dim → index_head_num：7168 → 64 : 7168 × 64 = 458752  【得到参与 index score 计算的逐head weight】
+- 以上总共：12582912+917504+458752 = 13959168
+
+以上合计（每层）: 201064448 （=11010048 + 37748736 + 8388608 + 4128768+8388608+117440512+13959168）
+
+随 n 线性增长的部分(解码要与历史 n 个位置做点积)：
+
+- q_nope · KV-cache: 128头 × 512 × n = 65,536n
+- q_pe · PE-cache: 128头 × 64 × n = 8,192n
+- softmax权重 × V-cache: 128头 × 512 × n = 65,536n
+- 索引器 q · k_cache: 64头 × 128 × n = 8,192n

@@ -183,9 +183,12 @@ $p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ �
 ### 用于 train/prefill 和用于 decoding
 
 **prefill:** 重点在于要 batch 而不是一个一个
-- 短序列：走 MHA 模式的 DSA。在标准 MHA 上，干预 attention mask 的方式（应该就是上面所引述的代码的方式； training 时，应该也是这样）。
+- 短序列：
   > for short-sequence prefilling, we specially implement a masked MHA mode to simulate DSA, which can achieve higher efficiency under short-context conditions.
-- 长序列：是像原始 MLA 那样走了 MHA 模式吗？现在 attn 序列限制到最长 2048 了，应该是 MHA、MQA 无所谓了，因此 prefill 也用 MQA 了吗？不过不管怎样，此时是可以并行的：
+  - 这句话怎么理解？短指的多短？
+    - 是说小于 2048，从而不需要 DSA，而走 MHA mode MLA
+    - 还是说序列大于 2048 但是不太长的时候，也走 MHA mode MLA，但是靠干预 attention mask 的方式（也就是上面所引述的代码的 MHA prefill 方式）。这样的话，意味着很长序列的 prefill，要走 MQA mode 了
+- 长序列：是像原始 MLA 那样走了 MHA 模式吗？现在 attn 序列限制到最长 2048 了，应该是 MHA、MQA 无所谓了吧？因此 prefill 也用 MQA 了吗？不过不管怎样，此时是可以并行的：
   - Indexer 的 score 计算，是可以像 attn 中 QK' 这样一次性 batch 算出来的，所以可以并行
   - 下一步是每个 token 位置分别选 topK=top_2048, 按 ai 解释，这一步硬件上也是可以并行算的。
     - ai：现代 GPU/TPU 实现（如 PyTorch 的 torch.topk 或 CUDA 内核）都是把输入矩阵的每一行分配到一个 warp/block；每行独立地执行 top-k 排序；
@@ -361,5 +364,5 @@ training 时，和 prefill 一样。
 
 （2）、如果引入 indexer，作稀疏注意力计算量：
 
-筛选出 top2048 kv-cache 后，仍然走的 MQA 的 MLA 吗？假设是。
+筛选出 top2048 kv-cache 后，仍然走的 MQA 的 MLA 吗？还是 MHA mode？
  

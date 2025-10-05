@@ -200,7 +200,7 @@ training 时，和 prefill 一样。
 
 ---
 
-### 计算成本
+## 计算成本
 
 长序列时，推理成本下降很多，无论是 prefill 还是单 step inference。
 > DSA reduces the core attention complexity of the main model from O(𝐿²) to O(𝐿𝑘), where 𝑘(≪𝐿) is the number of selected tokens. Although the lightning indexer still has a complexity of O(𝐿²), it requires much less computation compared with MLA in DeepSeek-V3.1-Terminus
@@ -209,7 +209,7 @@ training 时，和 prefill 一样。
 
 （从图看，短序列推理成本会略上升）
 
-计算量分析（FLOPS，ai 辅助计算）：
+### 计算量分析（FLOPS，ai 辅助计算）
 
 **（1）FFN（MOE) 层**
 
@@ -227,30 +227,86 @@ training 时，和 prefill 一样。
 
 **（3）注意力**
 
-不随 n 增长的部分：
+**不随 n 增长的部分：**
 
-**MLA（MQA 模式计算）**
+**MLA（MQA 模式）**
 - Q：
   - Wq_a : dim × q_rank = 7168 × 1536 = 11010048    【得到 q 的压缩 latent 表示】
   - Wq_b : q_rank → (heads × (rope_head_dim + non_rope_head_dim)) = 1536 × (128 × (64+128)) = 37748736 【q 解压还原】
   - q_nope × W(128 → 512): 128头 × 128 × 512 = 8388608  【获得 MQA 的 Q := q_no_rope × k_up_proj】
 - K：
-  - Wkv_a : dim → (k_rank + k_rope) = (512 + 64) = 576 : 7168 × 576 = 4128768  【得到 kv 的压缩 latent 表示， 作为下一个token 计算 MLA 的 MQA 的 K的一部分（本轮放入 kv-cache）】
+  - Wkv_a : dim → (k_rank + k_rope) = (512 + 64) = 576 : 7168 × 576 = 4128768  【得到 kv 的压缩 latent 表示， 作为下一个token 计算 MLA 的 MQA 的 K的一部分（本轮会把它放入 kv-cache）】
 - V：
   - value 回投 (512 → 128): 同上 8388608  【解压还原 v】
 - 输出投影 Wo : (head_num × head_dim) = (128 × 128) = 16384 → 7168 : 16384 × 7168 = 117440512 【attn 之后的 output proj】
+- 以上61层总共：61*(11010048+37748736+8388608+4128768+8388608+117440512)=11413422080
 
 **indexer 中的定值开销:**
 - Wq_b : q_rank → (index_head_num × index_head_dim): 1536 → (64 × 128) = 8192 : 1536 × 8192 = 12582912 【得到参与 index score 计算的多head的 q】
 - Wk: hidden_dim → index_head_dim: 7168 → 128 : 7168 × 128 = 917504 【得到参与 index score 计算的单head 的 k】
 - weights_proj : hidden_dim → index_head_num：7168 → 64 : 7168 × 64 = 458752  【得到参与 index score 计算的逐head weight】
-- 以上总共：12582912+917504+458752 = 13959168
+- 以上61层总共：61*(12582912+917504+458752) = 851509248
 
-以上合计（每层）: 201064448 （=11010048 + 37748736 + 8388608 + 4128768+8388608+117440512+13959168）
+**随 n 线性增长的部分(解码要与历史 n 个位置做点积)：**
 
-随 n 线性增长的部分(解码要与历史 n 个位置做点积)：
+**MLA(MQA 模式）**
 
-- q_nope · KV-cache: 128头 × 512 × n = 65,536n
-- q_pe · PE-cache: 128头 × 64 × n = 8,192n
-- softmax权重 × V-cache: 128头 × 512 × n = 65,536n
-- 索引器 q · k_cache: 64头 × 128 × n = 8,192n
+如果是全序列算：
+
+- QK'
+  - no-rope部分: q_nope × KV-cache: 128头 × 512 × n = 65536n
+  - rope部分：q_pe × PE-cache: 128头 × 64 × n = 8192n
+- softmax(.)V: softmax权重 × V-cache: 128头 × 512 × n = 65536n
+- 以上61层总共：61*(65536+8192+65536)*n=8495104n
+  
+如果是 topK=top-2048 按稀疏注意力算：即 n=2048
+
+- QK'
+  - no-rope部分: q_nope × KV-cache: 128头 × 512 × 2048 = 134217728
+  - rope部分：q_pe × PE-cache: 128头 × 64 × 2048 = 16777216
+- softmax(.)V: softmax权重 × V-cache: 128头 × 512 × 2048 = 134217728
+- 以上61层总共: 61 * (65536+8192+65536) * 2048=17397972992
+
+**indexer**
+
+- QK': q × k_cache: 64头 × 128 × n = 8192n
+- 以上61层总共: 61 * 8192 * n=499712n
+
+那么：
+
+（1）、如果不引入 indexer，计算量是：
+- ffn：24284495872
+- lm_head：926679040
+- mla-static：11413422080
+- mla-dynamic： 8495104n
+- 总共：36624596992+8495104n
+
+（2）、如果引入 indexer，作稀疏注意力计算量是：
+- ffn：24284495872
+- lm_head：926679040
+- mla-static：11413422080
+- mla-top2048： 17397972992
+- indexer_static: 851509248
+- indexer_dynamic: 499712n
+- 总共：54874079232 + 499712n
+
+推断 n 位置的计算量：引入indexer后 vs 原始，比率是： (54874079232 + 499712 * n) / (36624596992+8495104 * n). 注意当 $n -> \infty$, 极限是 1/17。加速比确实很可观
+
+| n | 计算量比率 |
+|------------|----------------------|
+| 2000       | 1.0421               |
+| 2200       | 1.0119               |
+| 2300       | 0.9975               |
+| 2500       | 0.9699               |
+| 3000       | 0.9076               |
+| 4000       | 0.8055               |
+| 8000       | 0.5629               |
+| 16000      | 0.3644               |
+| 32000      | 0.2297               |
+| 64000      | 0.1497               |
+| 128000     | 0.1057               |
+| 256000     | 0.0827               |
+| 512000     | 0.0708               |
+| $\infty$  | 1/17=0.0588 |
+
+

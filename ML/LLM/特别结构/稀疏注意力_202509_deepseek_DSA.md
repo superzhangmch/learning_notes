@@ -4,7 +4,7 @@ MLA 有两种等价模式： MHA 或 MQA
 
 <img width="1790" height="904" alt="image" src="https://github.com/user-attachments/assets/0cc7725f-97f9-4367-85ac-842ab4d9193e" />
 
-deepseek-DSA 着眼于 MQA 模式：在 MQA 模式上的示意图如下：
+deepseek-DSA 推理时会用 MQA 模式：在 MQA 模式上的示意图如下：
 
 <img width="1384" height="626" alt="image" src="https://github.com/user-attachments/assets/0023b5ff-ef78-48b1-b992-01bec4c53c23" />
 
@@ -18,7 +18,7 @@ $$
 I_{t,s} = \sum_{j=1}^{H^I} w_{t,j}^I \cdot \text{ReLU} (q_{t,j}^I \cdot k_s^I)
 $$
 
-- 其中所需各项： $w_{t,j}^I$, $k_s^I$ 从 hidden_states 经线性变换得到, $q_{t,j}^I$ 从 MLA 压缩后的 q_latent 经线性变换得到。q 是多 heads 的，所以上式 $\sum$ 就是遍历 q 的各个 head。
+- 它有点像是做一个小的 attn 中的 QK' 不分。所以有 q、k，还有 heads。其中所需各项： $w_{t,j}^I$, $k_s^I$ 从 hidden_states 经线性变换得到, $q_{t,j}^I$ 从 MLA 压缩后的 q_latent 经线性变换得到。q 是多 heads 的，所以上式 $\sum$ 就是遍历 q 的各个 head。
   - $H^I$ 是 q head 数。
 - 上图中的 "partially apply RoPE"，其实就是和 MLA 一样，分成 rope 与 非rope 两个分支。
 - 上面score 算的时候，是在 fp8 上算的，为此要做 fp8 量化。
@@ -213,6 +213,8 @@ training 时，和 prefill 一样。
 （从图看，短序列推理成本会略上升）
 
 ### 计算量分析（FLOPS，ai 辅助计算）
+
+下面不考虑 norm, softmax, rope 等小计算量。
 
 （1）FFN（MOE) 层
 

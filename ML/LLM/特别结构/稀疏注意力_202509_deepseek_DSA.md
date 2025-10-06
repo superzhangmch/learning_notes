@@ -182,6 +182,9 @@ $p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ �
 
 ### 用于 train/prefill 和用于 decoding
 
+<img width="1568" height="320" alt="image" src="https://github.com/user-attachments/assets/19ff34c8-6a08-4349-8998-047726a37941" />
+
+
 **prefill:** 重点在于要 batch 而不是一个一个
 - 短序列：
   > for short-sequence prefilling, we specially implement a masked MHA mode to simulate DSA, which can achieve higher efficiency under short-context conditions.

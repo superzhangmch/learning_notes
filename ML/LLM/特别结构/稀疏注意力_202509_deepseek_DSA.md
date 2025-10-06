@@ -188,7 +188,7 @@ $p _ {t,:}$ 是 softmax(QK'), 而 softmax(Indexer_score)= $softmax(I _ {t,:})$ �
   - 这句话怎么理解？短指的多短？
     - 是说小于 2048，从而不需要 DSA，而走 MHA mode MLA
     - 还是说序列大于 2048 但是不太长的时候，也走 MHA mode MLA，但是靠干预 attention mask 的方式（也就是上面所引述的代码的 MHA prefill 方式）。这样的话，意味着很长序列的 prefill，要走 MQA mode 了
-- 长序列：是像原始 MLA 那样走了 MHA 模式吗？现在 attn 序列限制到最长 2048 了，应该是 MHA、MQA 无所谓了吧？因此 prefill 也用 MQA 了吗？不过不管怎样，此时是可以并行的：
+- 长序列：是像原始 MLA 那样走了 MHA 模式吗？现在 attn 序列限制到最长 2048 了，应该是 MHA、MQA 无所谓了吧？因此 prefill 也用 MQA 了吗？(下面实际计算，发现还是 MHA 计算量更小)不过不管怎样，此时是可以并行的：
   - Indexer 的 score 计算，是可以像 attn 中 QK' 这样一次性 batch 算出来的，所以可以并行
   - 下一步是每个 token 位置分别选 topK=top_2048, 按 ai 解释，这一步硬件上也是可以并行算的。
     - ai：现代 GPU/TPU 实现（如 PyTorch 的 torch.topk 或 CUDA 内核）都是把输入矩阵的每一行分配到一个 warp/block；每行独立地执行 top-k 排序；
@@ -254,9 +254,11 @@ MLA（MHA 模式）
   - Wq_b : q_rank → (heads × (rope_head_dim + non_rope_head_dim)) = 1536 × (128 × (64+128)) = 37748736 【q 解压还原】
 - K、V：
   - Wkv_a : dim → (k_lora_rank + k_rope) = (512 + 64) = 576 : 7168 × 576 = 4128768  【得到 kv 的压缩 latent 表示】
-  - KV还原：k_lora_rank → n_heads × (qk_nope_head_dim + v_head_dim): 512 → 128头 × (128+128)dim = 32768 : 512 × 32768 = 16777216
+  - KV还原: k_lora_rank → n_heads × (qk_nope_head_dim + v_head_dim): 512 → 128头 × (128+128)dim = 32768 : 512 × 32768 = 16777216
 - 输出投影 Wo : (head_num × head_dim) = (128 × 128) = 16384 → 7168 : 16384 × 7168 = 117440512 【attn 之后的 output proj】
 - 以上61层总共：61*(11010048+37748736+4128768+16777216+117440512)=11413422080
+
+note：上面两项一样
 
 indexer 中的定值开销:
 - Wq_b : q_rank → (index_head_num × index_head_dim): 1536 → (64 × 128) = 8192 : 1536 × 8192 = 12582912 【得到参与 index score 计算的多head的 q】
@@ -272,7 +274,7 @@ MLA(MQA 模式）对全序列算 attn：
 - QK'
   - no-rope部分: q_nope × KV-cache: 128头 × 512 × n = 65536n
   - rope部分：q_pe × PE-cache: 128头 × 64 × n = 8192n
-- softmax(.)⋅V: softmax权重 × V-cache: 128头 × 512 × n = 65536n
+- softmax(.)⋅V: softmax权重 × V-cache: 128头 × 512 × n = 65536n 【MQA mode下，k_no_rope 与 v 都直接用的 kv_latent】
 - 以上61层总共：61*(65536+8192+65536)*n=8495104n
   
 MLA(MQA 模式）： topK=top-2048 按稀疏注意力算 attn：（此时即上面情形取 n=2048）
@@ -311,8 +313,8 @@ MLA(MHA 模式）:
 ```
 MLA(MHA 模式）:全序列算 attn：
 - QK': 128头 × (128+64)dim × n × n = 24576 n²
-- softmax(.)⋅V: 128头 × (128+64)dim × n² = 24576 n²
-- 以上61层总共：61 * (24576+24576) * n² = 2998272 n²
+- softmax(.)⋅V: 128头 × 128dim × n² = 16384 n²
+- 以上61层总共：61 * (24576+16384) * n² = 2498560 n²
 
 MLA(MHA 模式）:topK=top-2048 算稀疏注意力：则是上面情形中的一个 n 取2048
 - QK'：24576 * 2048 * n = 50331648 n 
@@ -333,14 +335,14 @@ indexer
 （1）、如果不引入 indexer，计算量是：
 - ffn：24284495872
 - lm_head：926679040
-- mla-static：11413422080
+- mla-static（per_token)：11413422080
 - mla-dynamic： 8495104n
 - 总共：36624596992+8495104n
 
 （2）、如果引入 indexer，作稀疏注意力计算量是：
 - ffn：24284495872
 - lm_head：926679040
-- mla-static：11413422080
+- mla-static（per_token)：11413422080
 - mla-top2048： 17397972992
 - indexer_static: 851509248
 - indexer_dynamic: 499712n
@@ -369,14 +371,44 @@ indexer
 
 基于以上，那么有：
 
-（1）、如果不引入 indexer，计算量是： 
+（1）、如果不引入 indexer，计算量是（MHA mode）： 
 - ffn：24284495872 n
 - lm_head：926679040 n
-- mla-static：10390011904 n 
-- mla-dynamic： 8495104n
-- 总共：36624596992+8495104n
+- mla-static（per_token)：11413422080 n 
+- mla-dynamic：2498560 n²
+- 总共：36624596992 n + 2498560 n²
 
-（2）、如果引入 indexer，作稀疏注意力计算量：
+（2）、如果引入 indexer，作稀疏注意力计算量（MHA mode）：
+- ffn：24284495872 n
+- lm_head：926679040 n
+- mla-static（per_token)：11413422080 n
+- mla-dynamic-top2048：6140461056 n
+- indexer-static: 851509248 n
+- indexer-dynamic: 499712 n²
+- 总共：43616567296 n + 499712 n²
 
-筛选出 top2048 kv-cache 后，仍然走的 MQA 的 MLA 吗？还是 MHA mode？
+（3）、如果引入 indexer，作稀疏注意力计算量（MQA mode）：
+- ffn：24284495872 n
+- lm_head：926679040 n
+- mla-static（per_token)：11413422080 n
+- mla-dynamic-top2048：17397972992 n  # 和上面只这项有差异
+- indexer-static: 851509248 n
+- indexer-dynamic: 499712 n²
+- 总共：54874079232 n + 499712 n²
+
+可以看到用 DSA 的 prefill， MQA mode 不如 MHA mode。
  
+下面看(2) vs (1)，也就是启用 DSA vs no_DSA 的计算量比:（注意极限是 0.2）
+ 
+| n | 计算量比率 |
+|------------|----------------------|
+| 2000       | 1.07               |
+| 4000       | 0.978               |
+| 8000       | 0.84               |
+| 16000      | 0.67               |
+| 32000      | 0.51               |
+| 64000      | 0.38               |
+| 128000     | 0.3               |
+| 256000     | 0.25               |
+| 512000     | 0.23               |
+| $\infty$  | 1/5=0.2    |

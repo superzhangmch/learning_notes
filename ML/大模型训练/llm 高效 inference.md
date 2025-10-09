@@ -75,6 +75,6 @@ positions = [0,1,2,3,4, 0,1,2,3,4,5,6,   0,1,2]
 https://www.aleksagordic.com/blog/vllm 中提到了 vllm 的一些优化：
 
 - Chunked prefill：把长序列的 prefill 切成 chunks，分多次 prefill(从而减小粒度）。否则就把推理流水线给 hang 住了。
-  > (v0.4.2) vLLM supports an experimental feature chunked prefill. Chunked prefill allows to chunk large prefills into smaller chunks and batch them together with decode requests.
+  > In vLLM V1, chunked prefill is always enabled by default. With chunked prefill enabled, the scheduling policy prioritizes decode requests（早期版本如 0.4.2，默认不开启。不开启时，prefill 优先 decode 调度）. 
 - prefill-decoding 分离（PD分离）： continuous batching 可以混合 perfill 与 decode，但是二者差异还是有的，所以可以把两种计算在不同的计算节点完成。
-
+  - 2025.10 仍是 experimental 功能

@@ -67,3 +67,11 @@ positions = [0,1,2,3,4, 0,1,2,3,4,5,6,   0,1,2]
 ```
 
 也就是计算 $\sigma(qK')V$ 时，可以独立施加正确的位置编码。从而不会有问题。
+
+### vllm 中一些优化：
+
+https://www.aleksagordic.com/blog/vllm 中提到了 vllm 的一些优化：
+
+- Chunked prefill：把长序列的 prefill 切成 chunks，分多次 prefill。否则就把推理流水线给 hang 住了。
+- prefill-decoding 分离（PD分离）： continuous batching 可以混合 perfill 与 decode，但是二者差异还是有的，所以可以把两种计算在不同的计算节点完成。
+

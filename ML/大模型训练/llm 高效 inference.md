@@ -33,7 +33,9 @@ LLM 要高效推理，应该用 continuous batching。该方法出于 《Orca: A
 - 每推进一 step，把生成完成的 seq 剔除，同时可以添加新的序列（prompt）。
 - prefill 与 decode 可以混在一起进行
 
-《Orca》还提到了 selective batching：它是 continuous batching 的进一步，讲怎样做选择 batching。
+note：
+- 《Orca》还提到了 selective batching：它是 continuous batching 的进一步，讲怎样做选择 batching。
+- 如果没有 continuous batching 或类似东西，那么是不容易高效做大流量下的 batch 化的 speculative decoding 的。
 
 ### "连续" 怎么做的
 

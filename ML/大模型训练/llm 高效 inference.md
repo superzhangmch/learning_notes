@@ -35,7 +35,7 @@ LLM 要高效推理，应该用 continuous batching。该方法出于 《Orca: A
 
 note：
 - 《Orca》还提到了 selective batching：它是 continuous batching 的进一步，讲怎样做选择 batching。
-- 对 speculative decode：batch 内每个序列的对 small model 预测结果的接收程度是不同的，所以要用一般的 batching，还真不要用。而用 continuous batching 则就没问题。
+- 对 speculative decode：batch 内每个序列对 small model 预测结果的接收程度是不同的（accept 长度不一），所以要用一般的 batching，还真不好用。而用 continuous batching 则就没问题。
 ### "连续" 怎么做的
 
 这里 https://www.aleksagordic.com/blog/vllm 讲 continuous batching 是怎么个连续，讲得很清楚（但是它只是关注 flatten 成一行）：

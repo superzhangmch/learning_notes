@@ -53,9 +53,11 @@ LLM 要高效推理，应该用 continuous batching。该方法出于 《Orca: A
 
 ### batch 内序列变长（prompt与生成都是不等长的），以及位置编码，怎么处理的
 
-**边长batching问题：**
+**变长batching问题：**
 
-鉴于只有 $\sigma(qK')V$ 才是不能 token 并行的，连续batching的不等长序列拼接，影响到的也只有 attn 部分。它是通过每个序列独立计算规避这问题的；既然 attn 不能batch计算，就独立算。当然也可以理解成拼接后的长序列用巧妙设置的 attn mask 来解决。 注意 $\sigma(qK')V$ 每参数，且对于单个序列，计算量也是不小的，独立计算它并不会有啥问题。
+鉴于只有 $\sigma(qK')V$ 才是不能 token 并行的，连续batching的不等长序列拼接，影响到的也只有 attn 部分。它是通过每个序列独立计算规避这问题的；既然 attn 不能batch计算，就独立算。当然也可以当成拼接后的长序列用巧妙设置的 attn mask 来解决。具体实际细节没看。
+
+注意 $\sigma(qK')V$ 没有参数，且对于单个序列，也有多个 heads，计算量也是不小的，独立计算它并不会有啥问题。
 
 **位置编码:**
 
@@ -72,6 +74,7 @@ positions = [0,1,2,3,4, 0,1,2,3,4,5,6,   0,1,2]
 
 https://www.aleksagordic.com/blog/vllm 中提到了 vllm 的一些优化：
 
-- Chunked prefill：把长序列的 prefill 切成 chunks，分多次 prefill。否则就把推理流水线给 hang 住了。
+- Chunked prefill：把长序列的 prefill 切成 chunks，分多次 prefill(从而减小粒度）。否则就把推理流水线给 hang 住了。
+  > (v0.4.2) vLLM supports an experimental feature chunked prefill. Chunked prefill allows to chunk large prefills into smaller chunks and batch them together with decode requests.
 - prefill-decoding 分离（PD分离）： continuous batching 可以混合 perfill 与 decode，但是二者差异还是有的，所以可以把两种计算在不同的计算节点完成。
 

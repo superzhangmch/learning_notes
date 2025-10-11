@@ -54,4 +54,7 @@ P(x 被采样且被接受})=prob(x被采样)⋅prob(x被接受)=p(x)⋅min[1, q(
 (2)、拒绝后采样得到 x 的概率
 
 P(被拒绝后采样得到了x)=prob(被拒绝)⋅prob(拒绝后，重新采样得到了x)
-- prob(被拒绝)，即
+- prob(被拒绝)：这个指的是，无论 draft 采样出什么token 都被拒绝，而不只是说特定的 x 被拒绝。所以 `prob(被拒绝)=1-prob(有任意的一个token被接受)`。
+  - 而 `prob(有任意的一个token被接受)=∑_y prob(y被draft采样出并被接收)`, 根据前面一步可知，`prob(y被draft采样出并被接收)=min(p(y), q(y))`, 所以 `prob(有任意的一个token被接受)=∑_y min(p(y), q(y))`
+  - 于是：prob(被拒绝)=1-∑_y min(p(y), q(y))=1-∑ₓ min(p(x), q(x))
+- 

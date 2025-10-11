@@ -40,7 +40,7 @@
 
 ### 为啥该采样结果和直接 target model 采样相一致
 
-下面看为啥上面算法流程的奇怪操作，采样结果的分布和直接 target model 采样相一致。
+下面看为啥上面算法流程的奇怪操作，采样结果的分布和直接 target model 采样相一致。注意，鉴于二者一致，所以 draft model 使用哪一种都是无所谓的，甚至用随机采样都行。
 
 令 P 表示该算法的采样概率分布，则需要证明 P(x) == q(x), 对任意 x 属于词表成立（其中 q,p分别是target 与 draft 分布）。
 
@@ -73,3 +73,29 @@ P(被拒绝后采样得到了x)=prob(被拒绝)⋅prob(拒绝后的采样得到�
 - p > q: min(p(x), q(x))+max(0, q(x)-p(x))=q(x)=q(x) + 0 = q(x)
 - p < q: min(p(x), q(x))+max(0, q(x)-p(x))=p(x) + q(x) - p(x) = q(x)
 
+上面证明，总结如下，来自 《Accelerating ..》中截图并改编：
+
+<img width="1118" height="922" alt="image" src="https://github.com/user-attachments/assets/604e2a5e-b374-45f6-9b94-3645114ef46a" />
+
+---
+
+### 一些理论分析
+
+下面主要来自 《Fast Inference ..》一文。
+
+假设单个 draft model token 的的接受率是 β, 那么平均接受率 α := E(β), 即对于各种推理前缀时接受率的平均值。
+
+
+（1）、每次迭代的平均接纳 token 数量怎么算
+
+draft model 一次采样 K 个，那么平均接纳几个呢？这构成了一个 capped geometric 分布（截断几何分布）：它常用于表示「尝试直到成功」但尝试次数不能无限多的情形。假设 α 已经知道了，数学上可以得到，平均接纳 token 数为：
+
+$$
+E(\text{accept 数}) = \frac {1 − α^{k+1}} {1 − α}
+$$
+
+（2）、平均接受率 α := E(β) 怎么算
+
+上面证明中，已经有了对一次具体的前缀的接受率=prob(有任意的一个token被接受)=∑_y prob(y被draft采样出并被接收)=∑_y min(p(y), q(y)), 所以 $α = E_{prefix}\ E_x\ min(p(x|prefix), q(x|prefix))$
+
+(3)、

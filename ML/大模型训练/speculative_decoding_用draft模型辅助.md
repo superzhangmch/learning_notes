@@ -27,8 +27,14 @@
   - 一旦不采纳，就要退出，并不理会后面的 token。但是退出时，可以额外采样一个token：根据 target-model 给出的概率分布，但是需要做一个调整。
 - 标 D 部分：如果 k 个全接受了，那么根据target-model所得的概率分布，还可以额外采样一个 token。此时不需要作概率调整
 - 上面算法，每跑一遍，target-model 推理一次；可以看到，至少可以产生一个 token。鉴于 draft model计算量远小于 target-model，所以即使全部拒绝了它的结果，总推理时间的退化也很有限。
- 
-上面的方法，naive 的想法会是这样：A、B仍一样做法，而在C部分，按 target-model 的采样方法对概率分布作采样，如果采样出的和 draft 的结果一样，则采纳；否则拒绝（同时用这次 target-model 采样结果作为本次的结果）。这样做，也能实现生成结果和直接用 target-model 生成的一致，还不需要概率调整。是不是这样的采纳率会低？
+
+**naive 的想法**
+
+上面的方法，naive 的想法会是这样：A、B仍一样做法，而在C部分，按 target-model 的采样方法对概率分布作采样，如果采样出的 token 和 draft 的结果一样，则采纳；否则拒绝（同时用这次 target-model 采样结果作为本次的结果）。这样做，也能实现生成结果和直接用 target-model 生成的一致，拒绝时还不需要概率调整。起步很好！
+
+注意这样做的接受率要低，所以不取：假设 draft 采样出了 token x，speculative decoding 的接受概率是 min(1, q(x)/p(x)), 而 naive 想法的接收概率是 q(x)。比较 min(1, q/p) vs q:
+- q > p: min(1, q/p) vs q => 1 vs q => 1 > q, 前者胜出
+- q < p: min(1, q/p) vs q => q/p vs q => q/p > q, 前者胜出
 
 ---
 
@@ -47,14 +53,23 @@
 (1)、draft 被接受的概率
 
 P(x 被采样且被接受})=prob(x被采样)⋅prob(x被接受)=p(x)⋅min[1, q(x)/p(x)]=min(p(x), q(x))
+
 - prob(x被采样) = p(x)
 - prob(x被接受) = min(1, q(x)/p(x))
 - 注意 p(x)⋅min[1, q(x)/p(x)] = min(p(x), q(x))
 
 (2)、拒绝后采样得到 x 的概率
 
-P(被拒绝后采样得到了x)=prob(被拒绝)⋅prob(拒绝后，重新采样得到了x)
+P(被拒绝后采样得到了x)=prob(被拒绝)⋅prob(拒绝后的采样得到了x)
+
 - prob(被拒绝)：这个指的是，无论 draft 采样出什么token 都被拒绝，而不只是说特定的 x 被拒绝。所以 `prob(被拒绝)=1-prob(有任意的一个token被接受)`。
-  - 而 `prob(有任意的一个token被接受)=∑_y prob(y被draft采样出并被接收)`, 根据前面一步可知，`prob(y被draft采样出并被接收)=min(p(y), q(y))`, 所以 `prob(有任意的一个token被接受)=∑_y min(p(y), q(y))`
-  - 于是：prob(被拒绝)=1-∑_y min(p(y), q(y))=1-∑ₓ min(p(x), q(x))
-- 
+  - 而 `prob(有任意的一个token被接受)=∑_y prob(y被draft采样出并被接收)`, 即为词表每个token都成功的概率和。根据前面一步可知，`prob(y被draft采样出并被接收)=min(p(y), q(y))`, 所以 `prob(有任意的一个token被接受)=∑_y min(p(y), q(y))`
+  - 于是：`prob(被拒绝)=1-∑_y min(p(y), q(y))=1-∑ₓ min(p(x), q(x)) = ∑ₓ [p(x) - min(p(x), q(x))] = ∑ₓ max(0, p(x)-q(x)) = ∑ₓ max(0, q(x)-p(x))`
+- prob(拒绝后的采样得到了x)：根据算法中定义是 `normalize(max(0, q(x)-p(x))) := max(0, q(x)-p(x)) / ∑ₓ max(0, q(x)-p(x)) == (q - p)₊`
+- 上面两者相乘后，后者把前者的分母消掉，得到： P(被拒绝后采样得到了x)=max(0, q(x)-p(x))
+
+（3）、上面两者相加，得到：`P(X=x) = P(x 被采样且被接受) + P(被拒绝后采样得到了x)=min(p(x), q(x))+max(0, q(x)-p(x))=q(x)`, 得证。
+
+- p > q: min(p(x), q(x))+max(0, q(x)-p(x))=q(x)=q(x) + 0 = q(x)
+- p < q: min(p(x), q(x))+max(0, q(x)-p(x))=p(x) + q(x) - p(x) = q(x)
+

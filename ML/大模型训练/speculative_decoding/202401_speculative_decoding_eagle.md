@@ -1,6 +1,8 @@
 # 《EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty》 https://arxiv.org/pdf/2401.15077
 
-eagle 有 v1，v2，v3 三篇 paper。这里看 v1。
+eagle 有 v1，v2，v3 三篇 paper。
+
+这里看 v1。paper 看是比 medusa 还要好。
 
 ## 整体流程
 
@@ -20,4 +22,10 @@ target model 怎么计算 draft model 的结果的 logits 概率：和 medusa �
 用原生 speculative decoding 那样的拒绝采样法，保证结果的分布和原 LLM 一致。
 
 ----
+
+## 自回归 head 细节
+
+<img width="1036" height="802" alt="image" src="https://github.com/user-attachments/assets/565bd52c-e5ab-4d93-89c8-9630ad60a6c4" />
+
+特征：每个 token 位置的 input：token emb + 该token的上衣位置的最后一层的hidden-stat
 

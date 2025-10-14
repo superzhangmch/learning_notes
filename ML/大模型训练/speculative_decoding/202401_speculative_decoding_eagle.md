@@ -2,7 +2,9 @@
 
 eagle 有 v1，v2，v3 三篇 paper。
 
-这里看 v1。paper 看是比 medusa 还要好。
+这里看 v1。paper 看是比 medusa 还要好：
+
+<img width="1590" height="544" alt="image" src="https://github.com/user-attachments/assets/4f2df5c9-9ef8-4946-963f-45927d491e59" />
 
 ## 整体流程
 

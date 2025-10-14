@@ -30,12 +30,14 @@ $$
 - 乃 MLP + resnet 的极简结构；
 - $h_t$ 是最后一个 hidden
 - 一般 5 个 heads 就行
-- 怎么训练 medusa-head：
-  - W_2 初始化为原 LLM 的 llm-head；W_1 初始化为 0
-  - 可以把主模型冻结，只训 head，这样的命名为 medusa-1
-  - 把主模型与 head 都训，叫 medusa-2
-  - 训练 loss 是不同 heads 的 loss 求和。loss weight $\lambda_k$：距离当前位置越远，weight 越小
+
+怎么训练 medusa-heads：
+- W_2 初始化为原 LLM 的 llm-head；W_1 初始化为 0
+- 可以把主模型冻结，只训 head，这样的命名为 medusa-1
+- 把主模型与 head 都训，叫 medusa-2
+- 训练 loss 是不同 heads 的 loss 求和。loss weight $\lambda_k$：距离当前位置越远，weight 越小
     - $\mathcal{Loss} _ {\text{MEDUSA-1}} = \sum _ {k=1}^{K} -\lambda_k \log p_t^{(k)}(y_{t+k+1})$
+- 训练数据：应该和打造原 LLM 时一样分布的数据集。如果找不到这样的数据集，那么可以用 self-distillation 用别的数据集的 prompt + 本 LLM 生成 answer 的方法构造出来。
 
 注意：
 - 它怎么实现轻量级预测的：一次重计算的 forward 生成当前 token 的同时，能顺便生成未来的几个token的候选。
@@ -61,5 +63,18 @@ $$
 即使剪枝，一棵树的节点也会是很多的（paper 中例子：256节点剪到了64节点），这意味着作 verify 的时候，一次forward 好几十上百个token，计算量是很大的——相比之下，原生 speculative decoding verify 一次只有三五个token。
 
 ### 三、怎么采样
+
+可以用原生 speculative decoding 的 rejection sampling。作者提到 rejection sampling 在target model 生成温度大时，效率低（温度大，则target model 预测概率低，从而导致accept率降低）。而现实中，大温度生成正是为了多样性，这时候其实应该多采纳 draft model 的结果（这样才体现了多样性）。因此作者断言：speculative decoding 的采样概率分布，不一定要精确拟合target model 的概率。
+
+于是提出可以用 typical acceptance 方法来从候选中筛选，而不是 rejection sampling；公式是：
+
+$$
+p_{\text{original}} \left(x_{n+k}\mid x_1, x_2, \cdots, x_{n+k-1}\right) > \min \left(\epsilon,\, \delta \exp \left(-H \left(p_{\text{original}} \left(\cdot\mid x_1, x_2, \cdots, x_{n+k-1}\right)\right)\right)\right)
+$$
+
+也就是候选的 target 概率在该范围内的都接受，概率值不能太小；但是也不能太大。额外细节：
+- 第一个token 要用 greedy，以便至少能decode出一个 token
+- 鉴于一轮操作中有多个候选seq，要选最长匹配的那个作为结果
+
 
 

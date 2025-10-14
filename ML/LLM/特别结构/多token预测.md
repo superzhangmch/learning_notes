@@ -6,7 +6,7 @@
 
 <img width="950" height="674" alt="image" src="https://github.com/user-attachments/assets/9c5fc375-bcac-434d-b88a-24e748ee9182" />
 
-它和 eagle 一样，是额外附加了 head，且也是串行自回归的（而非 medusa那样）。但是 eagle 后训练出的，用于推理加速，而deepseek-v3 用于预训练，用于提升训练效率与模型性能；且 eagle 只有一个 head；而 deepseek-v3 是多个 head （MTP module），每个都是专用的，第 k 个用于预测未来第 k 个 token。
+它和 eagle 一样，是额外附加了 head，且也是串行自回归的（而非 medusa那样）。但是 eagle 后训练出的，用于推理加速，而deepseek-v3 用于预训练，用于提升训练效率与模型性能；且 eagle 只有一个 head；而 deepseek-v3 是多个 head （MTP module），每个都是专用的，第 k 个用于预测未来第 k 个 token。eagle 作多候选，tree attn；而 deepseek-v3 不需要这个。
 
 deepseek-v3：如下图因果串联式：
 

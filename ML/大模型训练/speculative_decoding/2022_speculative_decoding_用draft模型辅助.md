@@ -36,6 +36,8 @@
 - q > p: min(1, q/p) vs q => 1 vs q => 1 > q, 前者胜出
 - q < p: min(1, q/p) vs q => q/p vs q => q/p > q, 前者胜出
 
+note：speculative decoding 虽好，如果是大流量下用于线上，会有一个问题是：怎么作 batch 用它？毕竟每条数据的接受长度不同。这多亏了现在的vllm 之类推理框架所用的 continuous batching，每推理一步都要动态组 batch，所以 batching 化作 speculative decoding 是没问题的。
+
 ---
 
 ### 为啥该采样结果和直接 target model 采样相一致

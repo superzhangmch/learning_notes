@@ -76,5 +76,29 @@ $$
 - 第一个token 要用 greedy，以便至少能decode出一个 token
 - 鉴于一轮操作中有多个候选seq，要选最长匹配的那个作为结果
 
+**关于 typical acceptance**
+
+有一种和 top-p，top-k 并列的 LLM 采样方法，叫 typical sampling （https://arxiv.org/pdf/2202.00666 ，《Locally Typical Sampling》）。
+
+下面主要来自 ai 提供：
+
+LLM 几种解码策略：
+- Greedy decoding：永远取概率最大的 token。
+- Top-k / Top-p (nucleus) sampling：只在最高概率前 k 个或累计概率 ≤ p 的 token 里采样。
+- Typical decoding：基于“信息熵”来选，不是单纯概率。选那些 “既不太平凡也不太离谱” 的词，更自然。
+
+Typical Decoding 的核心思想：避免模型只选概率最高的“安全词”，也避免随机性过大。
+
+1. 对每个候选 token，计算它的 信息量： $I(x) = -\log P(x)$
+2. 计算整分布的熵： $H(P) = -\sum_i P(x_i) \log P(x_i)$
+3. 定义 typicality： $\Delta(x) = | I(x) - H(P) |$
+   * 如果 token 的信息量接近熵，就说明它是“典型”的。
+   * 如果太小或太大，就说明它过于可预测（像停用词）或过于罕见（怪词）。
+4. 排序 & 截断：
+   * 按 $\Delta(x)$ 从小到大排序（越接近熵越典型）。
+   * 保留累计概率 ≤ $\tau$（典型性阈值，比如 0.9）的 token。
+5. 采样：在保留下来的 token 中，根据概率再随机采样一个。
+
+一些解释：熵衡量了一个概率分布有多分散，有多集中，熵越大，越分散（即混乱度大，概率分散）。所以 typicality 定义了一个token的典型程度。typical sampling 在累积阶段，并不偏好高概率token，但是一旦token被选中，最终还是会偏好高概率的。如果熵很大，那么表示没有哪个词是必选，所以这时候不盯着最高概率的token是有道理的。medusa 的 typical acceptance 和 typical sampling 在思想上，是很相似的。
 
 

@@ -27,5 +27,20 @@ target model 怎么计算 draft model 的结果的 logits 概率：和 medusa �
 
 <img width="1036" height="802" alt="image" src="https://github.com/user-attachments/assets/565bd52c-e5ab-4d93-89c8-9630ad60a6c4" />
 
-特征：每个 token 位置的 input：token emb + 该token的上衣位置的最后一层的hidden-stat
+- 特征：每个 token 位置的 input：token emb + 该token的上衣位置的最后一层的hidden-stat
+- 网络：
+  - embedding 层、LM-head 层，共享
+  - 自回归 head：FC + decoder-layer
+- loss：
+  - 训练的时候，原始 LLM 完全冻结。一次 target-model forward 把整个序列推理一遍，然后就可以得到 {$f_i$} 与 {$p_i$} 了。
+  - 然后在此基础上，可以算得 draft-head 的 $\hat{f}_i$ 与 $\hat{p}_i$，从而构建出预测 hidden-state 的回归 loss，与token预测的分类 loss。最终loss 乃二者之和。详细 loss 式子见下面：
 
+$$
+\begin{align}
+L_{\text{reg}} &= \text{SmoothL1}\big(f_{i+1}, \text{DraftModel}(T_{2:i+1}, F_{1:i})\big) &// f_{i+1} 乃target-model给出的\\
+\\
+p_{i+2} &= \text{Softmax}(\text{lmHead}(f_{i+1})) &// target-model 的预测概率\\
+\hat{p} _ {i+2} &= \text{Softmax}(\text{lmHead}(\hat{f} _ {i+1})) &// \hat{f} _ {i+1} 乃 draft-model 预测出的\\
+L_{\text{cls}} &= \text{CrossEntropy}(p_{i+2}, \hat{p}_{i+2}) \\
+\end{align}
+$$

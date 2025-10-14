@@ -12,7 +12,7 @@ medusa 不同于基于 draft model 的 speculative decoding：它是在原生 LL
 - 原生 LLM 的最后一层 hidden-states 处接多个并行的轻量级 medusa heads，每个 head 预测不同未来位置的一个 token。这样在生成当前token的同时，顺便生成了未来的几个token的候选，从而实现了轻量级 draft model 干的事。
 - 鉴于预测的未来多位置的 token 不是自回归生成的，所以才可以生成（遍历式生成）多个候选的 draft-model 结果。为了从多候选中高效 verify 结果，于是用 tree-attention 的方式高效地做 forward 计算。
 
-### medusa draft model head
+### 一、draft model 怎么做：medusa draft model head
 
 第 k 个 head 的网络结构是：
 
@@ -41,13 +41,25 @@ $$
 - 它怎么实现轻量级预测的：一次重计算的 forward 生成当前 token 的同时，能顺便生成未来的几个token的候选。
 - 为什么能一次 decoding 出多个候选：因为每个 token 位置是独立解码的。
 
-### tree attention 高效计算怎么做的
+### 二、target model 怎么高效作 candidates 的 verify 计算：tree attention
 
 <img width="1218" height="942" alt="image" src="https://github.com/user-attachments/assets/ca660ddd-bbad-4faa-9212-bd4cb1327fa9" />
 
-假设有两个 heads，分别取 top2，top3 个采样结果。则**排列组合**后有 6 种候选（后文讲，可以有一定的剪枝）。target model 验证 draft model 结果，而作 forward 的时候，按 naive 思路，就是构建一个 batch-size=6，seq-len=prefix_len+2 的 batch 然后做 forward。这样计算冗余太大。
+假设有两个 heads，分别取 top2，top3 个采样结果。则**排列组合**后有 6 种候选（后文讲，可以有一定的剪枝）。target model 验证 draft model 结果，而作 forward 的时候，按 naive 思路，就是构建一个 `batch-size=6，seq-len=prefix_len+2` 的 batch 然后做 forward。这样计算冗余太大。
 
-于是作者使用 tree-attention：巧妙构建 attn-mask，从而可以在 batch-size=1， seq_len=(prefix_len+树节点数) 的数据上完成计算。上图左侧的 `root->head1->head2` 就是所说的 tree 结构。对 tree 逐层扫描，flatten 成一行，并在 attn-mask 矩阵中把 tree 的节点关系构造（获得了稀疏的 mask 矩阵），然后按一般 attn 方式做就行了。
+于是作者使用 tree-attention：巧妙构建 attn-mask，从而可以在 `batch-size=1， seq_len=(prefix_len+树节点数)` 的数据上完成计算。上图左侧的 query 的 `root->head1->head2` 就是所说的 tree 结构；数节点数，也就是图左侧 query 长度会是： $\sum_{k=1}^K \prod _{i=1}^k s_i$, 其中 $s_i$ 表示第i个head的采样数。tree attn-mask 构建方式：对 tree 按节点逐层扫描，flatten 成一行，并在 attn-mask 矩阵中把 tree 的节点关系构造（从而获得了稀疏的 mask 矩阵），然后按一般方式做 attn 操作了。另外位置id，也要巧妙设置对。
 
+怎么对树剪枝：
+
+作者给的方法是用 calibration 数据集，统计出不同的head的不同top-i_th 位置的准确率。然后可以根据该统计信息，提前构建好剪枝后的 tree 结构。不同的 prompt 都用同样的剪枝树。怎么构建的：
+> building a tree by adding nodes one by one, the contribution of a new node to the expectation is exactly the accuracy associated with the node.
+>
+> Therefore, we can greedily add nodes to the tree by choosing the node that is connected to the current tree and has the highest accuracy.
+>
+> (也就是：贪心方法：从根节点开始，逐个增节点，直到达阈值；每次新增的节点是accuracy最高的那个）
+
+即使剪枝，一棵树的节点也会是很多的（paper 中例子：256节点剪到了64节点），这意味着作 verify 的时候，一次forward 好几十上百个token，计算量是很大的——相比之下，原生 speculative decoding verify 一次只有三五个token。
+
+### 三、怎么采样
 
 

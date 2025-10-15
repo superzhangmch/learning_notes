@@ -23,8 +23,17 @@ for i in range(K):
 
 ----
 
+### 《Listen and Fill in the Missing Letters: Non-Autoregressive Transformer for Speech Recognition》 2019.11 https://arxiv.org/pdf/1911.04908
+
+它用到了 《Mask-Predict》方法，做的是 asr。它不需要预测 Length token，而是 decoder 预测 EOS token的方式（提前分配足够长的长度）。
+
+<img width="952" height="274" alt="image" src="https://github.com/user-attachments/assets/c65fc44a-a775-44b5-83f5-9fecc2666522" />
+
+NAR 生成&mask 迭代得到结果。
+
 ## 《Mask CTC: Non-Autoregressive End-to-End ASR with CTC and Mask Predict》 2020.05 https://arxiv.org/pdf/2005.
 
 它用到了 《Mask-Predict》方法，做的是 asr：
 
 <img width="812" height="684" alt="image" src="https://github.com/user-attachments/assets/442f0cd5-618a-42eb-90e4-89838ffd845a" />
+

@@ -1,16 +1,14 @@
-## CIF (CONTINUOUS INTEGRATE-AND-FIRE)
+
+## paraformer 《Paraformer: Fast and Accurate Parallel Transformer for Non-autoregressive End-to-End Speech Recognition》  https://arxiv.org/pdf/2206.08317
+
+### 依赖知识：CIF (CONTINUOUS INTEGRATE-AND-FIRE)
 乃类似 CTC 作序列对齐的一种技术。paraformer/funAsr 基础就在于它。参 https://github.com/superzhangmch/learning_notes/blob/main/ML/%E7%90%86%E8%AE%BA/CTC%E3%80%81transducer%E3%80%81CIF.md#cif 
 
 ![image](https://github.com/user-attachments/assets/ebf189d7-5706-417b-ba9f-02d1cd68edae)
 
 核心在于对于没有对齐的每一个frame，预测一个属于某一 token 的 weight $\alpha_i$ ，最终他会属于某个结果token，但是正巧只占据该token的比例是 $\alpha_i$. 若干个相邻的 weight 和达阈值的 frame 拼起来就是一个 token 的范围了。从左到右依次scan & integrate & fire，如果某个地方的token边界错位，那么会一路能导致余下的所有 token 都错位了。
 
----
-## paraformer
-
-https://arxiv.org/pdf/2206.08317 《Paraformer: Fast and Accurate Parallel Transformer for Non-autoregressive End-to-End Speech Recognition》
-
-### inference
+### paraformer inference
 
 ![image](https://github.com/user-attachments/assets/6a18376c-685f-4ecd-a4c8-1cf6e266cbc7)
 
@@ -20,7 +18,7 @@ inference时，工作原理如上图。粗略地说，对于语音 frames：
 
 paraformer 特点在于第二步。根据第一步，一共能识别出多少字已经知道了，每个字的表示也有了，最简单是根据表示来预测该token即可，都不需要 transformer。但是这样彻底忽视了前后文环境信息，更进一步是causal transformer。而  paraformer 用了双向 full-attn transformer。名字中的 para-，乃 parallel 的缩写，表示不像自回归transformer那样只能一个字一个字往外预测，它是可以并行一次预测所有字(鉴于有full attn, 所以是并行但不独立)。
 
-### train
+### paraformer train
 
 ![image](https://github.com/user-attachments/assets/49e58d87-3356-46e4-b834-b50491c38cae)
 

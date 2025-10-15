@@ -25,6 +25,8 @@ for i in range(K):
 
 随机 mask 掉序列中一部分，预测全序列。
 
+扩散语言模型 LlaDa 和它感觉好像（ https://github.com/superzhangmch/learning_notes/blob/main/ML/LLM/%E7%89%B9%E5%88%AB%E7%BB%93%E6%9E%84/202502_LLaDa_%E6%89%A9%E6%95%A3.md ）
+
 ### 《Listen and Fill in the Missing Letters: Non-Autoregressive Transformer for Speech Recognition》 2019.11 https://arxiv.org/pdf/1911.04908
 
 它用到了 《Mask-Predict》方法，做的是 asr。它不需要预测 Length token，而是 decoder 预测 EOS token的方式（提前分配足够长的长度）。

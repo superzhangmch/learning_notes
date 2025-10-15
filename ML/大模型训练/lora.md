@@ -8,7 +8,9 @@ $$
 W'=W + \frac {\alpha} {r} A B
 $$
 
-inference 推理的时候，并不需要它。所以 lora_alpha 的作用，本质上和新定义一个 $\lambda$ 用于 $W'=W + \lambda A B$ 一样。二者等价。
+inference 推理的时候，并不需要它。所以 lora_alpha 的作用，训练时本质上和新定义一个 $\lambda$ 用于 $W'=W + \lambda A B$ 一样。二者等价。
+
+一般情况选取 lora_alpha=2*r, 或者 lora_alpha=r。
 
 ### 初始化
 

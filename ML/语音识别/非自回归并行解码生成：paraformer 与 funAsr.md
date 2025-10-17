@@ -43,15 +43,39 @@ MWER=minimum word error rate， CE= cross-entropy loss, MAE=the mean absolute er
 
 ![image](https://github.com/user-attachments/assets/11d48860-62df-4ed9-a408-ff3167fe4a46)
 
-该机制叫 GLM=glancing language model。之所以叫 glancing，指的是在训练遇到困难的时候，偷看下答案。训练后期效果较好后，偷看的也就更少。
 
-为啥work：
+下面是关于 Glancing Transformer 的。该机制叫 GLM=glancing language model。之所以叫 glancing，指的是在训练遇到困难的时候，偷看下答案。训练后期效果较好后，偷看的也就更少。
+
+图中用来替换 $h_i$ 的 embedding 来自于 decoder 的 lm-head 的相应参数。
+> Here the word embeddings are obtained from the softmax embedding matrix of the decoder. 
+
+NAR 假设目标词之间条件独立，导致“词间依赖关系”学不到。《glancing..》试图解决如何在单次并行解码下学到目标词之间的依赖（它也是 NAR 解码的）。
+
+- 第一次解码：用普通 NAT 方式预测整句输出（此时不算loss，比计算梯度）。
+- 对比预测和真实句子 Y：计算它们的差异（用 Hamming distance）。
+- Glancing Sampling（瞥一眼采样）：
+  - 从参考句子 Y 中抽取一部分词（比例与错误率成正比）；
+  - 把这些“正确的”目标词直接输入给 decoder；
+  - 再次解码，预测剩下没抽到的词；
+- 只用第二次解码的输出计算损失（梯度回传）。
+
+GLM inference的时候，需要知道结果长度，这是通过添加 length token 到 encoder实现的（encoder 预测出 length)。
+
+GLM 为啥 work：
 (1). 按原文：
 > Generally, GLM is quite similar to curriculum learning (Bengio et al., 2009) in spirit, namely first learning to generate some fragments and gradually moving to learn the whole sentences (from easy to hard). 
 
 (2). 在训练的早期，预测的基本都不对，这时候，encoder output embeddings 绝大部分被替换，这时候的训练，就约等于是在训练一个双向 transformer 语言模型。把 encoder output embds 与 target token embds 能互换，说明是把他们等价看待的, 隐式地把两者视为了“在某种语义空间中等价可交换的表示”。这种操作迫使模型把 acoustic 表达和语义 token embedding 对齐到某个“共享空间”中。
 
 (3). 训练中 decoder 的输入中，有些来自 acoustic（预测的），有些是“偷看的” ground-truth（embedding lookup）。decoder 要做到：不管来源是哪种，它都要能利用这些 embedding 来建模 token 之间的上下文关系并生成正确的输出。
+
+问题: GLM encoder 的输出 $h_i$, 是否会趋近于 ground-truth embedding
+
+不会直接趋近，因为在被替换的位置上没有梯度信号。但是，随着训练进行，被替换的位置数量逐渐减少，encoder 最终必须学会在不被替换时，自己生成与 token embedding 语义上接近的表示，否则 decoder 无法正确预测。
+
+- 训练初期, encoder 仅需部分承担语义编码
+- 训练中期, encoder 开始学会生成语义相似的表示
+- 训练后期, encoder 输出逐渐与词语 embedding 在语义空间对齐
 
 ---
 

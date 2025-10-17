@@ -22,7 +22,7 @@ paraformer 特点在于第二步。根据第一步，一共能识别出多少字
 
 ![image](https://github.com/user-attachments/assets/49e58d87-3356-46e4-b834-b50491c38cae)
 
-【如图： 根据 Y' 和 ground-truth Y 对比的结果，而把 E_a 中一些用 E_c 中一些替代，从而构造出 E_s， 或者说 
+【如图： 根据 Y' 和 ground-truth Y 对比的结果，而把 E_a 中一些用 E_c （来自于 decoder 的 lm-head 中的 emb）中一些替代，从而构造出 E_s， 或者说 
 
 $$\text{GLM}(Y, Y') = \text{Sampler}(\text{E}_s \mid \text{E}_a, \text{E}_c, [\lambda d(Y, Y')])$$
 

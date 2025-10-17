@@ -9,11 +9,19 @@ loss: $L_{combined}(x, y) = λ\cdot L_{CTC}(x, y) + (1 − λ)\cdot L_{AED}(x, y
 
 ![image](https://github.com/user-attachments/assets/1c815a7d-c5a2-48e9-8377-fdb9e21136c3)
 
-实验证明，解码效果，AED > CTC, 但是 CTC+AED打分，比 AED 更好，所以采用了CTC+AED打分（分两步，名之为 U2）：
+实验证明，解码效果，AED > CTC, 但是 CTC+AED打分，比 AED 更好，所以采用了 CTC+AED 打分（分两步，名之为 U2）：
 
 ![image](https://github.com/user-attachments/assets/074c3eb9-7025-4f8b-a8a5-f5bf487d2fbd)
 
 另外，这几种解码方式，虽然效果有差异，但是只是细微差异：大部分时候，几者的结果是一样的。
+
+**note: 关于 CTC 部分**
+
+根据 ai（看paper后）：wenet-v1 的 encoder input 帧率是100，每帧编码 25ms，相邻帧重叠10ms；经过两次stride=2，kernel=3x3的卷积后，CTC decoder 的 input 帧率是 25（下采样两次）。而 CTC decoder 是一次预测出整个序列的每个位置的词表token分布，每个 output 位置是和 input seq 的相应位置对应的（且 ctc 训练，其实就是在努力预测该位置的label）。
+
+这样容易疑惑：中文端到端的 CTC asr，真的能从 1000/25=40ms 时长推断一个字吗？口语中一个字的发音远超 40ms 啊。答案是没问题，这是因为，如果用的是卷积，则实际感受野要比 40ms 大（如果decoder内部没CNN 则是85ms；否则更大）；如果用了 transformer，则由于用 attn，感受野更大。
+
+----
 
 # weNet-v2 https://arxiv.org/pdf/2203.15455
 

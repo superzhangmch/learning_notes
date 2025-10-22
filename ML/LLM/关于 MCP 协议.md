@@ -310,3 +310,455 @@ while (true) {
   console.log('收到数据块:', chunk);
 }
 ```
+
+----
+
+# 示例
+
+mcp_server.py：
+
+```
+#!/usr/bin/env python3
+"""
+MCP Math Server - 使用官方 MCP SDK
+安装依赖: pip install mcp
+"""
+import math
+import asyncio
+import sys
+from datetime import datetime
+from mcp.server import Server
+from mcp.server.stdio import stdio_server
+from mcp.types import Tool, TextContent
+
+# 创建 MCP 服务器实例
+app = Server("math-calculator")
+
+@app.list_tools()
+async def list_tools() -> list[Tool]:
+    """注册可用的工具"""
+    return [
+        Tool(
+            name="get_date_time",
+            description="返回当前日期时间，格式 yy-mm-dd HH:MM:SS",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                },
+                "required": []
+            }),
+        Tool(
+            name="transform_date_time",
+            description="把日期转为时间戳，或者时间戳转为日期",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "direction": {
+                        "type": "string",
+                        "description": "dt2u|u2dt, dt2u=datetime_to_unixtime, u2dt=unixtime_to_datetime",
+                    },
+                    "value": {
+                        "type": "string",
+                        "description": "需要转化的时间戳或日期时间. 时间戳需要是整数，时间日期格式需要是 yy-mm-dd HH:MM:SS",
+                    }
+                },
+                "required": ["direction", "value"]
+            }),
+        Tool(
+            name="calculate",
+            description="计算数学表达式，支持基本运算、幂运算、三角函数等。可以使用 math 模块的所有函数。",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "要计算的数学表达式，例如: '2 + 3 * 4', 'math.sqrt(16)', 'math.sin(math.pi/2)'"
+                    }
+                },
+                "required": ["expression"]
+            })
+    ]
+
+
+@app.call_tool()
+async def call_tool(name: str, arguments: dict):
+    """处理工具调用"""
+
+    try:
+        # ========== 1. get_date_time ==========
+        if name == "get_date_time":
+            now = datetime.now().strftime("%y-%m-%d %H:%M:%S")
+            return [TextContent(type="text", text=f"当前时间: {now}")]
+
+        # ========== 2. transform_date_time ==========
+        elif name == "transform_date_time":
+            direction = arguments.get("direction")
+            value = arguments.get("value")
+
+            if direction == "dt2u":  # datetime -> unix timestamp
+                try:
+                    dt = datetime.strptime(value, "%y-%m-%d %H:%M:%S")
+                    timestamp = int(dt.timestamp())
+                    return [TextContent(type="text", text=f"时间戳: {timestamp}")]
+                except Exception as e:
+                    return [TextContent(type="text", text=f"日期格式错误: {str(e)}")]
+
+            elif direction == "u2dt":  # unix timestamp -> datetime
+                try:
+                    dt = datetime.fromtimestamp(float(value)).strftime("%y-%m-%d %H:%M:%S")
+                    return [TextContent(type="text", text=f"日期时间: {dt}")]
+                except Exception as e:
+                    return [TextContent(type="text", text=f"时间戳错误: {str(e)}")]
+
+            else:
+                return [TextContent(type="text", text=f"未知的 direction 参数: {direction}")]
+
+        # ========== 3. calculate ==========
+        elif name == "calculate":
+            expression = arguments.get("expression", "")
+            safe_dict = {
+                "math": math,
+                "__builtins__": {
+                    "abs": abs,
+                    "round": round,
+                    "min": min,
+                    "max": max,
+                    "sum": sum,
+                    "pow": pow,
+                }
+            }
+
+            try:
+                result = eval(expression, safe_dict, {})
+                return [TextContent(type="text", text=f"计算结果: {expression} = {result}")]
+            except Exception as e:
+                return [TextContent(type="text", text=f"计算错误: {str(e)}\n表达式: {expression}")]
+
+        # ========== 4. 未知工具 ==========
+        else:
+            raise ValueError(f"Unknown tool: {name}")
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"工具调用错误: {str(e)}")]
+
+#@app.call_tool()
+async def call_tool1(name: str, arguments: dict) -> list[TextContent]:
+    """处理工具调用"""
+    if name != "calculate":
+        raise ValueError(f"Unknown tool: {name}")
+
+    expression = arguments.get("expression", "")
+
+    try:
+        # 创建安全的执行环境
+        safe_dict = {
+            "math": math,
+            "__builtins__": {
+                "abs": abs,
+                "round": round,
+                "min": min,
+                "max": max,
+                "sum": sum,
+                "pow": pow,
+            }
+        }
+
+        # 执行表达式
+        result = eval(expression, safe_dict, {})
+
+        return [
+            TextContent(
+                type="text",
+                text=f"计算结果: {expression} = {result}"
+            )
+        ]
+
+    except Exception as e:
+        return [
+            TextContent(
+                type="text",
+                text=f"计算错误: {str(e)}\n表达式: {expression}"
+            )
+        ]
+
+async def main():
+    """运行服务器"""
+    # 输出启动信息到 stderr（不影响 stdio 通信）
+    print("MCP Math Server starting...", file=sys.stderr, flush=True)
+
+    try:
+        async with stdio_server() as (read_stream, write_stream):
+            print("MCP Math Server ready", file=sys.stderr, flush=True)
+            await app.run(
+                read_stream,
+                write_stream,
+                app.create_initialization_options()
+            )
+    except Exception as e:
+        print(f"MCP Math Server error: {e}", file=sys.stderr, flush=True)
+        raise
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("MCP Math Server stopped", file=sys.stderr, flush=True)
+```
+
+client：
+
+```
+
+#!/usr/bin/env python3
+import asyncio
+import json
+import os
+from typing import List, Dict, Optional
+from openai import OpenAI
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+class AIAssistantWithMCP:
+    """带 MCP 工具调用能力的 AI 助手（支持任何 OpenAI 兼容 API）"""
+
+    def __init__(self, api_key: str, base_url: Optional[str] = None, model: str = "gpt-4-turbo"):
+        """
+        初始化 AI 助手
+
+        Args:
+            api_key: API 密钥
+            base_url: API 端点 URL
+            model: 使用的模型名称
+        """
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.model = model
+        self.conversation_history: List[Dict] = []
+        self.mcp_session: Optional[ClientSession] = None
+        self.available_tools: List[Dict] = []
+
+    async def connect_mcp_server(self, server_script: str):
+        """连接到 MCP 服务器"""
+        import os
+
+        # 检查服务器文件是否存在
+        if not os.path.exists(server_script):
+            raise FileNotFoundError(f"MCP 服务器文件不存在: {server_script}")
+
+        server_params = StdioServerParameters(
+            command="python3",
+            args=[server_script],
+        )
+
+        print("🔌 连接到 MCP 数学服务器...")
+
+        try:
+            # 保存 context managers 以便后续清理
+            self.stdio_context = stdio_client(server_params)
+            self.read_stream, self.write_stream = await self.stdio_context.__aenter__()
+
+            # 创建会话
+            self.session_context = ClientSession(self.read_stream, self.write_stream)
+            self.mcp_session = await self.session_context.__aenter__()
+
+            # 初始化会话
+            await self.mcp_session.initialize()
+
+            # 获取可用工具
+            tools_list = await self.mcp_session.list_tools()
+
+            # 转换为 OpenAI 工具格式
+            for tool in tools_list.tools:
+                self.available_tools.append({
+                    "type": "function",
+                    "function": {
+                        "name": tool.name,
+                        "description": tool.description,
+                        "parameters": tool.inputSchema
+                    }
+                })
+
+            print(f"✅ 已连接！可用工具: {[t['function']['name'] for t in self.available_tools]}\n")
+
+        except Exception as e:
+            print(f"❌ 连接 MCP 服务器失败: {e}")
+            print("\n💡 可能的原因:")
+            print(f"  1. 服务器文件不存在: {server_script}")
+            print("  2. 服务器启动失败（检查 mcp_math_server.py 是否有语法错误）")
+            print("  3. Python 依赖缺失（需要 pip install mcp）")
+            raise
+
+    async def disconnect_mcp_server(self):
+        """断开 MCP 服务器连接"""
+        try:
+            if hasattr(self, 'session_context'):
+                await self.session_context.__aexit__(None, None, None)
+            if hasattr(self, 'stdio_context'):
+                await self.stdio_context.__aexit__(None, None, None)
+        except Exception as e:
+            print(f"⚠️  断开连接时出错: {e}")
+
+    async def call_mcp_tool(self, tool_name: str, arguments: dict) -> str:
+        """调用 MCP 工具"""
+        print(f"🔧 调用工具: {tool_name}")
+        print(f"   参数: {json.dumps(arguments, ensure_ascii=False)}")
+
+        result = await self.mcp_session.call_tool(tool_name, arguments)
+
+        # 提取文本结果
+        if result.content:
+            result_text = result.content[0].text
+            print(f"   结果: {result_text}\n")
+            return result_text
+
+        return "工具调用失败"
+
+    async def chat(self, user_message: str) -> str:
+        """处理用户消息（支持工具调用）"""
+        # 添加用户消息到历史
+        self.conversation_history.append({
+            "role": "user",
+            "content": user_message
+        })
+
+        # 调用 LLM API
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=self.conversation_history,
+            tools=self.available_tools if self.available_tools else None, # 注意这里是 function calling 来实现
+            tool_choice="auto" if self.available_tools else None,
+        )
+
+        # 处理响应
+        assistant_message = response.choices[0].message
+        if assistant_message.tool_calls:
+            return await self.handle_tool_calls(assistant_message)
+        else:
+            # 没有工具调用，直接返回文本
+            response_text = assistant_message.content or ""
+
+            # 添加助手回复到历史
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": response_text
+            })
+
+            return response_text
+
+    async def handle_tool_calls(self, assistant_message):
+        """
+        可能会多次调用工具，才能解决，所以应该是递归的形式。直到 LLM 不再调用 tool
+        """
+        # 如果 LLM 想要使用工具
+        print ("   ---")
+        if assistant_message.tool_calls:
+            # 添加助手的工具调用请求到历史
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": assistant_message.content,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments
+                        }
+                    }
+                    for tc in assistant_message.tool_calls
+                ]
+            })
+
+            # 执行所有工具调用
+            for tool_call in assistant_message.tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments)
+
+                # 调用 MCP 工具
+                tool_result = await self.call_mcp_tool(function_name, function_args)
+
+                # 添加工具结果到历史
+                self.conversation_history.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": function_name,
+                    "content": tool_result
+                })
+
+            # 让 LLM 根据工具结果生成最终回复
+            final_response = self.client.chat.completions.create(
+                model=self.model,
+                messages=self.conversation_history,
+                tools=self.available_tools,
+            )
+
+            final_message = final_response.choices[0].message
+            final_text = final_message.content or ""
+            still_need_func_call = 0
+            if final_response.choices[0].message.tool_calls:
+                still_need_func_call = 1
+            if still_need_func_call and final_text:
+                print ("   llm_out <<<", final_text, ">>>")
+
+            if final_response.choices[0].message.tool_calls:
+                return await self.handle_tool_calls(final_response.choices[0].message)
+
+            # 添加最终回复到历史
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": final_text
+            })
+
+            #print (" func call finished ..")
+            return final_text
+
+    def clear_history(self):
+        """清空对话历史"""
+        self.conversation_history = []
+        print("🗑️  对话历史已清空\n")
+
+async def main():
+
+    api_key = "sk-XXXXXX"
+    base_url = "https://api.deepseek.com/v1"
+    model = "deepseek-chat"
+
+    assistant = AIAssistantWithMCP(api_key=api_key, base_url=base_url, model=model) # 创建 AI 助手
+    await assistant.connect_mcp_server("mcp_math_server.py") # 连接 MCP 服务器
+    print (" cmd: exit|clear")
+
+    # 交互模式
+    while True:
+        try:
+            user_input = input("用户: ").strip()
+
+            if not user_input:
+                continue
+
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                print("\nexit..")
+                break
+
+            if user_input.lower() == 'clear':
+                assistant.clear_history()
+                continue
+
+            response = await assistant.chat(user_input)
+            print(f"助手: {response}")
+
+        except KeyboardInterrupt:
+            print("再见！KeyboardInterrupt")
+            break
+        except Exception as e:
+            print(f"错误: {e}")
+            import traceback
+            traceback.print_exc()
+            print()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+```
+
+执行记录：
+
+<img width="1332" height="1054" alt="image" src="https://github.com/user-attachments/assets/8ef9fef6-ae78-4b13-811d-606835f09375" />

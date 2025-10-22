@@ -251,15 +251,17 @@ https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview#single-too
 ============
 
 # 示例
+
+下面是个简单示例。注意：给了 LLM func calling 结果后，LLM 可能仍然选择继续 func call，不是一次 func call 就拿到结果了。
+
 ```
 import os
 import json
 import datetime
-import requests 
+import requests
 
 API_KEY = "sk-XXX"
 BASE_URL = "https://xxxx.com/v1/chat/completions"
-
 
 # 定义函数 schema
 functions = [
@@ -354,7 +356,7 @@ def run_chat():
             })
 
             # 再发一次，把函数结果返回给模型生成自然语言回答
-            final = call_llm(messages)
+            final = call_llm(messages) # NOTE!!: 实际中，有可能 LLM 返回继续做 function calling。所以是应该检查这点的，要对该过程递归，直到没有 func calling 为止。
             print ('  call_LLM_again', final)
             if final:
                 reply = final["choices"][0]["message"]["content"]

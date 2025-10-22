@@ -248,4 +248,138 @@ https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview#single-too
 
 ![image](https://github.com/user-attachments/assets/c3cbcb9f-09e2-4e95-b075-2a06e6fa5b16)
 
---- 
+============
+
+# 示例
+```
+import os
+import json
+import datetime
+import requests 
+
+API_KEY = "sk-XXX"
+BASE_URL = "https://xxxx.com/v1/chat/completions"
+
+
+# 定义函数 schema
+functions = [
+    {
+        "name": "calculate",
+        "description": "执行一个数学表达式，返回结果",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "expr": {
+                    "type": "string",
+                    "description": "数学表达式，例如 '3+4*2'"
+                }
+            },
+            "required": ["expr"]
+        }
+    },
+    {
+        "name": "get_current_date_time",
+        "description": "获取当前系统日期与时间（2022-02-22 01:22:33格式）。",
+        "parameters": {
+            "type": "object",
+            "properties": {}
+        }
+    }
+]
+
+def calculate(expr: str):
+    """执行字符串表达式，返回结果"""
+    local_vars = {}
+    exec(f"a = {expr}", {}, local_vars)
+    print ("LLLexpr", expr, "ans", local_vars["a"])
+    return local_vars["a"]
+
+def get_current_time():
+    """返回当前系统时间字符串"""
+    now = datetime.datetime.now()
+    return now.strftime("%Y-%m-%d %H:%M:%S")
+
+def call_llm(messages):
+    """发起 POST 请求"""
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {API_KEY}",
+    }
+    payload = {
+        "model": "gpt-4.1",  # 改成你的模型名称
+        "messages": messages,
+        "functions": functions,
+        "function_call": "auto",
+    }
+
+    resp = requests.post(BASE_URL, headers=headers, data=json.dumps(payload))
+    if resp.status_code != 200:
+        print("请求失败:", resp.status_code, resp.text)
+        return None
+    return resp.json()
+
+def run_chat():
+    messages = [{"role": "system", "content": "你是一个能计算数学表达式的助手"}]
+
+    while True:
+        user_input = input("你：").strip()
+        if user_input.lower() in ("退出", "exit", "quit"):
+            print("系统：再见！")
+            break
+
+        messages.append({"role": "user", "content": user_input})
+        resp = call_llm(messages)
+        print ("  call_llm")
+        if not resp:
+            continue
+
+        message = resp["choices"][0]["message"]
+        print ('  first_call_result', message)
+
+        # 检查是否触发 function call
+        if "function_call" in message:
+            func_name = message["function_call"]["name"]
+            args = json.loads(message["function_call"]["arguments"])
+            if func_name == "calculate":
+                result = calculate(args["expr"])
+            elif func_name == "get_current_date_time":
+                result = get_current_time()
+            else:
+                result = f"未知函数: {func_name}"
+
+            messages.append({
+                "role": "function",
+                "name": "calculate",
+                "content": str(result)
+            })
+
+            # 再发一次，把函数结果返回给模型生成自然语言回答
+            final = call_llm(messages)
+            print ('  call_LLM_again', final)
+            if final:
+                reply = final["choices"][0]["message"]["content"]
+                print("助手：", reply)
+        else:
+            print("助手：", message.get("content"))
+
+
+if __name__ == "__main__":
+    run_chat()
+```
+
+执行：
+
+``` 
+你：小王去买菜，一斤白菜一块九毛二，买了二斤八两，一共多少钱
+  <<  下面是 functional calling 的两次过程
+  call_llm 
+  first_call_result {'role': 'assistant', 'content': None, 'function_call': {'name': 'calculate', 'arguments': '{"expr":"1.92 * (2 + 8/16)"}'}, 'refusal': None, 'annotations': []}
+LLLexpr 1.92 * (2 + 8/16) ans 4.8
+  call_LLM_again {'id': 'chatcmpl-CTJvGFfYOxyBOkATUJhSbpaI45mbs', 'object': 'chat.completion', 'created': 1761104130, 'model': 'gpt-4.1-2025-04-14', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': '一斤白菜1.92元，买了二斤八两（2.8斤），总价计算如下：\n\n1.92 × 2.8 = 5.376元\n\n所以一共需要5.38元（四舍五入到分）。', 'refusal': None, 'annotations': []}, 'logprobs': None, 'finish_reason': 'stop'}], 'usage': {'prompt_tokens': 132, 'completion_tokens': 58, 'total_tokens': 190, 'prompt_tokens_details': {'cached_tokens': 0, 'audio_tokens': 0}, 'completion_tokens_details': {'reasoning_tokens': 0, 'audio_tokens': 0, 'accepted_prediction_tokens': 0, 'rejected_prediction_tokens': 0}}, 'system_fingerprint': 'fp_f99638a8d7'}
+  >>
+助手： 一斤白菜1.92元，买了二斤八两（2.8斤），总价计算如下：
+
+1.92 × 2.8 = 5.376元
+
+所以一共需要5.38元（四舍五入到分）。
+```

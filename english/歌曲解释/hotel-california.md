@@ -1,7 +1,7 @@
 ```
 On a dark desert highway cool wind in my hair
 Warm smell of colitas rising up through the air      # 空气中弥漫着大麻花蕾的温暖香气。在加州、墨西哥一带的俚语中，“colitas” 常指大麻植株顶端的小花蕾 —— 也就是大麻中最浓香、最具效力的部分。
-Up ahead in the distance I saw a shimmering light    # shimmering：闪烁的、闪闪发光的、微微发亮的
+Up ahead in the distance I saw a shimmering light    # up ahead：在前方；in the distance：在远处、在远方；shimmering：闪烁的、闪闪发光的、微微发亮的
 My head grew heavy and my sight grew dim
 I had to stop for the night
 

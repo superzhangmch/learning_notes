@@ -80,3 +80,40 @@ kube-system
 kube-public
 
 你创建 Pod、Deployment 时都属于某个 namespace。
+
+### pod
+
+Pod 是什么？（最小运行单位）
+
+Pod = Kubernetes 运行你的容器的最小单位。
+
+每个 Pod：有自己的 IP,自己的网络环境,自己的文件系统
+
+可以包含 1~多个 container（通常 1 个）
+
+- Pod = mini 虚拟机环境
+- Container = 在里面跑的进程
+
+你实际运行的是容器，但你管理的是 Pod。
+
+### Container
+
+Container = 你的应用实际运行的地方（隔离进程）。
+
+是由镜像启动的, 在 Pod 内运行. 内部 rootfs 独立,使用宿主机 kernel, 网络由 Pod 提供
+
+一般一个 Pod 就一个 container（最佳实践）。有时会多个（sidecar、日志代理等）。
+
+```
+Namespace
+└── Deployment
+      └── ReplicaSet
+            └── Pod
+                 └── Container
+Node（实际机器）
+└── 运行 Pod
+
+Service
+└── 为一组 Pod 提供一个统一入口
+```
+

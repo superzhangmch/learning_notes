@@ -161,11 +161,60 @@ containerd 才是 Docker 内部真正用来运行容器的底层部分。
 
 note: 
 - "Kubernetes 不支持 Docker" ≠ "Kubernetes 不支持 Docker 镜像"
-
+```
 | 概念                 |  说明                  | Kubernetes 支持？       |
 ｜---------------------|-----------------------|------------------------|
 | Docker 镜像格式       | OCI 标准的容器镜像       | ✅ 完全支持             |
 | Docker Engine 运行时  | Docker daemon (dockerd) | ❌ 已移除 (K8S 1.24+) |
+```
+
+```
+  1. Kubernetes 移除的是什么？
+
+  Kubernetes 1.20 之前：
+  ┌─────────────────────────────────────┐
+  │ Kubernetes                          │
+  │   ↓                                 │
+  │ Dockershim (Docker 兼容层)           │
+  │   ↓                                 │
+  │ Docker Engine (dockerd)             │
+  │   ↓                                 │
+  │ containerd                          │
+  │   ↓                                 │
+  │ 运行容器                             │
+  └─────────────────────────────────────┘
+
+  Kubernetes 1.24+ (现在)：
+  ┌─────────────────────────────────────┐
+  │ Kubernetes                          │
+  │   ↓                                 │
+  │ CRI (容器运行时接口)                  │
+  │   ↓                                 │
+  │ containerd / CRI-O                  │
+  │   ↓                                 │
+  │ 运行容器                             │
+  └─────────────────────────────────────┘
+
+  移除的：Dockershim（Docker 的兼容层）
+  保留的：containerd（Docker 的底层运行时）
+
+  2. Docker 镜像为什么还能用？
+
+  因为 OCI (Open Container Initiative) 标准：
+
+  Docker 镜像格式 = OCI 镜像格式
+         ↓
+  所有容器运行时都支持 OCI 标准
+         ↓
+  containerd ✅ 支持
+  CRI-O     ✅ 支持
+  Docker    ✅ 支持
+  Podman    ✅ 支持
+```
+类比：
+  - 镜像格式 = MP3 音频文件
+  - 运行时 = 播放器（iTunes、VLC、Spotify）
+  - Kubernetes 移除了一个播放器，但 MP3 文件仍然通用
 
 
 ----

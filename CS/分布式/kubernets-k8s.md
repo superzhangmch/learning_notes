@@ -198,7 +198,7 @@ Azure 上购买的 Cosmos DB 不是以 StatefulSet 启动的。StatefulSet 是 K
 
 ----
 
-# client
+# 关于 k8s 的 client
 
 ### k9s
 
@@ -207,3 +207,36 @@ Azure 上购买的 Cosmos DB 不是以 StatefulSet 启动的。StatefulSet 是 K
 `kubectl config use-context $content_name` 的执行局结果（不做修改），会影响 `k9s` 的查看吗?
 
 会影响。因为 k9s 本质上是基于 kubectl 的 ~/.kube/config 文件运行的。kubectl 指向哪个集群，k9s 默认也会指向哪个集群
+
+----
+
+# k8s 的一些原理
+
+### 最终一致
+
+Kubernetes 是一个“最终一致性系统”，而不是按步执行命令的系统。
+
+Kubernetes 不执行命令，它只不断比较：“期望状态（你写在 YAML 里的）” 和 “当前实际状态”，然后让系统自动把实际状态调和到期望状态。【你告诉它：`我要 5 个副本（replicas = 5）`,它会不断检查集群实际状态：`当前 3 个？那就再调度 2 个;如果死掉 1 个？它再补 1 个`。它永远尝试让实际状态逼近目标状态】这是 Google 在 Borg 时代学到的：分布式系统不能依赖即时命令（imperative），必须基于最终一致性。
+
+Kubernetes 永远不执行一次性命令，只管理状态。
+
+### master
+
+```
+             Control Plane（分布式，可多副本）
+   ┌──────────────┬───────────────┬───────────────┐
+   │  API Server  │   Controller  │   Scheduler   │
+   └──────────────┴───────────────┴───────────────┘
+                       │
+                    etcd（强一致）
+                       │
+             Worker Nodes（Kubelet + KubeProxy）
+
+```
+
+Kubernetes 的 master 组件中：
+- API Server 多个 master 同时发挥作用（全部 active）
+- Scheduler / Controller Manager 是单 leader 工作；
+- etcd 是多节点协作，但只有 1 个 leader 负责写入。
+
+Master（控制平面）和 Worker（节点）不是两套完全独立的代码，而是“同一套 Kubernetes 项目里的不同组件”，分别运行在不同节点上。

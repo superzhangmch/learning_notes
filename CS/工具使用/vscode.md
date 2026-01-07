@@ -155,3 +155,10 @@ VS Code 用的是 **分层语义模型**：
 👉 本质：
 
 > **把“高风险工程操作”变成低风险**
+
+-------
+
+# JetBrains
+
+JetBrains 也是一个类似 vscode 的编辑器,但是功能更强大. vscode 是和 lsp server交互, 而 jetBrains 则是内建对代码做了深层解析. 据说因为和 IDE UI 界面绑定太深, 不容易 API 化, 所以它的内核的那些功能难以被 coding 的 LLM 用到.
+

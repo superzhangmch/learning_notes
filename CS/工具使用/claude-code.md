@@ -9,6 +9,8 @@
 
 ### claude code 解读
 - https://zhuanlan.zhihu.com/p/1961002540868024184
+- https://zhuanlan.zhihu.com/p/1951279182551188824
+- https://zhuanlan.zhihu.com/p/1951509776757429542
 
 ### 关于 TodoWrite tool
 

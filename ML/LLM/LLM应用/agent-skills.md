@@ -17,7 +17,7 @@
 
 skills 根目录下, 放一堆子目录. 每个代表一个 skill. 每个子目录内有一个 SKILL.md: 头部以固定格式存有 skill name 与 skill description 信息, 然后是关于该 skill 的其他描述. 如果涉及到别的, 在 skill.md 中指明, 同时把相关文件放到 skill 目录下即可: 
 
-<img width="553" height="171" alt="image" src="https://github.com/user-attachments/assets/55070314-642e-48c8-b8cd-85dcd392efc0" />
+<img width="503" height="210" alt="image" src="https://github.com/user-attachments/assets/39e86aa7-fde8-4785-ba17-2e9c5921ef75" />
 
 SKILL.md 例子: 
 ```
@@ -53,6 +53,12 @@ How skills work: Skills use progressive disclosure to manage context efficiently
 - Activation: When a task matches a skill’s description, the agent reads the full SKILL.md instructions into context.
 - Execution: The agent follows the instructions, optionally loading referenced files or executing bundled code as needed.
 ```
+
+下面图来自 https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview: 
+
+<img width="855" height="483" alt="image" src="https://github.com/user-attachments/assets/d3689c73-38c3-4122-84e4-a846e9bef8ce" />
+
+如上图, 可以看到 skills 拼到了 sys prompt, LLM 通过 tool call 使用 skill.
 
 ### 参考
 - https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview

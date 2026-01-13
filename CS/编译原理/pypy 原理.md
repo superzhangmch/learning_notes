@@ -1,8 +1,8 @@
 by chatgpt
 
-PyPy 技术原理总结文档
+# PyPy 技术原理总结文档
 
-1. PyPy 是什么？
+### 1. PyPy 是什么？
 
 PyPy 是 Python 语言的一种实现（implementation），与 CPython 处于同一层级。
 	•	CPython：官方参考实现，用 C 写
@@ -11,10 +11,9 @@ PyPy 是 Python 语言的一种实现（implementation），与 CPython 处于�
 PyPy 的目标不是“重新定义 Python”，而是：
 
 在完全保持 Python 语义的前提下，显著提升执行性能
+ 
 
-⸻
-
-2. PyPy 不是“Python 写的 Python”
+### 2. PyPy 不是“Python 写的 Python”
 
 一个常见误解是：
 
@@ -30,9 +29,7 @@ PyPy = 用 Python 解释 Python
 	•	不是解释执行 RPython
 	•	而是已经被编译好的 native binary
 
-⸻
-
-3. 什么是 RPython？
+### 3. 什么是 RPython？
 
 RPython（Restricted Python） 是 Python 的一个受限子集：
 
@@ -60,9 +57,8 @@ RPython toolchain 可以：
 	•	生成 C / LLVM IR
 	•	最终编译为机器码
 
-⸻
 
-4. PyPy 的构建流程（非常关键）
+### 4. PyPy 的构建流程（非常关键）
 
 RPython 写的 PyPy 源码
         ↓
@@ -77,10 +73,9 @@ PyPy 可执行文件（机器码）
 👉 PyPy 自身 = 机器码程序
 
 这一点和 CPython 完全一致。
+ 
 
-⸻
-
-5. PyPy 的核心组成
+### 5. PyPy 的核心组成
 
 5.1 解释器（Interpreter）
 	•	用 RPython 写
@@ -91,8 +86,7 @@ PyPy 可执行文件（机器码）
 	•	字节码执行
 
 解释器是 第一公民。
-
-⸻
+ 
 
 5.2 Meta-Tracing JIT（PyPy 的核心创新）
 
@@ -114,10 +108,9 @@ PyPy 的 JIT 不是传统“函数级 JIT”，而是：
 	•	而是 “解释器执行 Python 的过程”
 
 这就是 meta-tracing 中的 “meta”。
+ 
 
-⸻
-
-6. PyPy 为什么快？
+### 6. PyPy 为什么快？
 
 6.1 原因不是“用 Python 写的”
 
@@ -133,10 +126,9 @@ PyPy 的 JIT 不是传统“函数级 JIT”，而是：
 运行时系统中同时存在：
 	1.	PyPy 解释器自身的机器码
 	2.	JIT 动态生成的机器码（热点 Python 代码）
+ 
 
-⸻
-
-7. PyPy ≠ 传统编译器
+### 7. PyPy ≠ 传统编译器
 
 7.1 和传统编译器的区别
 
@@ -162,10 +154,9 @@ JIT 编译成机器码
 
 👉 你不是在写编译器
 👉 你是在写一个“可被追踪的解释器”
+ 
 
-⸻
-
-8. PyPy 和 “编译器前端” 的关系
+### 8. PyPy 和 “编译器前端” 的关系
 
 你可以这样理解：
 	•	PyPy 包含：
@@ -182,10 +173,9 @@ JIT 编译成机器码
 
 PyPy 是一个用 RPython 写的解释器 + 运行时，
 JIT 编译器是从解释器执行过程中自动“生长”出来的。
+ 
 
-⸻
-
-9. 和 CPython 的对比总结
+### 9. 和 CPython 的对比总结
 
 维度	CPython	PyPy
 实现语言	C	RPython
@@ -194,11 +184,9 @@ JIT 编译器是从解释器执行过程中自动“生长”出来的。
 JIT	无	有（meta-tracing）
 C 扩展兼容	最好	较差（ABI 不同）
 热点性能	一般	通常更快
+ 
 
-
-⸻
-
-10. PyPy 的局限
+### 10. PyPy 的局限
 
 10.1 C 扩展兼容性
 	•	CPython 扩展依赖 CPython 内部 ABI
@@ -210,10 +198,9 @@ C 扩展兼容	最好	较差（ABI 不同）
 10.2 启动与冷代码
 	•	启动慢
 	•	短脚本可能不如 CPython
+ 
 
-⸻
-
-11. 一句话终极总结
+### 11. 一句话终极总结
 
 PyPy 是一个用 RPython 写的 Python 解释器，
 通过 meta-tracing JIT，把“解释器执行 Python 的过程”

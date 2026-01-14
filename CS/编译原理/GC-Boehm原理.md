@@ -1,4 +1,15 @@
-by claude
+- 扫描所有可能存地址的地方（栈、寄存器、全局变量），只要像指针的数值(哪怕是个 int 整数)就当作根，不需要编译器提供精确指针集。
+- 用 GC_MALLOC/GC_REALLOC/GC_STRDUP 等替代 malloc 系列，它们分配自 GC 管理的堆；内存不再显式 free。它回收的是 heap mem, 乃对 malloc/free 的高级封装, 所以c/c++ 程序也能用它(从而也能垃圾回收了)
+- 基本原理:
+  - allocated heap mem blocs = list of [mem_offset, mem_len]
+  - 首先从栈、寄存器、全局变量等地方扫描出疑似指针. 只要落在任意一个 [heap_mem_block_addr_start, heap_mem_block_addr_end] 的, 就看是扫描这个 heap block. 从这个block 里 8个 8个 字节地 san, 从而发现关联到的更多 heap-block (这样heap 上的链表, 就可以全扫出了)
+    - 疑似指针的判断条件: 落在已分配对象区间内 +（可选）对齐/边界条件”等过滤
+  - 基本假设是指针存储时,在内存里都 8字节 align 了
+  - 缺陷: Boehm GC 通常是非移动（不 compaction），所以碎片问题可能比移动式 GC 严重。
+
+====
+
+下面 by claude
 
 Boehm GC 用的是保守式 GC（Conservative GC），它的工作原理很巧妙但有局限性。
 

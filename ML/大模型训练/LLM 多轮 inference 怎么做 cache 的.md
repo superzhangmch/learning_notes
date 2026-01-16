@@ -35,3 +35,9 @@ chatgpt 回答:
 ✔️ **负载均衡 / 调度层把带相同前缀的请求路由到同一个 vLLM 节点**
 → 相当于 “GPU 本地 + sticky routing / prefix-aware routing”（方案 A）。
 
+----
+
+chatgpt deep-research:
+
+- 主流是 A：GPU 本地 KV Cache +（强/弱）Sticky Routing。
+- 原因很简单：KV Cache 体积大、读写频繁、对延迟极其敏感，把它放到远端分布式缓存里，网络开销和工程复杂度通常得不偿失。

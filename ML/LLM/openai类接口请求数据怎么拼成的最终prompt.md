@@ -51,7 +51,7 @@ user_query: 请问。。。
 
 ----
 
-### 追加：
+### chatML 
 
 另外后来了解到： chatML 格式，就是干这个的。最后就是转成了该格式。
 
@@ -79,3 +79,14 @@ France won the 2018 FIFA World Cup.
 ```
 
 transformers 库里的 text = processor.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt") 就是作这样的转化的。
+
+###  function calling 怎么拼进去的
+
+When Claude/GPT etc processes a request with messages + tools, what is the actual token sequence order in the internal context window? Specifically: 
+```
+- Option A: [tools] → [system msg] → [user/assistant msgs...]
+- Option B: [system msg] → [tools] → [user/assistant msgs...]
+- Option C: [system msg] → [user/assistant msgs...] → [tools]
+```
+
+答案是: 一般都用 B. 这样好处是, tool 定义可以走 prompt前缀cache. 坏处是如果工具太多, 不能动态选用不同的工具

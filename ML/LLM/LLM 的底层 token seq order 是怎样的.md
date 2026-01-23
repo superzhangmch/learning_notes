@@ -89,4 +89,4 @@ When Claude/GPT etc processes a request with messages + tools, what is the actua
 - Option C: [system msg] → [user/assistant msgs...] → [tools]
 ```
 
-答案是: 一般都用 B. 这样好处是, tool 定义可以走 prompt前缀cache. 坏处是如果工具太多, 不能动态选用不同的工具
+答案是: 一般都用 B. 这样好处是, tool 定义可以走 prompt前缀cache. 坏处是长 session 场景下, 如果工具太多(加入几百几千), 不能动态选用不同的工具(比如根据用户的请求query, 动态搜索出最合适的那几个工具). 否则会让cache 命中率大降.

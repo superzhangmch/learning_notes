@@ -6,6 +6,7 @@
     - A stall selling fruits and vegetables at a farmers’ market.
     - A stall at a flea market where second-hand goods are sold.
   - ![image](https://github.com/user-attachments/assets/437a445e-df31-4da4-87d9-c6120b001598)
+  - 公共厕所的隔间: stall
 
 - Stand（展示架/摊位）
   - 结构和用途：Stand 是一种展示商品的架子、摊位或者固定位置。它可以是临时或永久的，通常用于展示商品或信息，可能是一个简化版的摊位或展台。Stand 比较开放，通常没有围栏或墙壁，适合产品展示。

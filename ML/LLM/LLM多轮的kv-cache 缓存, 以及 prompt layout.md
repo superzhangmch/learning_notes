@@ -1,3 +1,9 @@
+### prompt lay out
+
+LLM 的 token stream 的 lay out 中: system-prompt 一般放在 user-prompt 的前面. 所以, 对于系统时间等易变内容, 如果放到 sys-prompt, 那么会导致 prefix-cache 失效. 所以最好放到最后一轮 role=user 的 request 的 prompt 里.
+
+### kv-cache
+
 LLM 多轮交互中，新一轮需要把过去几轮的交互也发给llm，那么llm server 端怎么处理的？会有某种 cache 吗？按说也可以有的。
 
 根据 https://api-docs.deepseek.com/zh-cn/guides/kv_cache 的 “上下文硬盘缓存”：

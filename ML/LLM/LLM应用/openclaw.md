@@ -1,8 +1,8 @@
-openclaw 允许从不同的渠道使用: 可以在不同的聊天工具(whatapp, slack), 在不同的聊天群里把它拉进去, 甚至其他使用入口.
+openclaw 允许从不同的渠道使用: 不同的聊天工具/聊天群里把它拉进去, 甚至其他使用入口.
 
-这些不同来演的消息, 经过一个网关层后, 会把消息处理成统一格式, 并根据消息来源作路由, 打向不同的 session. 而每个 session 是一个 LLM agent loop. 也就是并不是一个 openclaw instance 全局只有一个 llm loop.
+这些不同来源的消息, 经过一个中间层, 会把消息处理成统一格式, 并根据消息来源作路由, 打向不同的 session. 而每个 session 对应一个 LLM agent loop(也就是并不是一个 openclaw instance 全局只有一个 llm loop).
 
-这样对于每个 session 来说, 其实这才算是一个标准的一般意义上的 agent 流程. 
+也就是说, 虽然这个 bot 只是自己使用的, 但并不是只有一个 llm loop. 每个session, 才算是一个标准的一般意义上的 agent 流程.
 
 ### 信息隔离, 以及 agent 与 session 关系
 

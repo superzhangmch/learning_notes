@@ -1,4 +1,6 @@
-### system prompt 怎么和chat 记录拼一起, 形成最终的塞给 LLM 的 prompt 的？
+一般首先是 system prompt, 然后是 user-prompt.(所以为了高效利用 prefix cache, 应该尽量令 sys prompt 不变)
+
+### system prompt 怎么和 chat 记录拼一起, 形成最终的塞给 LLM 的 prompt 的？
 
 虽然可以猜测怎么做，还是问问 LLM。
 
@@ -28,6 +30,7 @@ User: [Current User Input]
 如果聊天过长，怎么截断？AI 说多种截断法，总之会保证 system prompt 不被截走。
 
 ### 实际应用中怎么组织 prompt
+
 人设、要求、输出格式等，放入 system prompt 是很自然想法。但按照上面拼接法，如果会话历史过长，sys_prompt 距离最后的用户query，以及最近的会话历史就会过远，于是 sys_prompt 的遵从就会变差。这时候可以这样组织 prompt：
 ```
 【System Prompt BEGIN

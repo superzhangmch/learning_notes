@@ -1,13 +1,12 @@
-openclaw 允许从不同的渠道使用: 不同的聊天工具, 以及在不同的聊天群里把它拉进去, 甚至其他使用入口.
+openclaw 允许从不同的渠道使用: 可以在不同的聊天工具(whatapp, slack), 在不同的聊天群里把它拉进去, 甚至其他使用入口.
 
 这些不同来演的消息, 经过一个网关层后, 会把消息处理成统一格式, 并根据消息来源作路由, 打向不同的 session. 而每个 session 是一个 LLM agent loop. 也就是并不是一个 openclaw instance 全局只有一个 llm loop.
 
-这样对于每个 session 来说, 其实这才算是一个标准的一般意义上的 agent. 
+这样对于每个 session 来说, 其实这才算是一个标准的一般意义上的 agent 流程. 
 
+### 信息隔离, 以及 agent 与 session 关系
 
-就 openclaw 来说, 记忆会存下来, 用的时候拼入. 怎么避免记忆内容在不同session 泄漏的? 从代码看，OpenClaw 并没有做 session 级别的记忆隔离。记忆（src/memory/manager.ts）是 per-agent 的，用  agentId + workspaceDir 作为缓存 key。同一个 agent 下的所有 session 共享同一份记忆索引。这是 by design，不是泄漏——因为记忆代表的是"这个 agent 知道什么"，不是"某次对话说了什么"。真正按 session 隔离的是 transcript（对话历史）。
-
-### agent 与 session 关系
+就 openclaw 来说, 记忆会存下来, 用的时候拼入. 怎么避免记忆内容在不同session 泄漏的? 它并没有做 session 级别的记忆隔离。记忆是 per-agent 的，用 agentId + workspaceDir 作为缓存 key。同一个 agent 下的所有 session 共享同一份记忆索引。这是 by design，不是泄漏——因为记忆代表的是"这个 agent 知道什么"，不是"某次对话说了什么"。真正按 session 隔离的是 transcript（对话历史）。
 
 在 openclaw 里, 同一个 Agent, 代表了同一个人格/角色. 所以记忆隔离, 其实是 agent 级别的. 同一个 agent 可以有不同 session, 每个session 可以是关于不同地方的(不同 WhatsApp 群 / 不同 Slack thread) —— 但是就像一个人可以加入不同app的不同群组.
 
@@ -65,6 +64,7 @@ OpenClaw 实例
 
 所以, 请求路由到不同 session，其实是：路由先按 agent 分，再按 sender/group 分出 session。记忆共享发生在 agent 层级，对话隔离发生在 session 层级。
 
+这样, 根本上其实难以避免这样的事情: agent 在一个群里听到什么, 在另一个群里泄漏了出去.
 
 ### 关于时间驱动,永不退出
 

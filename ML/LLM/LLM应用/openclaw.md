@@ -66,9 +66,48 @@ OpenClaw 实例
 
 这样, 根本上其实难以避免这样的事情: agent 在一个群里听到什么, 在另一个群里泄漏了出去.
 
-### 关于时间驱动,永不退出
+### 关于记忆
 
-openclaw 是周期timer + event + 定时crotab 等驱动的, 这是说代码框架层, 说的并不是每个 session. timer + event + cron 驱动的是 heartbeat runner（定期唤醒 agent 做自主检查）和 cron service（定时任务）。而每个 session 内部的 LLM loop 本身就是个同步式的 while(hasToolCalls) 循环，不涉及 timer 向驱动。用户消息进来后直接触发一次 LLM loop 跑完就结束。
+- 除非用户主动要求, 或者要达到 context limit, 否则不会触发主动的重要信息的提取与记忆写入. (也就是不会像 chatgpt 那样默默提取记忆).
+- context limit 触达时: llm messages 会被summary 缩短后放回 prompt, 同时把原始 msgs 追加写入session log 文件. 这和 claude code 基本一样. 
+  - 但是和 claude code 不同, openclaw 会对这些也构建Full-Text / embedding index(而非仅仅存档), 以便 model 在必要时通过 tool call 方式读取记忆.
+
+**(1). 索引了哪些内容（What gets indexed）**
+Memory 系统有 两个数据源（MemorySource）：
+
+1. "memory" — workspace 里的 Markdown 文件：
+  - <workspace>/memory.md（即 MEMORY.md）
+  - <workspace>/memory/**/*.md（所有子目录下的 .md 文件）
+  - settings.extraPaths 里配置的额外路径
+  - 这些就是用户/agent 手动维护的长期记忆笔记
+2. "sessions" — 会话 JSONL 文件：
+  - ~/.openclaw/agents/<agentId>/sessions/*.jsonl
+  - 提取所有 user 和 assistant 角色的原始消息文本（包括被 compaction 压缩掉的）
+
+两类内容都会被切分成 chunks，生成 embeddings 存入 SQLite 的向量表，同时也建 FTS5 全文索引。
+
+**(2). 如何使用索引的**
+
+通过 tool call（function call）。Agent 有两个内置工具：
+
+1. memory_search（src/agents/tools/memory-tool.ts:49-98）— 语义搜索。Agent 发送一个 query，系统对 embedding index + FTS index
+做混合检索，返回最相关的 snippets（带 path、行号、score）。工具描述里写的是 mandatory recall step，意思是 agent
+在回答关于历史工作、决策、偏好等问题前，被指示必须先调用这个工具。
+2. memory_get（src/agents/tools/memory-tool.ts:101-139）— 定点读取。在 memory_search 找到相关文件后，用这个工具按 path +
+行范围读取具体内容，避免一次注入太多文本。
+
+所以流程是：
+```
+用户提问 → Agent 判断需要回忆 → 调用 memory_search(query)
+→ 拿到 snippets + 文件路径 → 可选调用 memory_get(path, from, lines)
+→ 将检索结果纳入回答
+```
+
+完全是通过 tool call 驱动的，不是自动注入 prompt。
+
+### 关于时间 timer 驱动,永不退出咋做的
+
+openclaw 是周期 timer + event + 定时crotab 等驱动的, 这是说代码框架层, 说的并不是每个 session. timer + event + cron 驱动的是 heartbeat runner（定期唤醒 agent 做自主检查）和 cron service（定时任务）。而每个 session 内部的 LLM loop 本身就是个同步式的 while(hasToolCalls) 循环，不涉及 timer 向驱动。用户消息进来后直接触发一次 LLM loop 跑完就结束。
 
 参考:
 - https://zhuanlan.zhihu.com/p/2010385772486878215 (原始: https://ppaolo.substack.com/p/openclaw-system-architecture-overview )

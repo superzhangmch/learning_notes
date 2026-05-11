@@ -6,9 +6,24 @@ tailscale 可用于隧穿内网(穿越 NAT).
 
 它是基于端到端加密的, 所以安全有保障, 不怕数据泄漏.
 
+相比于 frp, 它的好处是, 不需要管理要用哪个端口等等网络细节. 开启后像水一样使用即可.
+
 ### 关于隧穿
 
 不考虑隧穿, 他就是个 VPN. 它的牛逼在于令两个节点的访问成本最小化: 如果能 NAT 穿越, 则直连; 否则自动降级成 DERP 中转模式, 且中转模式下, 仍然会自动选用通信成本最小的derp 节点. 这样同一个内网之间的机器上, 用它自动就是本地互联. 
+
+不是所有 NAT 都能穿越. 一般来说, 对一个路由器, 有两个卡点: NAT类型与 UPnP 的开启. 在机器所在的内网上, 执行 `tailscale netcheck` 后, 看 MappingVariesByDestIP(最好是false) / PortMapping(最好是 UPnP), 如果满足一个, 则就能成功. 
+
+<img width="1304" height="652" alt="image" src="https://github.com/user-attachments/assets/30cefa20-ff7e-4790-b35d-d0f9b1210ca8" />
+
+解释:
+
+<img width="1387" height="1279" alt="146" src="https://github.com/user-attachments/assets/1d7c9607-adf6-4367-8314-25e36564da93" />
+
+<img width="1042" height="414" alt="144" src="https://github.com/user-attachments/assets/cda51d56-a03c-4c3e-98e3-523c926a17a2" />
+
+<img width="1148" height="428" alt="145" src="https://github.com/user-attachments/assets/8752224a-bff5-40a1-b0ea-5c97d2fb72b1" />
+
 
 ### 网络协议
 

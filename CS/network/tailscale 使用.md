@@ -184,3 +184,13 @@ tailscale netcheck
 3. **阿里云安全组**别忘了开 UDP/3478，否则 STUN 不通，直连成功率下降。
 4. **国内云的 80/443 备案问题**：DERP 不走 HTTP 网页服务、不返回 HTML，理论上不触发备案校验，但谨慎起见可换非标准端口（如 `-a :8443`，记得 derpMap 里同步改 `DERPPort`）。
 5. 如果只想自己的 tailnet 走自建 DERP，可在 ACL 把 `OmitDefaultRegions` 设为 `true`，但建议保留官方 DERP 作为 fallback。
+
+----
+
+## 其他
+
+1. 两个节点之间, 一个可以公网访问, 另一个在不可打洞的 NAT 后面, 则可能实现直接的 UDP 访问.
+2. 两个节点之间, 如果需要借助于 DERP server, 则不再用 udp, 而是用 tcp
+3. 一个 tailscale 链路上的 server, 可以通过 tailscale 提供的 magicdns + tailscale 提供的官方 https 证书, 实现无弹窗(不可信任弹窗) https 访问. 需要在 tailscale admin page, 开启功能
+  - tailscale 节点可用 MagicDNS + 官方 HTTPS 证书,实现无警告(可信)HTTPS
+  - tailscale cert <name>.ts.net 签发的是真正的 Let's Encrypt 证书(不是自签),所以浏览器信任、不弹"不安全"警告。这也是我们最后在 mac-pro 上让 cc-web 直接 HTTPS 用的方式。

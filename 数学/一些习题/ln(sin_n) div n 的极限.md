@@ -1,6 +1,7 @@
 $\dfrac{\ln|\sin\ n|}{n}\to 0\ (n\to\infty,\ n\in\mathbb{N})$
 
---
+---
+
 下面来自AI. 
 
 这个结论**不是纯粹的分析事实，必须用到 $\pi$ 的丢番图性质**（ $\pi$ 不是 Liouville 数）。因为 $|\sin n|\le 1$ ， $\ln|\sin n|\le 0$ ，命题等价于

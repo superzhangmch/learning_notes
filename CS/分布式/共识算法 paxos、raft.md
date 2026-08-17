@@ -1,4 +1,4 @@
-<img width="886" height="924" alt="image" src="https://github.com/user-attachments/assets/b99b3510-fe1a-45ed-b8de-4c84822c5f53" /># 共识算法 paxos、 raft
+# 共识算法 paxos、 raft
 
 它不关心怎么保证分布式的 a=a+1 这类操作的事务性、原子性。而是关心分布式下怎么共识地执行一系列操作，保证最终每个分布式实例都执行了相同的命令序列。
 

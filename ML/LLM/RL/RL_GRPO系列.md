@@ -1,3 +1,11 @@
+## PPO
+
+PPO-llm-rlhf  是标准的 PPO RL 算法框架: actor/critic 模式. 每一token 就是一个 RL step. 
+
+见: https://zhuanlan.zhihu.com/p/715488196
+
+## GRPO
+
 ![image](https://github.com/user-attachments/assets/51282531-5e7b-45e4-9dc7-6be61cbbbb3c)
 
 单条数据的 G 个不同采样，决定出一个平均 reward。然后可以用它来得到G个采样各自的 advantage。critic model 计算出的 advantage, 也不过是作为 baseline 能提供平均值的估计; 既然多次采样能算出平均值, 就不用 critic model 好了——于是 grpo 省略了 critic model(或者说 value model).
@@ -30,4 +38,32 @@ PPO 是 per token per step RL 的. GRPO 和 PPO 有区别, 严格来说仍然是
     - 不看正则项, grpo 可以看作是最后一个 token step 才拿到 reward 的多step RL.
 
 ![image](https://github.com/user-attachments/assets/5dfd14e7-faae-438c-99b4-ad97b3122cd7)
+
+## DAPO
+
+<img width="1924" height="448" alt="image" src="https://github.com/user-attachments/assets/dce88d3e-fb0e-4895-b7eb-67689490aaa1" />
+
+对 GRPO 的改进. 
+
+1. 去掉 KL 项: 做长 CoT 推理训练时，模型的分布本来就会大幅偏离初始模型，KL 这个约束没有必要.
+2. 加补丁:
+ 
+| 补丁                            | 修的问题                                       | 做法                                      |
+|---------------------------------|------------------------------------------------|-------------------------------------------|
+| ① Clip-Higher（Decoupled Clip） | 熵塌缩：模型很快变得高度确定，不再探索         | 上下限分开设：ε_low = 0.2，ε_high = 0.28  |
+| ② Dynamic Sampling              | 零梯度组：全对或全错的组优势全是 0，白占 batch | 丢掉这些组，继续采样直到 batch 填满       |
+| ③ Token-level loss              | 长回答的 token 权重偏小                        | 整组所有 token 一起平均，不再先句内平均   |
+| ④ Overlong reward shaping       | 截断回答的奖励不准                             | 被截断的样本 mask 掉 loss，加上超长软惩罚 |
+
+- Clip-Higher: ε_low/ε_high = 0.2/0.2  => ε_low/ε_high = 0.2/0.28
+- Dynamic Sampling: G 次采样的 reward 都一样, 则这一组都不要了(没有信息增益, 学不到新东西)
+- Token-level loss:
+  - GRPO：先句内平均，再对样本平均（sample-level）, Loss := (1/G) · Σ_i [ (1/|o_i|) · Σ_t loss_{i,t} ]
+    - 每条回答先压成一个数，然后 G 条回答等权平均。不管长短，每条回答的总权重都是 1/G。
+  - DAPO：所有 token 放在一起平均（token-level）, Loss := (1 / Σ_i |o_i|) · Σ_i Σ_t loss_{i,t}
+    - 每个 token 的权重都相同，回答越长，总权重越大(回答长, 但是有对有错, 所以不能说鼓励长回答)。
+- Overlong reward shaping:
+  - Overlong Filtering（超长过滤）: 被截断的样本直接 mask 掉 loss，也就是这条样本仿佛看不见. 可以剔除.
+  - Soft Overlong Punishment（超长软惩罚）: 在硬上限之前设一个缓冲区，回答进入缓冲区后，按超出的长度线性扣分
+  - paper中: 超过 20480：被截断; 16384 个 token 以内：不罚; 16384 到 20480 之间：线性扣分，从 0 扣到 −1，例如 18432 个 token 扣 0.5
 

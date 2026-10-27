@@ -43,7 +43,9 @@ PPO 是 per token per step RL 的. GRPO 和 PPO 有区别, 严格来说仍然是
 
 <img width="1924" height="448" alt="image" src="https://github.com/user-attachments/assets/dce88d3e-fb0e-4895-b7eb-67689490aaa1" />
 
-对 GRPO 的改进. 
+如上图, r_{i,t}, A_{i,t} 和 GRPO 一样. 
+
+DAPO 乃对 GRPO 的改进.
 
 1. 去掉 KL 项: 做长 CoT 推理训练时，模型的分布本来就会大幅偏离初始模型，KL 这个约束没有必要.
 2. 加补丁:

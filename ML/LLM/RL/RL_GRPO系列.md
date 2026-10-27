@@ -4,6 +4,12 @@ PPO-llm-rlhf  是标准的 PPO RL 算法框架: actor/critic 模式. 每一token
 
 见: https://zhuanlan.zhihu.com/p/715488196
 
+下面是 GRPO 系列的. 另外还有 kimi 的 mirror-descent 法, 见: https://zhuanlan.zhihu.com/p/1894514919472358155 , 二者区别:
+- 都是对一个 prompt 采样n次的平均 reward, 来取代 value model 干的事
+- kimi-MD 比 GRPO 更省显存, 连 ref model 都不需要了. 它的 KL 是拿参数更新前的和之后的比.
+- GRPO 使用了 PPO 那样的 clip 法, 而 kimi-md 则不需要.
+- kimi-md 是 one-step RL, 而 GRPO 是token 粒度的多 step RL.
+
 ## GRPO
 
 ![image](https://github.com/user-attachments/assets/51282531-5e7b-45e4-9dc7-6be61cbbbb3c)

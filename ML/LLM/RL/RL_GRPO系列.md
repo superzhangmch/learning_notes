@@ -71,9 +71,7 @@ DAPO 乃对 GRPO 的改进.
 
 ## GSPO
 
-<img width="2418" height="948" alt="image" src="https://github.com/user-attachments/assets/d491267c-aef5-4985-b6e6-3edc5a8e3a88" />
-
-**GSPO 相比 GRPO 的改进, 一句话说就是, 不再区分一个sample 内的token之间如何, 只只看整段句子如何. 所以它的loss里, t 消失了. 为啥要这样:**
+**GSPO 相比 GRPO 的改进, 一句话说就是, 不再区分一个 sample 内的token之间如何, 只只看整段句子如何. 所以它的loss里, t 消失了. 为啥要这样:**
 
 1. token 级的重要性比值本身就不成立
 重要性采样的原理是：用行为分布（π_old）的很多样本求平均，再用比值去修正分布差异。GRPO 在每个 token 位置算 w_{i,t}，但在那个位置的条件分布上只有一个采样到的 token。只有一个样本，起不到分布修正的作用，比值只是给梯度乘上了一个随机的系数。这就是你记得的"token-wise 不靠谱"。
@@ -115,3 +113,11 @@ DAPO 乃对 GRPO 的改进.
 为什么用几何平均，而不用算术平均 (1/|y|)·Σ w_t：序列概率本来就是 token 概率的乘积，在 log 空间里求平均最自然，s_i 仍然对应"整句概率比"这个含义，只是按长度归一了。
 - 另外, 算术平均容易被单个异常大的 w_t 主导。几何平均在 log 空间求平均，对单个极端值更不敏感。比如一个 token 的比值是 4、其余是 1：长度为 10 时，算术平均是 1.3，几何平均约 1.15。
 - 开了 1/|y| 次方之后，s_i 已经不是严格意义上的重要性权重了，严格的权重应该是原始的整句比值。所以它是一个用一点偏差换来大幅降低方差的近似，和 PPO 的 clip 本身就是有偏近似是同一类取舍。
+
+<img width="2418" height="948" alt="image" src="https://github.com/user-attachments/assets/d491267c-aef5-4985-b6e6-3edc5a8e3a88" />
+
+note: 上面没有 KL 项, 不是像 DAPO 一样不要了, 而是没写出(实际有它).
+
+<img width="1628" height="270" alt="image" src="https://github.com/user-attachments/assets/1275218b-f667-4ad2-89f6-2b2ec27de1ad" />
+
+用梯度角度, 二者形式一样, 只是对 $∇_θ ​log π_θ​(y_{i,t}​∣x,y_{i,<t}​)$ 的权重不同而已.

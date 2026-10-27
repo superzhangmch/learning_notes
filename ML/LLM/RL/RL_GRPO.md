@@ -1,7 +1,10 @@
 ![image](https://github.com/user-attachments/assets/51282531-5e7b-45e4-9dc7-6be61cbbbb3c)
 
-单条数据的 G 个不同采样，决定出一个平均 reward。然后可以用它来得到G个采样各自的 advantage。
+单条数据的 G 个不同采样，决定出一个平均 reward。然后可以用它来得到G个采样各自的 advantage。critic model 计算出的 advantage, 也不过是作为 baseline 能提供平均值的估计; 既然多次采样能算出平均值, 就不用 critic model 好了——于是 grpo 省略了 critic model(或者说 value model).
 
+注意区别: 
+- PPO 的 critic model 的output 是token-wise 的, 不同token 不同取值
+- GRPO 用多次采样的 reward 平均值, 则不再是 token-wise, 而是这一组采样生成的样本, 都用这一个 avg reward.
 
 ![image](https://github.com/user-attachments/assets/919ffe18-2d26-4242-9a4e-081c1860891f)
 

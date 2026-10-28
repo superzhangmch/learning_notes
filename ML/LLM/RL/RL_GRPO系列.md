@@ -1,3 +1,5 @@
+不同 rl demo: https://superzhangmch.github.io/tiny_tools/demo/llm/rl/llm_rl_algorithms.html#overview
+
 ## PPO
 
 PPO-llm-rlhf  是标准的 PPO RL 算法框架: actor/critic 模式. 每一token 就是一个 RL step. 

@@ -18,3 +18,9 @@ Models - https://arxiv.org/pdf/2306.08543》.
 通过 RL 来拟合 reverse-KL, 以便做蒸馏, 来自 miniLLM 一文. 
 
 <img width="2496" height="1828" alt="image" src="https://github.com/user-attachments/assets/42fa33ba-fad0-4331-91c6-27966289ae5a" />
+
+上图公式编号同其 paper中编号(每个公式有所调整). 
+
+是现有loss 然后看怎么用 RL 解. 然后通过形变, 强行构造了一个 reward = Rₜ = log p/q_θ . 而且注意reward 居然含有和策略中的参数θ. 这不算是典型的 RL 了. anyway, 对这个 loss 求导, 可以得到(2). 
+
+推导: -∇_θ L = ∇_θ [ ∑ q_θ · log(p/q_θ) ] = ∑ [ q_θ′ · log(p/q_θ) + q_θ · (−q_θ′/q_θ) ] = ∑ [q_θ′ · (log(p/q_θ) − 1) ] == ∑ [q_θ′ · (Rₜ − 1) ] = E_q (Rₜ − 1)  ∇_θ(log q_θ).  注意 q′ = q · ∇log q.

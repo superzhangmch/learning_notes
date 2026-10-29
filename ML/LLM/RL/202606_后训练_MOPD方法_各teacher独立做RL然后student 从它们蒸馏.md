@@ -11,3 +11,10 @@
 Models - https://arxiv.org/pdf/2306.08543》.
 
 
+----
+
+### 《miniLLM》
+
+通过 RL 来拟合 reverse-KL, 以便做蒸馏, 来自 miniLLM 一文. 
+
+<img width="2496" height="1828" alt="image" src="https://github.com/user-attachments/assets/42fa33ba-fad0-4331-91c6-27966289ae5a" />

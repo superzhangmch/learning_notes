@@ -17,7 +17,7 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 通过 RL 来拟合 reverse-KL, 以便做蒸馏, 来自 miniLLM 一文. 
 
-<img width="2496" height="1828" alt="image" src="https://github.com/user-attachments/assets/42fa33ba-fad0-4331-91c6-27966289ae5a" />
+<img width="2462" height="1804" alt="image" src="https://github.com/user-attachments/assets/5c99a9f1-7184-4968-aaec-d4d20cd30da6" />
 
 上图公式编号同其 paper中编号(每个公式有所调整). 
 
@@ -29,8 +29,9 @@ Models - https://arxiv.org/pdf/2306.08543》.
       = -∑ [ q_θ′ · log(p/q_θ) + q_θ · (−q_θ′/q_θ) ]  # (ab)' = a'b+ab'
       = -∑ [q_θ′ · (log(p/q_θ) − 1) ]
       = -∑ [q_θ′ · (Rₜ − 1) ]                          # Rₜ := log p/q_θ
-      = -E_q (Rₜ − 1)  ∇_θ(log q_θ)                    # q′ = q · ∇log q.  证明了 (2)
-      = -E_q (rₜ+Rₜ₊₁ − 1)  ∇_θ(log q_θ)      # 注意 Rₜ 是 trajectory 的 reward 和: 每新生成一个 token 就有一份 reward rₜ:=log(p(yₜ)/q_θ(yₜ)), Rₜ = ∑ᵢrᵢ = rₜ+Rₜ₊₁.
-      = 
+      = -E_q [(Rₜ − 1)·∇_θ(log q_θ)]                   # q′ = q · ∇log q.  证明了 (2)
+      = -E_q [(rₜ + Rₜ₊₁ − 1)·∇_θ(log q_θ)]      # 注意 Rₜ 是 trajectory 的 reward 和: 每新生成一个 token 就有一份 reward rₜ:=log(p(yₜ)/q_θ(yₜ)), Rₜ = ∑ᵢrᵢ = rₜ+Rₜ₊₁.
+      = -E_q (Rₜ₊₁ · ∇_θ(log q_θ)) - E_q[(rₜ−1)·∇_θ(log q_θ)]
+      = long_term - E_q[(rₜ−1)·∇_θ(log q_θ)].   # long + short term 分解
 ```
 

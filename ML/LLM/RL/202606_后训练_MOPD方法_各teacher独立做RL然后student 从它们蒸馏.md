@@ -75,3 +75,9 @@ Models - https://arxiv.org/pdf/2306.08543》.
 > long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses
 
 注意:  
+
+**training**
+
+如下图可看到: 和普通的 ML 倒是更像, 和 RL 好像也没多大关系——只是当场 sample data, 这很 RL, 以及对 long 项做了 PPO 那样的 clip 一边稳定训练. 另外, long term 是 "reward × ∇log p" 形式的, 这个很 RL.
+
+<img width="2082" height="1132" alt="image" src="https://github.com/user-attachments/assets/650cddca-4aef-42e9-abb6-1b2edf22e3cf" />

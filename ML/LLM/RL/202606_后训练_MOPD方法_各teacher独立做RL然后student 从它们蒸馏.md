@@ -23,7 +23,14 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 是现有loss 然后看怎么用 RL 解. 然后通过形变, 强行构造了一个 reward = Rₜ = log p/q_θ . 而且注意reward 居然含有和策略中的参数θ. 这不算是典型的 RL 了. anyway, 对这个 loss 求导, 可以得到(2). 
 
-``` (1) => (2) => (3)
+然后对(2), 可以拆分成long、short 两项:
+- short_term: 对一个已知的prompt 前缀, 所有下一个 token 所带来的reward
+- long_term: 对一个已知的prompt 前缀, 所有补全tokens 带来的reward(当然这里指的是下下 token 开始所有 tokens 的 reward 之和)
+- 这样对于一个prompt 前缀的补全的reward = short+long
+
+```
+(1) => (2):
+
 ∇_θ L = -∇_θ [ E_{q_θ} log(p/q_θ) ]
       = -∇_θ [ ∑ (q_θ · log(p/q_θ)) ]                 # note: E_{q_θ} = ∑ q_θ
       = -∑ [ q_θ′ · log(p/q_θ) + q_θ · (−q_θ′/q_θ) ]  # (ab)' = a'b+ab'
@@ -34,4 +41,10 @@ Models - https://arxiv.org/pdf/2306.08543》.
       = -E_q (Rₜ₊₁ · ∇_θ(log q_θ)) - E_q[(rₜ−1)·∇_θ(log q_θ)]
       = long_term - E_q[(rₜ−1)·∇_θ(log q_θ)].   # long + short term 分解
 ```
+
+(2) => (3): ∇_θ L = long_term + short_term. 重点是short_term的变形 $E_{p,q} ∑ₜ [(rₜ−1)·∇_θ(log q_θ)] = E_{p,q} ∑ₜ ∇ E_q rₜ$. 详看下面: 
+- (25) => (26): 
+- (26) => (27): 其实就是逆用 (1)=>(2)
+
+<img width="2298" height="884" alt="image" src="https://github.com/user-attachments/assets/a5527857-3661-415d-ada0-2acdb78785c5" />
 

@@ -70,11 +70,10 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 后来者, OPD（MOPD、Kimi 等）都没用它. 大概是, student 和 teacher 都是比较强的同大小的 model, 没必要让 teacher 做引导.
 
-**(5) => (6): 引入长度normalization: 消除"越短越占便宜"的偏差**
+**(5) => (6): 引入长度normalization: 去掉长度依赖**
 
-> long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses
-
-注意:  
+Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得到. normalized Rₜ₊₁ = 1/(T-t-1) ∑ᵀₜ₊₁ rₜ. 
+- 背景是作者发现 “long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses”. 为啥 long sequences=>Rₜ₊₁, 我这就不深究它了.
 
 **training**
 

@@ -13,9 +13,21 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 ----
 
-### 《miniLLM》
+## 《miniLLM》
 
 通过 RL 来拟合 reverse-KL, 以便做蒸馏, 来自 miniLLM 一文. 
+
+为啥用 reverse-KL: 学生容量有限，学不会老师分布的全部；forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上。
+
+### how to
+
+如下图可看到: 和普通的 ML 倒是更像, 和 RL 好像也没多大关系——只是当场 sample data, 这很 RL; 另外, long term 是 "reward × ∇log p" 形式的, 并且 PPO 那样的 clip 一边稳定训练, 这个也很 RL. 
+
+它标榜 RL, 其实并不是最典型的 RL: reward 甚至含有被优化的参数. 它的loss 拆成了 long term+singler term+llm loss 三部分(前两部分看下文).
+
+<img width="2082" height="1132" alt="image" src="https://github.com/user-attachments/assets/650cddca-4aef-42e9-abb6-1b2edf22e3cf" />
+
+### 院里详细解释
 
 <img width="2462" height="1804" alt="image" src="https://github.com/user-attachments/assets/5c99a9f1-7184-4968-aaec-d4d20cd30da6" />
 
@@ -72,11 +84,5 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 **(5) => (6): 引入长度normalization: 去掉长度依赖**
 
-Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得到. normalized Rₜ₊₁ = 1/(T-t-1) ∑ᵀₜ₊₁ rₜ. 
+Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得到 normalized Rₜ₊₁ = 1/(T-t-1) ∑ᵀₜ₊₁ rₜ. 这个被除的是当前位置t到尾巴的长度, 而不是 |y|.
 - 背景是作者发现 “long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses”. 为啥 long sequences=>Rₜ₊₁, 我这就不深究它了.
-
-**training**
-
-如下图可看到: 和普通的 ML 倒是更像, 和 RL 好像也没多大关系——只是当场 sample data, 这很 RL, 以及对 long 项做了 PPO 那样的 clip 一边稳定训练. 另外, long term 是 "reward × ∇log p" 形式的, 这个很 RL.
-
-<img width="2082" height="1132" alt="image" src="https://github.com/user-attachments/assets/650cddca-4aef-42e9-abb6-1b2edf22e3cf" />

@@ -23,4 +23,14 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 是现有loss 然后看怎么用 RL 解. 然后通过形变, 强行构造了一个 reward = Rₜ = log p/q_θ . 而且注意reward 居然含有和策略中的参数θ. 这不算是典型的 RL 了. anyway, 对这个 loss 求导, 可以得到(2). 
 
-推导: -∇_θ L = ∇_θ [ ∑ q_θ · log(p/q_θ) ] = ∑ [ q_θ′ · log(p/q_θ) + q_θ · (−q_θ′/q_θ) ] = ∑ [q_θ′ · (log(p/q_θ) − 1) ] == ∑ [q_θ′ · (Rₜ − 1) ] = E_q (Rₜ − 1)  ∇_θ(log q_θ).  注意 q′ = q · ∇log q.
+``` (1) => (2) => (3)
+∇_θ L = -∇_θ [ E_{q_θ} log(p/q_θ) ]
+      = -∇_θ [ ∑ (q_θ · log(p/q_θ)) ]                 # note: E_{q_θ} = ∑ q_θ
+      = -∑ [ q_θ′ · log(p/q_θ) + q_θ · (−q_θ′/q_θ) ]  # (ab)' = a'b+ab'
+      = -∑ [q_θ′ · (log(p/q_θ) − 1) ]
+      = -∑ [q_θ′ · (Rₜ − 1) ]                          # Rₜ := log p/q_θ
+      = -E_q (Rₜ − 1)  ∇_θ(log q_θ)                    # q′ = q · ∇log q.  证明了 (2)
+      = -E_q (rₜ+Rₜ₊₁ − 1)  ∇_θ(log q_θ)      # 注意 Rₜ 是 trajectory 的 reward 和: 每新生成一个 token 就有一份 reward rₜ:=log(p(yₜ)/q_θ(yₜ)), Rₜ = ∑ᵢrᵢ = rₜ+Rₜ₊₁.
+      = 
+```
+

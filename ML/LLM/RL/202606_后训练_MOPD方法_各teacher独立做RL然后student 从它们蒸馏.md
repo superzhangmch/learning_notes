@@ -8,7 +8,7 @@
 <img width="2020" height="1160" alt="image" src="https://github.com/user-attachments/assets/21c830d0-c002-4dc4-9286-1b175a4df545" />
 
 对于stage3: student 蒸馏 teachers, 是做的KL距离逼近. 这一step, 也是通过 RL 来做的. 方法来自 《MiniLLM: On-Policy Distillation of Large Language
-Models - https://arxiv.org/pdf/2306.08543》.
+Models - https://arxiv.org/pdf/2306.08543》. 
 
 
 ----
@@ -17,7 +17,16 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 通过 RL 来拟合 reverse-KL, 以便做蒸馏, 来自 miniLLM 一文. 
 
-为啥用 reverse-KL: 学生容量有限，学不会老师分布的全部；forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上。
+### 为啥用 reverse-KL: 
+
+|                                         | 在老师 / 固定数据的前缀上 | 在学生生成的前缀上         |
+|-----------------------------------------|-----------------------|-------------------------|
+| forward KL（每个位置算 Σ_v p · log(p/q)） | 传统蒸馏                | on-policy 的 forward KL |
+| reverse KL（每个位置算 Σ_v q · log(q/p)） | 较少见                  | MiniLLM、OPD            |
+
+学生容量有限，学不会老师分布的全部；forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上。
+
+本文对比的是如上表格的传统蒸馏(上面: "前缀"指的是提问 prompt 加上 response 里已经写出来的前 t−1 个 token)
 
 ### how to
 
@@ -27,7 +36,7 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 <img width="2082" height="1132" alt="image" src="https://github.com/user-attachments/assets/650cddca-4aef-42e9-abb6-1b2edf22e3cf" />
 
-### 院里详细解释
+### 原理详细解释
 
 <img width="2462" height="1804" alt="image" src="https://github.com/user-attachments/assets/5c99a9f1-7184-4968-aaec-d4d20cd30da6" />
 
@@ -86,3 +95,8 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得到 normalized Rₜ₊₁ = 1/(T-t-1) ∑ᵀₜ₊₁ rₜ. 这个被除的是当前位置t到尾巴的长度, 而不是 |y|.
 - 背景是作者发现 “long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses”. 为啥 long sequences=>Rₜ₊₁, 我这就不深究它了.
+
+----
+
+## 回到 MOPD
+

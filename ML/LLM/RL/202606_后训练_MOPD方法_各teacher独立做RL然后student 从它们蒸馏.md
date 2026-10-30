@@ -29,10 +29,10 @@ Models - https://arxiv.org/pdf/2306.08543》.
 - 这样对于一个prompt 前缀的补全的reward = short+long
 
 ```
-(1) => (2):
+(1) => (2): 直接算就可以了
 
 ∇_θ L = -∇_θ [ E_{q_θ} log(p/q_θ) ]
-      = -∇_θ [ ∑ (q_θ · log(p/q_θ)) ]                 # note: E_{q_θ} = ∑ q_θ
+      = -∇_θ [ ∑ (q_θ · log(p/q_θ)) ]                 #  E_{q_θ} = ∑ q_θ
       = -∑ [ q_θ′ · log(p/q_θ) + q_θ · (−q_θ′/q_θ) ]  # (ab)' = a'b+ab'
       = -∑ [q_θ′ · (log(p/q_θ) − 1) ]
       = -∑ [q_θ′ · (Rₜ − 1) ]                          # Rₜ := log p/q_θ
@@ -42,9 +42,14 @@ Models - https://arxiv.org/pdf/2306.08543》.
       = long_term - E_q[(rₜ−1)·∇_θ(log q_θ)].   # long + short term 分解
 ```
 
-(2) => (3): ∇_θ L = long_term + short_term. 重点是short_term的变形 $E_{p,q} ∑ₜ [(rₜ−1)·∇_θ(log q_θ)] = E_{p,q} ∑ₜ ∇ E_q rₜ$. 详看下面: 
-- (25) => (26): 
+(2) => (3): ∇_θ L = long_term + short_term. 重点是short_term的变形 $E_{p,q_θ} ∑ₜ [(rₜ−1)·∇_θ(log q_θ)] = E_{p,q_θ} ∑ₜ ∇ E_{q_θ} rₜ$. 详看下面: 
 - (26) => (27): 其实就是逆用 (1)=>(2)
+- (25) => (26): 注意形式上就是 25 的 ∑ₜ 之后强行插入了 $E_{y_t} ..$, 看起来有问题.
+  - 注意 25/26 中: ∑ₜ 后的 yₜ 是不同的:
+    - 25 里的 yₜ 来自 trajectory $y~q_θ$, 是 fixed (trajectory_sample --> y -> y[t] == yₜ)
+    - 26 中的 yₜ 来自 trajector $y~q_θ$ 的前缀 y[:t-1] 的 next token sample (trajectory_sample --> y -> y[1:t-1] --token_sample--> yₜ).
+  - 为什么 25 => 26 等式成立?
+    - 25: $E_{x,y} ∑ₜ₌₁ᵀ log(p(y_t|x, y[:t-1]) / q_θ(y_t|x,y[:t-1])) == E_{x,y} log(p(y|x)/q_θ(y|x)$, 也就是等于关于不同trajector 的 log(p(y|x)/q_θ(y|x) 值的均值.
 
-<img width="2298" height="884" alt="image" src="https://github.com/user-attachments/assets/a5527857-3661-415d-ada0-2acdb78785c5" />
+<img width="2290" height="874" alt="image" src="https://github.com/user-attachments/assets/8d2d6b1e-3316-4de8-a04d-6738405faab3" />
 

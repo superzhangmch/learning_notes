@@ -15,18 +15,24 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 ## 《miniLLM》
 
-通过 RL 来拟合 reverse-KL, 以便做蒸馏, 来自 miniLLM 一文. 
+miniLLM: 一种蒸馏方法, 通过 RL 来拟合 teacher 和 student 的生成分布的 reverse-KL. 
 
-### 为啥用 reverse-KL: 
+### 为啥用 reverse-KL
+
+rev-kl 还是 fwd-kl, 本质就是用student做sample(rev) 还是用 teacher(fwd).
+- D_KL(P || Q) = Σᵢ P(i) log(P(i) / Q(i))
+- fwd-kl = D_KL( teacher || student)
 
 |                                         | 在老师 / 固定数据的前缀上 | 在学生生成的前缀上         |
 |-----------------------------------------|-----------------------|-------------------------|
 | forward KL（每个位置算 Σ_v p · log(p/q)） | 传统蒸馏                | on-policy 的 forward KL |
 | reverse KL（每个位置算 Σ_v q · log(q/p)） | 较少见                  | MiniLLM、OPD            |
 
-学生容量有限，学不会老师分布的全部；forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上。
+note: 本文对比的是如上表格的传统蒸馏(上面: "前缀"指的是提问 prompt 加上 response 里已经写出来的前 t−1 个 token)
 
-本文对比的是如上表格的传统蒸馏(上面: "前缀"指的是提问 prompt 加上 response 里已经写出来的前 t−1 个 token)
+fwd-kl: 需遍历 teacher 的各种采样(或者说各种 mode), 而学生容量有限，学不会老师分布的全部；于是 forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上(看下图, fwd/rev 都没能完美学会teacher, 好歹 rev 学到了重点, 而 fwd 啥都没学会):
+
+<img width="872" height="626" alt="image" src="https://github.com/user-attachments/assets/a7904485-a919-4db9-9c0a-a62916e3a4c7" />
 
 ### how to
 
@@ -94,7 +100,10 @@ Models - https://arxiv.org/pdf/2306.08543》.
 **(5) => (6): 引入长度normalization: 去掉长度依赖**
 
 Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得到 normalized Rₜ₊₁ = 1/(T-t-1) ∑ᵀₜ₊₁ rₜ. 这个被除的是当前位置t到尾巴的长度, 而不是 |y|.
-- 背景是作者发现 “long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses”. 为啥 long sequences=>Rₜ₊₁, 我这就不深究它了.
+- 背景是作者发现 “long sequences tend to have small Rₜ₊₁, which encourages the model to produce short responses”. normalization 在于去除长度依赖, 所以其实不只是解决 long seq 导致 Rₜ₊₁ 更大更小.
+  - 关于“long seq 导致 Rₜ₊₁ 小”:
+    - 首先注意往往 Rₜ = log p(y|x) /q_θ(y|x) < 0, 因为: (1) 直觉上: teacher 往往不太同意student 采样的y, 所以 p(y) < q(y), log(<1) <0 (2): 数学上: E[ log(p/q) ] = −KL(q ‖ p) ≤ 0, 也就是 log(p/q) 均值 <=0
+    -  不做 normalization 则 R(长) < R(短)，所以模型偏向写短; 要纠正，就得让长续写的 R 往上提；R 是负数，乘以一个小于 1 的系数推大 R(long)；于是用系数 1/(T-t-1) < 1, 对一个y, 越关注它的尾部，系数 1/(T−t−1) 越小，往上提得越多
 
 ----
 

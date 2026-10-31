@@ -13,7 +13,7 @@ Models - https://arxiv.org/pdf/2306.08543》.
 
 ----
 
-## 《miniLLM》
+## 《miniLLM》 2023.06
 
 miniLLM: 一种蒸馏方法, 通过 RL 来拟合 teacher 和 student 的生成分布的 reverse-KL. 
 
@@ -33,6 +33,10 @@ note: 本文对比的是如上表格的传统蒸馏(上面: "前缀"指的是提
 fwd-kl: 需遍历 teacher 的各种采样(或者说各种 mode), 而学生容量有限，学不会老师分布的全部；于是 forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上(看下图, fwd/rev 都没能完美学会teacher, 好歹 rev 学到了重点, 而 fwd 啥都没学会):
 
 <img width="872" height="626" alt="image" src="https://github.com/user-attachments/assets/a7904485-a919-4db9-9c0a-a62916e3a4c7" />
+
+note: 
+- MiniLLM 的目标就是把大模型压缩成小模型(名字里的 "Mini"正此意)。它的整个论证，也是建立在"学生容量有限、学不全老师的分布"这个前提上的，这正是它选择 reverse KL 的理由。
+- MOPD、DeepSeek-V4、Kimi K3：老师和学生一样大，都从同一个 SFT 检查点出发，目的是合并多个专家的能力。
 
 ### how to
 
@@ -106,6 +110,43 @@ Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得�
     -  不做 normalization 则 R(长) < R(短)，所以模型偏向写短; 要纠正，就得让长续写的 R 往上提；R 是负数，乘以一个小于 1 的系数推大 R(long)；于是用系数 1/(T-t-1) < 1, 对一个y, 越关注它的尾部，系数 1/(T−t−1) 越小，往上提得越多
 
 ----
+
+## thinkingmachines blog
+
+2026.01 https://thinkingmachines.ai/blog/on-policy-distillation/ (它引用了 miniLLM) 正式开启了 OPD 后训练.
+
+出发点：on-policy 和 off-policy 各有一半好处
+- RL（on-policy）：学生从自己犯的错里学，但反馈太稀疏。不管回答多长，一条回答只有一个分数，学生不知道是哪个 token 出了问题。
+  - 注意: 这里 RL（on-policy）没有老师模型，和蒸馏无关。
+- SFT / 传统蒸馏（off-policy）：反馈很密集，但学生学的是老师会走到的状态，而不是自己会走到的状态。早期一步走错，后面就越错越远。作者还引用了已有研究：学生可能学到了老师的风格和语气，却没学到老师的事实准确性。
+- OPD 想把两者的优点合起来：在学生自己的轨迹上，由老师逐个 token 打分。
+
+作者用了一个下棋的比喻：
+- RL 像是自己下棋，没人指导：只知道最后输赢，不知道哪几步是关键。
+- 传统蒸馏: 像是看大师对局, 但那些局面你自己根本走不到。
+- OPD 像是下完之后，让引擎给你的每一步打分，就像 chess.com 用颜色标出每一步棋的好坏。
+
+方法
+- loss：KL(π_student ‖ π_teacher) := $KL(π_θ ‖ π_T)=𝔼_{x∼π_θ} [log(π_θ(xₜ₊₁|.))/(π_T(xₜ₊₁|.))]$, 逐 token 的 reverse KL，在学生采样出来的 token 上估计。
+  - 注意:
+    * loss中, 对一个特定的 prefix, 只看它的下一个token, 而没看更多steps. 作者说关注更多没看到收益.
+    * 只看下一token, 所以可以 partial rollout，不必等回答完整写完。
+
+- 实现只改一行：在 RL 代码里设 advantages = -reverse_kl，配合重要性采样的 loss。老师只需要做一次前向，给出 log 概率，不需要奖励模型。
+
+rev-KL 好处:
+- 不怕 reward hacking: unhackable：不怕奖励被钻空子
+  - reverse KL 的最小值恰好在学生 = 老师的时候取到，KL 低就真的意味着学生的行为接近老师，目标和衡量指标之间没有缝隙可钻。
+- mode-seeking：只抓老师的主要模式(miniLLM 就指出过, 比miniLLM 更早就有人指出过)
+  - reverse KL 重罚"学生给了概率、老师却认为不可能"的地方，所以学生宁可只学其中一两个峰，也不会把概率摊到峰和峰之间那些老师不认可的地方。
+- 减少 exposure bias：训练和推理时看到的前缀一致(前缀=question_prompt + generating_partial_response)
+  - 传统训练（SFT、传统蒸馏）的前缀总是标准答案或老师写的，模型在训练时从没见过自己写出来的、可能有错的前缀。而此处训练用的前缀就是学生自己生成的, 训练和推理之间不再有这种错位。
+
+没做的部分：全词表或 top-k 的 logit 蒸馏；把逐 token 奖励和整句的环境奖励结合起来。后来 DeepSeek-V4 和 MiMo 分别补上了这两点。
+
+局限
+- 学生必须本来就有一定概率做出老师的行为，所以前面仍然需要 mid-training 或 SFT 打底。
+- mode-seeking：学生只会学到老师的一种行为，而不是老师的完整分布。
 
 ## 回到 MOPD
 

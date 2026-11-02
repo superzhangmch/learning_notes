@@ -115,9 +115,16 @@ miniLLM 的 loss, 其实可以转成另一种形式: $KL(q||p) = ∑ₜ E_{y<t} 
 
 <img width="2046" height="1900" alt="image" src="https://github.com/user-attachments/assets/c3cfad4b-9d7a-4f8d-bbfc-6b87c115c2bc" />
 
-然后: $∑ₜ [E_{y<t} KLₜ(y<t)] = ∑ₜ ∑_{y<t} q_θ(y<t) KLₜ(y<t)$ ⇒ $∇(∑ₜ ∑_y} q⋅KLₜ) = ∑ₜ ∑_y(∇q⋅KLₜ) + ∑ₜ ∑_y(q⋅∇KLₜ)$
-- $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KLₜ) = ∑ₜ ∑_{y<t}(q(y<t)⋅∇KLₜ) = ∑ₜ E_{y<t} ∇KLₜ = -∑ₜ E_{y<t}(∇E_{yₜ}rₜ) == single_term$, 注意 KLₜ == -E_{yₜ}rₜ
-- ∑ₜ(∇q⋅KLₜ) 正是 single term. 因为 ∑ₜ(∇q⋅KLₜ) = ∑ₜ(∇q/q⋅KLₜ⋅q)=∑ₜ (∇log(q)⋅KLₜ⋅q)= ∑ₜ E_q(∇log(q)⋅KLₜ)
+然后: $∑ₜ [E_{y<t} KLₜ(y<t)] = ∑ₜ ∑_{y<t} q_θ(y<t) KLₜ(y<t)$ ⇒ $∇(∑ₜ ∑_y q⋅KLₜ) = ∑ₜ ∑_y(∇q⋅KLₜ) + ∑ₜ ∑_y(q⋅∇KLₜ)$
+- $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KLₜ) = ∑ₜ ∑_{y<t}(q(y<t)⋅∇KLₜ) = ∑ₜ E_{y<t} ∇KLₜ = -∑ₜ E_{y<t}(∇E_{yₜ}rₜ) == -E_{y<t} ∑ₜ (∇E_{yₜ}rₜ) = single_term$, 注意 KLₜ == -E_{yₜ}rₜ
+```
+∑ₜ ∑_y(q⋅∇KLₜ) = ∑ₜ ∑_{y<t}(q(y<t)⋅∇KLₜ)
+              =  ∑ₜ E_{y<t} ∇KLₜ         // ∑_{y<t} q(y<t) .. = E_{y<t} ..
+              = -∑ₜ E_{y<t} (∇E_{yₜ}rₜ)  // KLₜ == -E_{yₜ}rₜ
+              = -E_y ∑ₜ (∇E_{yₜ}rₜ)  // E、∑ₜ 交换. E_{y<t} 与 E_y 不同, 按说不能交换. 但是
+              = single_term 
+```
+- ∑ₜ(∇q⋅KLₜ) 正是 long term. 因为 ∑ₜ(∇q⋅KLₜ) = ∑ₜ(∇q/q⋅KLₜ⋅q)=∑ₜ (∇log(q)⋅KLₜ⋅q)= ∑ₜ E_q(∇log(q)⋅KLₜ)
 
 ----
 

@@ -109,6 +109,16 @@ Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得�
     - 首先注意往往 Rₜ = log p(y|x) /q_θ(y|x) < 0, 因为: (1) 直觉上: teacher 往往不太同意student 采样的y(反之student 也不太同意teacher), 所以 p(y) < q(y), log(<1) <0 (2): 数学上: E[ log(p/q) ] = −KL(q ‖ p) ≤ 0, 也就是 log(p/q) 均值 <=0; p、q交换, 不等式仍然成立
     -  不做 normalization 则 R(长) < R(短)，所以模型偏向写短; 要纠正，就得让长续写的 R 往上提；R 是负数，乘以一个小于 1 的系数推大 R(long)；于是用系数 1/(T-t-1) < 1, 对一个y, 越关注它的尾部，系数 1/(T−t−1) 越小，往上提得越多
 
+### loss 的其他转化形式
+
+miniLLM 的 loss, 其实可以转成另一种形式: $KL(q||p) = ∑ₜ E_{y<t} KLₜ(y<t)$, 也就是先固定长度, 然后看下一个 token 的 KL. 证明如下: 
+
+<img width="2046" height="1900" alt="image" src="https://github.com/user-attachments/assets/c3cfad4b-9d7a-4f8d-bbfc-6b87c115c2bc" />
+
+然后: $∑ₜ [E_{y<t} KLₜ(y<t)] = ∑ₜ ∑_{y<t} q_θ(y<t) KLₜ(y<t)$ ⇒ $∇(∑ₜ ∑_y} q⋅KLₜ) = ∑ₜ ∑_y(∇q⋅KLₜ) + ∑ₜ ∑_y(q⋅∇KLₜ)$
+- $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KLₜ) = ∑ₜ ∑_{y<t}(q(y<t)⋅∇KLₜ) = ∑ₜ E_{y<t} ∇KLₜ = -∑ₜ E_{y<t}(∇E_{yₜ}rₜ) == single_term$, 注意 KLₜ == -E_{yₜ}rₜ
+- ∑ₜ(∇q⋅KLₜ) 正是 single term. 因为 ∑ₜ(∇q⋅KLₜ) = ∑ₜ(∇q/q⋅KLₜ⋅q)=∑ₜ (∇log(q)⋅KLₜ⋅q)= ∑ₜ E_q(∇log(q)⋅KLₜ)
+
 ----
 
 ## thinkingmachines blog

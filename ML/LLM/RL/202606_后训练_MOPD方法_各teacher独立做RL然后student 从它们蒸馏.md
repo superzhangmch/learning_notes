@@ -130,6 +130,8 @@ $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KL�
                                        //            于这个前缀本身的概率，因此遍历完整序列和遍历前缀得到的数一样.
 ```
 
+注意: $∇KLₜ = ∑ᵥ∇q(v)⋅log[q(v|y<t)/p(v|y<t)] == ∑ᵥ∇q(v)⋅log(q/p)=∑ᵥq(v) ∇log(q)⋅log(q/p) = Eᵥ ∇log(q)⋅log(q/p)$, 所以: $∑ₜ ∑_y(q⋅∇KLₜ) = E_y ∑ₜ ∇KLₜ = E_y ∑ₜ (Eᵥ ∇log(q(v))⋅log(q(v)/p(v)) = E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)]$. 注意神奇一点: 可以把 Eᵥ 去掉(背后逻辑, 和 miniLLM 一文 (25) => (26) 中的 E_yₜ 的可有可无是一个道理, 本质是不同的遍历的差异!), 而精确得到: $E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而这正是 MOPD 的梯度更新世.
+
 #### (2) long term
 
 ∑ₜ ∑_y(∇q⋅KLₜ) 正是 long term.
@@ -230,4 +232,10 @@ rev-KL 好处:
 - mode-seeking：学生只会学到老师的一种行为，而不是老师的完整分布。
 
 ## 回到 MOPD
+
+MOPD 的loss 除了长度normaliza 项外, 其实和 miniLLM 的loss 一模一样(但是形式有转化, 见上面). 看上文, miniLLM 的loss 另一转化形式所得到的 single term, 可以完美浮现出 MOPD loss 的梯度式(见“另一个角度看 single 与 long 分解” 一节).
+
+mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
+
+<img width="750" alt="image" src="https://github.com/user-attachments/assets/f88cb9b0-b6c0-45bb-b5ea-7f71a95a5baf" />
 

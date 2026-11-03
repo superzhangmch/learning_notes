@@ -136,7 +136,9 @@ $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KL�
 
 先来辅助结论
 
-(i). 概率上有著名的 全期望公式 / 重期望定理：E[X]=E_Y[E[X|Y]], 也就是直接算期望可以转成先算条件期望, 再对条件算期望. 于是对 s < t 有: 
+**(i). $E_y [∇log(q(yₛ))⋅rₜ] = = -E_{y<t} [∇log(q(yₛ))⋅KLₜ]$**
+
+概率上有著名的 全期望公式 / 重期望定理：E[X]=E_Y[E[X|Y]], 也就是直接算期望可以转成先算条件期望, 再对条件算期望. 于是对 s < t 有: 
 
 ```
 E_y [∇log(q(yₛ))⋅rₜ] = E_{y≤t} [∇log(q(yₛ))⋅rₜ]
@@ -145,7 +147,9 @@ E_y [∇log(q(yₛ))⋅rₜ] = E_{y≤t} [∇log(q(yₛ))⋅rₜ]
                      = -E_{y<t} [∇log(q(yₛ))⋅KLₜ]        # KLₜ == -E_{yₜ}rₜ
 ```
 
-(ii). ∑ₜ E_{y<t} [(∑_{s<t}∇log(q(yₛ)))⋅KLₜ] = E_y ∑ₛ [∇log(q(yₛ))⋅∑_{t>s} KLₜ]
+<img width="421" height="214" alt="image" src="https://github.com/user-attachments/assets/f774c6f0-a6df-494b-8c5a-7ce04167d838" />
+
+**(ii). $∑ₜ E_{y<t} [(∑_{s<t}∇log(q(yₛ)))⋅KLₜ] = E_y ∑ₛ [∇log(q(yₛ))⋅∑_{t>s} KLₜ]$**
 
 证明: 令 a_{s,t} := ∇log(q(yₛ))⋅KLₜ
 - 左 = ∑ₜ ∑_{s<t} [∇log(q(yₛ))⋅KLₜ]     = E_y ∑ₜ ∑_{s<t} [∇log(q(yₛ))⋅KLₜ] = E_y ∑ₜ ∑_{s<t} a_{s,t}

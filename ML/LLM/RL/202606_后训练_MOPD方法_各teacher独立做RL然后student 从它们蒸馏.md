@@ -178,10 +178,14 @@ s            a₃₄,  ...,  a₃ₙ
               = - E_y[∑ₛ ∇log(q(yₛ))⋅Rₛ₊₁]             # Rₛ₊₁=∑_{t>s}rₜ
               = long term
 ```
+或看图: 
+
+<img width="1280" height="1174" alt="image" src="https://github.com/user-attachments/assets/ed4e5346-139c-497b-90a3-cc8108b4d377" />
+
 
 ----
 
-## thinkingmachines blog
+## thinkingmachines blog: OPD 2026.01
 
 2026.01 https://thinkingmachines.ai/blog/on-policy-distillation/ (它引用了 miniLLM) 正式开启了 OPD 后训练.
 

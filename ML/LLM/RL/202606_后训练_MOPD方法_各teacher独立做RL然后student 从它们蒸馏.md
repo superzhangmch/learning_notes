@@ -113,7 +113,7 @@ Rₜ₊₁ = ∑ᵀₜ₊₁ rₜ, 正好是 T-t-1 项, 于是除以T-t-1, 得�
 
 miniLLM 的 loss, 其实可以转成另一种形式: $KL(q||p) = ∑ₜ E_{y<t} KLₜ(y<t)$, 也就是先固定长度, 然后看下一个 token 的 KL. 证明如下: 
 
-<img width="2046" height="1900" alt="image" src="https://github.com/user-attachments/assets/c3cfad4b-9d7a-4f8d-bbfc-6b87c115c2bc" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/c3cfad4b-9d7a-4f8d-bbfc-6b87c115c2bc" />
 
 然后: $∑ₜ [E_{y<t} KLₜ(y<t)] = ∑ₜ ∑_{y<t} q_θ(y<t) KLₜ(y<t)$ ⇒ $∇(∑ₜ ∑_y q⋅KLₜ) = ∑ₜ ∑_y(∇q⋅KLₜ) + ∑ₜ ∑_y(q⋅∇KLₜ) = long + single$
 
@@ -147,7 +147,9 @@ E_y [∇log(q(yₛ))⋅rₜ] = E_{y≤t} [∇log(q(yₛ))⋅rₜ]
                      = -E_{y<t} [∇log(q(yₛ))⋅KLₜ]        # KLₜ == -E_{yₜ}rₜ
 ```
 
-<img width="421" height="214" alt="image" src="https://github.com/user-attachments/assets/f774c6f0-a6df-494b-8c5a-7ce04167d838" />
+或看图: 
+
+<img width="210" alt="image" src="https://github.com/user-attachments/assets/f774c6f0-a6df-494b-8c5a-7ce04167d838" />
 
 **(ii). $∑ₜ E_{y<t} [(∑_{s<t}∇log(q(yₛ)))⋅KLₜ] = E_y ∑ₛ [∇log(q(yₛ))⋅∑_{t>s} KLₜ]$**
 
@@ -184,7 +186,7 @@ s            a₃₄,  ...,  a₃ₙ
 ```
 或看图: 
 
-<img width="1280" height="1174" alt="image" src="https://github.com/user-attachments/assets/ed4e5346-139c-497b-90a3-cc8108b4d377" />
+<img width="320" alt="image" src="https://github.com/user-attachments/assets/ed4e5346-139c-497b-90a3-cc8108b4d377" />
 
 
 ----

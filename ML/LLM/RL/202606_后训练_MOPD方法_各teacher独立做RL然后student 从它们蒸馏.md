@@ -234,11 +234,15 @@ rev-KL 好处:
 - 学生必须本来就有一定概率做出老师的行为，所以前面仍然需要 mid-training 或 SFT 打底。
 - mode-seeking：学生只会学到老师的一种行为，而不是老师的完整分布。
 
-## 回到 MOPD
+## 小米 MOPD 2026.06
 
-MOPD 的loss 除了长度normaliza 项外, 其实和 miniLLM 的loss 一模一样(但是形式有转化, 见上面). 看上文, miniLLM 的loss 另一转化形式所得到的 single term, 可以完美浮现出 MOPD loss 的梯度式(见“另一个角度看 single 与 long 分解” 一节).
+MOPD 的loss 除了长度 normaliza 项外, 其实和 miniLLM 的 loss 一模一样(但是形式有转化, 见上面). 看上文, miniLLM 的loss 另一转化形式所得到的 single term, 可以完美浮现出 MOPD loss 的梯度式(见“另一个角度看 single 与 long 分解” 一节).
 
 mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
 
 <img width="750" alt="image" src="https://github.com/user-attachments/assets/f88cb9b0-b6c0-45bb-b5ea-7f71a95a5baf" />
+
+## deepseek-v4 2026.06 https://arxiv.org/pdf/2606.19348
+
+不同专家的 KL 加权和: L_OPD(𝜃) = ∑︁ᴺᵢ₌₁ wᵢ· KL(𝜋𝜃 ∥ 𝜋_{expertᵢ}
 

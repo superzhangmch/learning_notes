@@ -208,14 +208,6 @@ s            a₃₄,  ...,  a₃ₙ
 - 传统蒸馏: 像是看大师对局, 但那些局面你自己根本走不到。
 - OPD 像是下完之后，让引擎给你的每一步打分，就像 chess.com 用颜色标出每一步棋的好坏。
 
-方法
-- loss：KL(π_student ‖ π_teacher) := $KL(π_θ ‖ π_T)=𝔼_{x∼π_θ} [log(π_θ(xₜ₊₁|.))/(π_T(xₜ₊₁|.))]$, 逐 token 的 reverse KL，在学生采样出来的 token 上估计。
-  - 注意:
-    * loss中, 对一个特定的 prefix, 只看它的下一个token, 而没看更多steps. 作者说关注更多没看到收益.
-    * 只看下一token, 所以可以 partial rollout，不必等回答完整写完。
-
-- 实现只改一行：在 RL 代码里设 advantages = -reverse_kl，配合重要性采样的 loss。老师只需要做一次前向，给出 log 概率，不需要奖励模型。
-
 rev-KL 好处:
 - 不怕 reward hacking: unhackable：不怕奖励被钻空子
   - reverse KL 的最小值恰好在学生 = 老师的时候取到，KL 低就真的意味着学生的行为接近老师，目标和衡量指标之间没有缝隙可钻。
@@ -223,6 +215,17 @@ rev-KL 好处:
   - reverse KL 重罚"学生给了概率、老师却认为不可能"的地方，所以学生宁可只学其中一两个峰，也不会把概率摊到峰和峰之间那些老师不认可的地方。
 - 减少 exposure bias：训练和推理时看到的前缀一致(前缀=question_prompt + generating_partial_response)
   - 传统训练（SFT、传统蒸馏）的前缀总是标准答案或老师写的，模型在训练时从没见过自己写出来的、可能有错的前缀。而此处训练用的前缀就是学生自己生成的, 训练和推理之间不再有这种错位。
+
+方法
+- loss：KL(π_student ‖ π_teacher) := $KL(π_θ ‖ π_T)=𝔼_{x∼π_θ} [log(π_θ(xₜ₊₁|x[:t]))/(π_T(xₜ₊₁|x[:t]))]$, 这个从 blog 直接扣取来的 loss 只算是示意性质的. 补充后应该是 $𝔼_x ∑ₜ [log(π_θ(xₜ₊₁|x<t))/(π_T(xₜ₊₁|x<t))] = 𝔼_x log(π_θ(x))/π_T(x)$, 正好是精确的 KL 定义, 和 miniLLM 是严格一样的.
+- 梯度: 既然loss 和minillm 一样, 那么梯度就不是个简单的了. blog 没细说, 从所提供的code:
+  * 梯度 = -∑ₜ Aₜ ∇logπ_θ(yₜ); Aₜ = -reverse_kl=log π_{teacher}(yₜ)-log π_{student}(yₜ)
+  * 后来的 MOPD 的梯度, 和他的形式一模一样. 那么怎么来的, 看下面 MOPD 讲解
+  * 对应到 miniLLM, 其实就是miniLLM 的梯度 single term, 也就是没看 long term
+    * 作者说: singer term 这样, 只看下一个token, 而不看更多steps, 就够了——看更多没发现收益. 另外只看下一token, 所以可以 partial rollout，不必等回答完整写完。
+
+实现:
+- 是要嵌入已有的 RL 框架的. 所以实现只需改一行：在 RL 代码里设 advantages = -reverse_kl，配合重要性采样的 loss。
 
 没做的部分：全词表或 top-k 的 logit 蒸馏；把逐 token 奖励和整句的环境奖励结合起来。后来 DeepSeek-V4 和 MiMo 分别补上了这两点。
 为啥改一句 code 就行

@@ -137,7 +137,8 @@ $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KL�
                                        //            于这个前缀本身的概率，因此遍历完整序列和遍历前缀得到的数一样.
 ```
 
-注意: $∇KLₜ = ∑ᵥ∇q(v)⋅log[q(v|y<t)/p(v|y<t)]$ == $∑ᵥ∇q(v)⋅log(q/p)=∑ᵥq(v) ∇log(q)⋅log(q/p)$ = $Eᵥ ∇log(q)⋅log(q/p)$, 所以: $∑ₜ ∑_y(q⋅∇KLₜ) = E_y ∑ₜ ∇KLₜ$ = $E_y ∑ₜ (Eᵥ ∇log(q(v))⋅log(q(v)/p(v))$ = $E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)]$. 注意神奇一点: 可以把 Eᵥ 去掉(背后逻辑, 和 miniLLM 一文 (25) => (26) 中的 E_yₜ 的可有可无是一个道理, 本质是不同的遍历的差异!), 而精确得到: $E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而这正是 MOPD 的梯度更新世.
+注意: $∇KLₜ = $Eᵥ ∇log(q)⋅log(q/p)$ => single_term=$E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而后者正是 MOPD 的梯度更新世.
+- 因为: $∇KLₜ = ∑ᵥ∇q(v)⋅log[q(v|y<t)/p(v|y<t)]$ == $∑ᵥ∇q(v)⋅log(q/p)=∑ᵥq(v) ∇log(q)⋅log(q/p)$ = $Eᵥ ∇log(q)⋅log(q/p)$, 所以: single_term=$∑ₜ ∑_y(q⋅∇KLₜ) = E_y ∑ₜ ∇KLₜ$ = $E_y ∑ₜ (Eᵥ ∇log(q(v))⋅log(q(v)/p(v))$ = $E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)]$. 注意神奇一点: 可以把 Eᵥ 去掉(背后逻辑, 和 miniLLM 一文 (25) => (26) 中的 E_yₜ 的可有可无是一个道理, 本质是不同的遍历的差异!), 而精确得到: single_term=$E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而这正是 MOPD 的梯度更新世.
 
 #### (2) long term
 

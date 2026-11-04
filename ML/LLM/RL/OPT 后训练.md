@@ -12,7 +12,7 @@
 
 一句话说: 先SFT然后以他为基础, 不同领域分别 RL, 这样得到多个领域专家, 然后再对原来的 sft model, 把这些能力蒸馏过去.
 
-<img width="2020" height="1160" alt="image" src="https://github.com/user-attachments/assets/21c830d0-c002-4dc4-9286-1b175a4df545" />
+<img width="750" alt="image" src="https://github.com/user-attachments/assets/21c830d0-c002-4dc4-9286-1b175a4df545" />
 
 对于stage3: student 蒸馏 teachers, 是做的KL距离逼近. 这一step, 也是通过 RL 来做的. 方法来自 《MiniLLM: On-Policy Distillation of Large Language
 Models - https://arxiv.org/pdf/2306.08543》. 
@@ -39,7 +39,7 @@ note: 本文对比的是如上表格的传统蒸馏(上面: "前缀"指的是提
 
 fwd-kl: 需遍历 teacher 的各种采样(或者说各种 mode), 而学生容量有限，学不会老师分布的全部；于是 forward KL 会逼学生把概率分到老师认为不该出现的地方，reverse KL 则让学生只集中在老师的主要模式上(看下图, fwd/rev 都没能完美学会teacher, 好歹 rev 学到了重点, 而 fwd 啥都没学会):
 
-<img width="872" height="626" alt="image" src="https://github.com/user-attachments/assets/a7904485-a919-4db9-9c0a-a62916e3a4c7" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/a7904485-a919-4db9-9c0a-a62916e3a4c7" />
 
 note: 
 - MiniLLM 的目标就是把大模型压缩成小模型(名字里的 "Mini"正此意)。它的整个论证，也是建立在"学生容量有限、学不全老师的分布"这个前提上的，这正是它选择 reverse KL 的理由。
@@ -51,11 +51,11 @@ note:
 
 它标榜 RL, 其实并不是最典型的 RL: reward 甚至含有被优化的参数. 它的loss 拆成了 long term+singler term+llm loss 三部分(前两部分看下文).
 
-<img width="2082" height="1132" alt="image" src="https://github.com/user-attachments/assets/650cddca-4aef-42e9-abb6-1b2edf22e3cf" />
+<img width="750" alt="image" src="https://github.com/user-attachments/assets/650cddca-4aef-42e9-abb6-1b2edf22e3cf" />
 
 ### 原理详细解释
 
-<img width="2462" height="1804" alt="image" src="https://github.com/user-attachments/assets/5c99a9f1-7184-4968-aaec-d4d20cd30da6" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/5c99a9f1-7184-4968-aaec-d4d20cd30da6" />
 
 上图公式编号同其 paper中编号(每个公式有所调整). 
 
@@ -202,7 +202,7 @@ s            a₃₄,  ...,  a₃ₙ
 
 下面总结了 KL loss, 以及梯度/single项 的各种形式(相关推导看上文; thinkingmachines, mopd, kimi, deepseek 都可从下面得到):
 
-<img width="700" alt="image" src="https://github.com/user-attachments/assets/0defeb74-656b-4687-8605-8c9c86a3b881" />
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/0defeb74-656b-4687-8605-8c9c86a3b881" />
 
 ----
 
@@ -229,7 +229,7 @@ rev-KL 好处:
 - 减少 exposure bias：训练和推理时看到的前缀一致(前缀=question_prompt + generating_partial_response)
   - 传统训练（SFT、传统蒸馏）的前缀总是标准答案或老师写的，模型在训练时从没见过自己写出来的、可能有错的前缀。而此处训练用的前缀就是学生自己生成的, 训练和推理之间不再有这种错位。
 
-方法
+loss
 - loss：KL(π_student ‖ π_teacher) := $KL(π_θ ‖ π_T)=𝔼_{x∼π_θ} [log(π_θ(xₜ₊₁|x[:t]))/(π_T(xₜ₊₁|x[:t]))]$, 这个从 blog 直接扣取来的 loss 只算是示意性质的. 补充后应该是 $𝔼_x ∑ₜ [log(π_θ(xₜ₊₁|x<t))/(π_T(xₜ₊₁|x<t))] = 𝔼_x log(π_θ(x))/π_T(x)$, 正好是精确的 KL 定义, 和 miniLLM 是严格一样的.
 - 梯度: 既然loss 和minillm 一样, 那么梯度就不是个简单的了. blog 没细说, 从所提供的code:
   * 梯度 = -∑ₜ Aₜ ∇logπ_θ(yₜ); Aₜ = -reverse_kl=log π_{teacher}(yₜ)-log π_{student}(yₜ)
@@ -237,25 +237,40 @@ rev-KL 好处:
   * 对应到 miniLLM, 其实就是miniLLM 的梯度 single term, 也就是没看 long term
     * 作者说: singer term 这样, 只看下一个token, 而不看更多steps, 就够了——看更多没发现收益. 另外只看下一token, 所以可以 partial rollout，不必等回答完整写完。
 
-实现:
-- 是要嵌入已有的 RL 框架的. 所以实现只需改一行：在 RL 代码里设 advantages = -reverse_kl，配合重要性采样的 loss。
+**具体实现:**
 
-没做的部分：全词表或 top-k 的 logit 蒸馏；把逐 token 奖励和整句的环境奖励结合起来。后来 DeepSeek-V4 和 MiMo 分别补上了这两点。
-为啥改一句 code 就行
+是可以嵌入已有的 RL 框架的, 实现只需改一行：在 RL 代码里设 advantages = -reverse_kl，配合重要性采样的 loss。
+- 各家 OPD, 实际操作时, 都是 student 采样出完整的 trajector y. 如果只看一个token, 则是只看y[t]. 这时候天然和原 RL 框架兼容. 如果做 top-k 或者 全词表, 则是会对采样出的 y[:t], 看t位置的所有或topK候选, 这时候原 RL 框架就不能直接用了(deepseek-v4 选择用全 token, 毕竟方差小, 于是需要工程实现能跟上).
 
-局限
+**局限**
 - 学生必须本来就有一定概率做出老师的行为，所以前面仍然需要 mid-training 或 SFT 打底。
 - mode-seeking：学生只会学到老师的一种行为，而不是老师的完整分布。
 
+### 其他
+
+这个 blog 在呼应 minillm 之外, 主要在于点明, 不需要考虑 mini llm 的 long 项. 只看single 项时, 对t位置, 有三种选择:
+- 只看 student 的当前采样的 token
+- 看该位置全词表
+- 看该位置全词表的 teacher logit 的top-k
+
+对应下图:
+
+<img width="400" alt="image" src="https://github.com/user-attachments/assets/74d26bbc-a332-4a04-bca6-071e85bde562" />
+
+该blob 只是常识了第一种. 后来的 DeepSeek-V4 和 MiMo 分别试了后两点。
+
 ## 小米 MOPD 2026.06
 
-MOPD 的loss 除了长度 normaliza 项外, 其实和 miniLLM 的 loss 一模一样(但是形式有转化, 见上面). 看上文, miniLLM 的loss 另一转化形式所得到的 single term, 可以完美浮现出 MOPD loss 的梯度式(见“另一个角度看 single 与 long 分解” 一节).
+MOPD 的loss 除了长度 normaliza 项外, 其实和 miniLLM 的 loss 一模一样(但是形式有转化, 见上面). 看上文, miniLLM 的loss 另一转化形式所得到的 single term, 可以完美浮现出 MOPD loss 的梯度式.
 
 mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
 
-<img width="1340" height="780" alt="image" src="https://github.com/user-attachments/assets/5cc8e75c-20d1-44c9-ae3b-89179f73bf02" />
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/5cc8e75c-20d1-44c9-ae3b-89179f73bf02" />
 
 ## deepseek-v4 2026.06 https://arxiv.org/pdf/2606.19348
 
 不同专家的 KL 加权和: L_OPD(𝜃) = ∑︁ᴺᵢ₌₁ wᵢ· KL(𝜋𝜃 ∥ 𝜋_{expertᵢ}
 
+## kimi-k3
+
+就是 MOPD 原文方法. 

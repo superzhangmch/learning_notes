@@ -124,6 +124,10 @@ miniLLM 的 loss, 其实可以转成另一种形式: $KL(q||p) = ∑ₜ E_{y<t} 
 
 然后: $∑ₜ [E_{y<t} KLₜ(y<t)] = ∑ₜ ∑_{y<t} q_θ(y<t) KLₜ(y<t)$ ⇒ $∇(∑ₜ ∑_y q⋅KLₜ) = ∑ₜ ∑_y(∇q⋅KLₜ) + ∑ₜ ∑_y(q⋅∇KLₜ) = long + single$
 
+上面为啥 ∑ₜ ∑_y(q⋅∇KLₜ) == single, 见下文.
+
+注意: single 项反推出的loss, 其实就是把原 loss 中 E_{y~q_θ} 的采样分布中的参数θ不求导. 所以下文说到只用 single, 就是不关心采样分布中的参数.
+
 #### (1) single term
 
 $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KLₜ) = ∑ₜ ∑_{y<t}(q(y<t)⋅∇KLₜ) = ∑ₜ E_{y<t} ∇KLₜ = -∑ₜ E_{y<t}(∇E_{yₜ}rₜ) == -E_y ∑ₜ (∇E_{yₜ}rₜ) = single_term$, 注意 KLₜ == -E_{yₜ}rₜ
@@ -137,8 +141,8 @@ $∑ₜ ∑_y(q⋅∇KLₜ)$ 正是 single term. 因为 $∑ₜ ∑_y(q⋅∇KL�
                                        //            于这个前缀本身的概率，因此遍历完整序列和遍历前缀得到的数一样.
 ```
 
-注意: $∇KLₜ = Eᵥ ∇log(q)⋅log(q/p)$ => single_term= $-E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = -E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而后者正是 MOPD 的梯度更新世.
-- 因为: $∇KLₜ = ∑ᵥ∇q(v)⋅log[q(v|y<t)/p(v|y<t)]$ == $∑ᵥ∇q(v)⋅log(q/p)=∑ᵥq(v) ∇log(q)⋅log(q/p)$ = $Eᵥ ∇log(q)⋅log(q/p)$, 所以: single_term=$∑ₜ ∑_y(q⋅∇KLₜ) = E_y ∑ₜ ∇KLₜ$ = $E_y ∑ₜ (Eᵥ ∇log(q(v))⋅log(q(v)/p(v))$ = $-E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)]$. 注意神奇一点: 可以把 Eᵥ 去掉(背后逻辑, 和 miniLLM 一文 (25) => (26) 中的 E_yₜ 的可有可无是一个道理, 本质是不同的遍历的差异!), 而精确得到: single_term=$-E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = -E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而这正是 MOPD 的梯度更新世.
+注意: $∇KLₜ = Eᵥ ∇log(q)⋅log(q/p)$ => single_term= $-E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = -E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而后者正是 MOPD 的梯度更新式.
+- 因为: $∇KLₜ = ∑ᵥ∇q(v)⋅log[q(v|y<t)/p(v|y<t)]$ == $∑ᵥ∇q(v)⋅log(q/p)=∑ᵥq(v) ∇log(q)⋅log(q/p)$ = $Eᵥ ∇log(q)⋅log(q/p)$, 所以: single_term = $∑ₜ ∑_y(q⋅∇KLₜ) = E_y ∑ₜ ∇KLₜ$ = $E_y ∑ₜ (Eᵥ ∇log(q(v))⋅log(q(v)/p(v))$ = $-E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)]$. 注意神奇一点: 可以把 Eᵥ 去掉(背后逻辑, 和 miniLLM 一文 (25) => (26) 中的 E_yₜ 的可有可无是一个道理, 本质是不同的遍历的差异!), 而精确得到: single_term= $-E_y ∑ₜ Eᵥ[∇log(q(v|y<t))⋅rₜ(v|y<t)] = -E_y ∑ₜ [∇log(q(yₜ|y<t))⋅rₜ(yₜ|y<t)]$, 而这正是 MOPD 的梯度更新式.
 
 #### (2) long term
 
@@ -204,6 +208,8 @@ s            a₃₄,  ...,  a₃ₙ
 
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/0defeb74-656b-4687-8605-8c9c86a3b881" />
 
+一点注意: 这里列出 loss 与梯度的各种形式; 实际用到的时候, 只需要定义好loss, 怎么求梯度, 用训练框架的自动微分做的. 所以梯度形式其实只是为了说明, 它是什么样子.
+
 ----
 
 ## thinkingmachines blog: OPD 2026.01
@@ -231,11 +237,11 @@ rev-KL 好处:
 
 loss
 - loss：KL(π_student ‖ π_teacher) := $KL(π_θ ‖ π_T)=𝔼_{x∼π_θ} [log(π_θ(xₜ₊₁|x[:t]))/(π_T(xₜ₊₁|x[:t]))]$, 这个从 blog 直接扣取来的 loss 只算是示意性质的. 补充后应该是 $𝔼_x ∑ₜ [log(π_θ(xₜ₊₁|x<t))/(π_T(xₜ₊₁|x<t))] = 𝔼_x log(π_θ(x))/π_T(x)$, 正好是精确的 KL 定义, 和 miniLLM 是严格一样的.
-- 梯度: 既然loss 和minillm 一样, 那么梯度就不是个简单的了. blog 没细说, 从所提供的code:
-  * 梯度 = -∑ₜ Aₜ ∇logπ_θ(yₜ); Aₜ = -reverse_kl=log π_{teacher}(yₜ)-log π_{student}(yₜ)
-  * 后来的 MOPD 的梯度, 和他的形式一模一样. 那么怎么来的, 看下面 MOPD 讲解
-  * 对应到 miniLLM, 其实就是miniLLM 的梯度 single term, 也就是没看 long term
-    * 作者说: singer term 这样, 只看下一个token, 而不看更多steps, 就够了——看更多没发现收益. 另外只看下一token, 所以可以 partial rollout，不必等回答完整写完。
+- 实际loss: 从所提供的 code, 更新的梯度是:
+  * 梯度 = -∑ₜ Aₜ ∇logπ_θ(yₜ); Aₜ = -reverse_kl=log π_{teacher}(yₜ)-log π_{student}(yₜ), 这说明实际用的 fwd loss, 并不是精确等于 KL. 
+    * 后来的 MOPD 的梯度, 和他的形式一模一样. 那么怎么来的, 看下面 MOPD 讲解
+    * 对应到 miniLLM, 其实就是miniLLM 的梯度 single 项, 也就是没看 long 项
+      * 作者说: singer term 这样, 只看下一个token, 而不看更多steps, 就够了——看更多没发现收益. 另外只看下一token, 所以可以 partial rollout，不必等回答完整写完。
 
 **具体实现:**
 
@@ -257,7 +263,12 @@ loss
 
 <img width="400" alt="image" src="https://github.com/user-attachments/assets/74d26bbc-a332-4a04-bca6-071e85bde562" />
 
-该blob 只是常识了第一种. 后来的 DeepSeek-V4 和 MiMo 分别试了后两点。
+该blob 只是尝试了第一种. 后来的 DeepSeek-V4 和 MiMo 分别试了后两点。
+
+再次说明: 这个梯度, 只是说希望怎么更新参数. 而训练用的是自动微分, 所以fwd loss 是需要从这个反推的. 
+- 全词表来说: loss = -E_{y~q_θ} ∑ₜ KLₜ, 其中对于 E 的采样分布的 θ 不求梯度.
+- topK 词表: loss = E_y ∑ₜ ∑_{v ∈ topK} q log(q/p), 其中对于 E的采样分布的 θ 也不求梯度.
+- 单 token 版: loss = E_y ∑ₜ (stop_gradient[log(q/p)]⋅log(q)), , 其中对于 E的采样分布的 θ 也不求梯度.
 
 ## 小米 MOPD 2026.06
 
@@ -267,9 +278,24 @@ mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
 
 <img width="700" alt="image" src="https://github.com/user-attachments/assets/5cc8e75c-20d1-44c9-ae3b-89179f73bf02" />
 
+### top-K
+
+MOPD 试验了 top-k:
+- 相比只看student单token, top-k 并没有带来额外的稳定性或方差降低
+- kimi-k3 也试过, 结论是 "no clear advantage in either convergence speed or final performance"；
+
 ## deepseek-v4 2026.06 https://arxiv.org/pdf/2606.19348
 
-不同专家的 KL 加权和: L_OPD(𝜃) = ∑︁ᴺᵢ₌₁ wᵢ· KL(𝜋𝜃 ∥ 𝜋_{expertᵢ}
+不同专家的 KL 加权和: L_OPD(𝜃) = ∑︁ᴺᵢ₌₁ wᵢ· KL(𝜋_𝜃 || 𝜋_{expertᵢ}
+
+另外, deepseek-v4 用了全词表法. 为此有专门的架构升级.
+- 通用优化(无论是否全词表都可以做的):
+  - 部署上的优化: 因为是有好多teacher, 一种选择时直接部署多个独立副本; 而deepseek 做法是: gpu 上排队连轴不间断做不同teacher的计算, 同时异步load 下一个teacher(实现了更少资源更大计算). 也就是: ① 老师权重放在分布式存储里按需加载，ZeRO 式分片 ② 异步加载 / 卸载，不阻塞主计算,
+  - 每个样本是有自己的 teacher 归属的, 所以可以batch 内, 同一个 teacher 的sample 挨着, 这样: teacher 可以批量计算, 更高效
+- 专门给全词表做的优化:
+  - teacher 计算的最后一层的 hidden state 要 cache: teacher 的全词表logit 太大, 所以cache hidden state 更好. forward/backward 都需要用到teacher 的logit, 所以有必要cache. 对于单token版: teacher logit 只用于fwd 时算 advantage, 所以不需要cache
+  - KL计算优化: 专用 TileLang kernel 算老师和学生 logits 之间的精确 KL：加速，并减少动态内存分配。
+    - loss = -E_{y~q_θ} ∑ₜ KLₜ (其中对于 E的采样分布的θ不求梯度), 所以fwd 需要求KL
 
 ## kimi-k3
 

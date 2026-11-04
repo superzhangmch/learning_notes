@@ -1,3 +1,10 @@
+当前(2026年) LLM post-training 的套路大约是, 先对每个领域分别用 RL 做后训练, 然后把每个独立专家蒸馏到目标model上. 但是不再用典型的那种老师给出答案与 logit 的手把手蒸馏, 而是用 OPT: 学生自己采样, 老师告诉学生在每一token最佳采样分布是怎样的.
+
+- OPT 蒸馏发展过程中的两个重要关节点是: 2023年的 mini-LLM(它详细阐述了 loss 与 梯度怎么搞); 2026.01 的 thinkingmachines 的 blog(指出 mini-LLM 的简化版本就很有效).
+- 多专家做 OPD: 小米的MiMo-V2-Flash首先引入(并总结成了 MOPD 一文), 后来 kimi-k3, deepseek-v4 都用到了该法.
+
+----
+
 # Multi-teacher On-Policy Distillation (MOPD)
 
 - 《MOPD: Multi-Teacher On-Policy Distillation for Capability Integration in LLM Post-Training》 小米 https://arxiv.org/abs/2606.30406

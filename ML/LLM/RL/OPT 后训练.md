@@ -200,7 +200,7 @@ s            a₃₄,  ...,  a₃ₙ
 
 ### 总结 & 回看
 
-下面总结了 KL loss, 以及梯度/single项 的各种形式(相关推导看上文):
+下面总结了 KL loss, 以及梯度/single项 的各种形式(相关推导看上文; thinkingmachines, mopd, kimi, deepseek 都可从下面得到):
 
 <img width="700" alt="image" src="https://github.com/user-attachments/assets/0defeb74-656b-4687-8605-8c9c86a3b881" />
 

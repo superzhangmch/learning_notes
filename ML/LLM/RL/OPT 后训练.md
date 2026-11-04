@@ -247,7 +247,7 @@ MOPD 的loss 除了长度 normaliza 项外, 其实和 miniLLM 的 loss 一模一
 
 mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
 
-<img width="750" alt="image" src="https://github.com/user-attachments/assets/f88cb9b0-b6c0-45bb-b5ea-7f71a95a5baf" />
+<img width="1340" height="780" alt="image" src="https://github.com/user-attachments/assets/5cc8e75c-20d1-44c9-ae3b-89179f73bf02" />
 
 ## deepseek-v4 2026.06 https://arxiv.org/pdf/2606.19348
 

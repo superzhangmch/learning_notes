@@ -286,9 +286,9 @@ MOPD 试验了 top-k:
 
 **top-K 的 loss 为啥需要调整项:**
 
-对 loss = $E_y ∑ₜ ∑_{v ∈ topK} [q_θ log(q_θ/p)]$, 因 $[q_θ log(q_θ/p)]' = q‘(log(q/p) + 1)= q'log(q/p)+q'$, 所以 $∇loss = E_y ∑ₜ ∑_{v ∈ topK} q‘(log(q/p) + 1)$, 在 $q_θ = p$ 点, loss 未必是最小值, 因为 ∇loss = E_y ∑ₜ ∑_{v ∈ topK} q‘, 难以保证是0梯度. 这不好. 
+对 loss = $E_y ∑ₜ ∑_{v ∈ topK} [q_θ log(q_θ/p)]$, 因 $[q_θ log(q_θ/p)]' = q‘(log(q/p) + 1)= q'log(q/p)+q'$, 所以 $∇loss = E_y ∑ₜ ∑_{v ∈ topK} q‘(log(q/p) + 1)$, 在 $q_θ = p$ 点, loss 不满足极小值必要条件(梯度为0; 虽然梯度为0, 也不见得最小): ∇loss = E_y ∑ₜ ∑_{v ∈ topK} q‘, 难以保证是0梯度. 这不好. 注意 loss 从 minillm 的 single 项出发的, 求导不需要对 E_y 的分布求导. 
 
-引入 adjsut 后, $loss = E_y ∑ₜ ∑_{v ∈ topK} [q_θ log(q_θ/p) - q_θ + p]$, 则 ∇loss = $E_y ∑ₜ ∑_{v ∈ topK} [q‘(log(q/p) + 1) - q']=E_y ∑ₜ ∑_{v ∈ topK} [q‘(log(q/p)]$, 在 q_θ = p 点, ∇loss==0. 保证了优化目标处是极小值. 这就是为啥有 -q_θ 来调整. 至于 还有 p 从而最终调整项是 -q_θ+p, 是为了让 loss value 别大变, 毕竟 q_θ -> p时, -q_θ+p-> 0.
+引入 adjsut 后, $loss = E_y ∑ₜ ∑_{v ∈ topK} [q_θ log(q_θ/p) - q_θ + p]$, 则 ∇loss = $E_y ∑ₜ ∑_{v ∈ topK} [q‘(log(q/p) + 1) - q']=E_y ∑ₜ ∑_{v ∈ topK} [q‘(log(q/p)]$, 在 q_θ = p 点, ∇loss==0. 保证了优化目标处满足极小值的必要条件. 这就是为啥有 -q_θ 来调整. 至于 还有 p 从而最终调整项是 -q_θ+p, 是为了让 loss value 别大变, 毕竟 q_θ -> p时, -q_θ+p-> 0.
 
 ## deepseek-v4 2026.06 https://arxiv.org/pdf/2606.19348
 

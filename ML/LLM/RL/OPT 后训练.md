@@ -265,16 +265,16 @@ loss
 
 该blob 只是尝试了第一种. 后来的 DeepSeek-V4 和 MiMo 分别试了后两点。
 
-再次说明: 这个梯度, 只是说希望怎么更新参数. 而训练用的是自动微分, 所以fwd loss 是需要从这个反推的. 
-- 全词表来说: loss = -E_{y~q_θ} ∑ₜ KLₜ, 其中对于 E 的采样分布的 θ 不求梯度.
-- topK 词表: loss = E_y ∑ₜ ∑_{v ∈ topK} q log(q/p), 其中对于 E的采样分布的 θ 也不求梯度.
-- 单 token 版: loss = E_y ∑ₜ (stop_gradient[log(q/p)]⋅log(q)), , 其中对于 E的采样分布的 θ 也不求梯度.
+再次说明: 这个梯度, 只是说希望怎么更新参数. 而训练用的是自动微分, 所以fwd loss 是需要从这个目标梯度反推的. 
+- 全词表来说: $loss = -E_{y~q_θ} ∑ₜ KLₜ$, 注意对于 E 的采样分布的 θ 不求梯度.
+- topK 词表: $loss = E_y ∑ₜ ∑_{v ∈ topK} q log(q/p)$, 其中对于 E的采样分布的 θ 也不求梯度.
+- 单 token 版: $loss = E_y ∑ₜ (sg[log(q/p)]⋅log(q))$, 其中 sg=stop_gradient, 且对于 E的采样分布的 θ 也不求梯度.
 
 ## 小米 MOPD 2026.06
 
 MOPD 的loss 除了长度 normaliza 项外, 其实和 miniLLM 的 loss 一模一样(但是形式有转化, 见上面). 看上文, miniLLM 的loss 另一转化形式所得到的 single term, 可以完美浮现出 MOPD loss 的梯度式.
 
-mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
+mopd 的 loss $L^{PG}_{MOPD}(𝜃)$, 是根据梯度式倒推出来的而已.
 
 <img width="700" alt="image" src="https://github.com/user-attachments/assets/5cc8e75c-20d1-44c9-ae3b-89179f73bf02" />
 
@@ -283,6 +283,12 @@ mopd 的 L^{PG}_{MOPD}(𝜃) loss, 是根据梯度式倒推出来的而已.
 MOPD 试验了 top-k:
 - 相比只看student单token, top-k 并没有带来额外的稳定性或方差降低
 - kimi-k3 也试过, 结论是 "no clear advantage in either convergence speed or final performance"；
+
+top-K 的 loss 为啥需要调整项:
+
+对 loss = $E_y ∑ₜ ∑_{v ∈ topK} [q_θ log(q_θ/p)]$, 因 $[q_θ log(q_θ/p)]' = q‘(log(q/p) + 1)= q'log(q/p)+q'$, 所以 $∇loss = E_y ∑ₜ ∑_{v ∈ topK} q‘(log(q/p) + 1)$, 在 $q_θ = p$ 点, loss 未必是最小值, 因为 ∇loss = E_y ∑ₜ ∑_{v ∈ topK} q‘, 难以保证是0梯度. 这不好. 
+
+引入 adjsut 后, $loss = E_y ∑ₜ ∑_{v ∈ topK} [q_θ log(q_θ/p) - q_θ + p]$, 则 ∇loss = $E_y ∑ₜ ∑_{v ∈ topK} [q‘(log(q/p) + 1) - q']=E_y ∑ₜ ∑_{v ∈ topK} [q‘(log(q/p)]$, 在 q_θ = p 点, ∇loss==0. 保证了优化目标处是极小值.
 
 ## deepseek-v4 2026.06 https://arxiv.org/pdf/2606.19348
 

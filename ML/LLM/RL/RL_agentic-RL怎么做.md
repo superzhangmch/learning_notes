@@ -31,6 +31,8 @@ Kimi K3（§ 在 RL 的 Algorithm 段）
 - 所以一条长轨迹天然跨好几轮。原文承认这带来数据陈旧，称之为"extreme off-policy regime"。
 - 处理方式是算法本身容忍：不关心是否是新还是旧, 对于旧的, log-ratio 可能会大, 于是自然打压.
 
+<img width="750" alt="image" src="https://github.com/user-attachments/assets/b09bda5a-7218-4807-b66b-b58caf58d7da" />
+
 DeepSeek-V4.1-Flash（§5.2）
 - 采样和训练同机分时：训练一开始，在跑的 rollout 被抢占（token 级中断，任意 token 边界都能停）。
 - 续跑不重算：每个 token 的 KV cache 和 expert routing 都持久化。新检查点上线后，直接复用这些状态，从中断处继续生成。

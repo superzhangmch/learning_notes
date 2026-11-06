@@ -20,4 +20,6 @@ agentic RL 做法：先让模型与环境交互，直到结束（自行收尾，
 
 ----
 
-### 假如有一个 agent 有大量的用户真实数据, 怎么用于 agentic RL training?
+### 假如有一个 agent 的大量的用户真实数据, 怎么用于 agentic RL training?
+
+这类数据用于 SFT 可以理解, 如果用于 RL, 没那么简单: 一者 RL 一般是需要当场用 training 中的model 现采样的; 如果是 GRPO 系列的 RL, 那都是要 sample N 个的(对 grpo, 铁定不能用真实数据). 

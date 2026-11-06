@@ -23,3 +23,9 @@ agentic RL 做法：先让模型与环境交互，直到结束（自行收尾，
 ### 假如有一个 agent 的大量的用户真实数据, 怎么用于 agentic RL training?
 
 这类数据用于 SFT 可以理解, 如果用于 RL, 没那么简单: 一者 RL 一般是需要当场用 training 中的model 现采样的; 如果是 GRPO 系列的 RL, 那都是要 sample N 个的(对 grpo, 铁定不能用真实数据). 
+
+真实采集的用户数据, 也就可以用于这几种:
+- (1). train reward mode, 或搞出 reward rule
+- (2). 做 DPO/KTO 或者 SFT train
+- (3). RL 的 task 来源
+- (4). 评测集：用真实的分布和失败案例，用 trained model 来做 replay, 看看问题是否解决

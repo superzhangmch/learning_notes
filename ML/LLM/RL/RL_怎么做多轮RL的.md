@@ -1,3 +1,5 @@
+参考 https://github.com/superzhangmch/learning_notes/blob/main/ML/LLM/RL/RL_agentic-RL%E6%80%8E%E4%B9%88%E5%81%9A.md
+
 ### LLM 多轮训练怎么做的, 怎么模拟的
 
 - 在多轮对话 RL 中，如果直接回放真实对话日志，当新模型在早期就回答正确时，原日志里后续“用户纠正”的轮次就会变得不合理；那工业界到底是如何利用真实多轮对话数据训练模型的？

@@ -43,6 +43,9 @@ DeepSeek-V4.1-Flash（§5.2）
   b. mask old: 训练时用 loss mask，把陈旧程度过高的 token 的贡献去掉。这是 token 级的判断，不是整条丢弃。
 - 长度偏差也被明确提出：短样本先完成，会主导早期的 batch。对策是按数据集限制并发，以及丢掉早期过快返回的短样本。
 
+需要注意的: 
+- rollout server 的推理精度如果和training server 的精度不同, 本身也有偏差(于是同一个分布的 log-ratio 天然就对得不齐).
+
 ----
 
 ### 假如有一个 agent 的大量的用户真实数据, 怎么用于 agentic RL training?

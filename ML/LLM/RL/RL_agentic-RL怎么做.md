@@ -22,7 +22,7 @@ agentic RL 做法：先让模型与环境交互，直到结束（自行收尾，
 
 长 rollout 可能需要很长时间, trainer 的两个 batch 之间的训练时间, 肯定不能是 max{rollout time of the samples in the batch}. 固然可以把长 rollout sample 直接丢掉, 这样有个问题是, model 就解决不了长运行的复杂问题了.
 
-现实中, 一般是容忍长 rollout 跨越多次rollout server 的多次参数更新. 但是在traiing loss 上做文章: kimi-k3 用了 per-token log-ratio clip 以及正则, deepseek-v4.1 用了对过老的前缀不算loss.
+现实中, 一般是容忍长 rollout 跨越多次rollout server 的多次参数更新. 但是在traiing loss 上做文章: kimi-k3 用了 per-token log-ratio clip, deepseek-v4.1 用了对过老的前缀不算loss.
 
 Kimi K3（§ 在 RL 的 Algorithm 段）
 - partial rollout：每轮采样 $N$ 个 prompt × $K$ 条，维持 $N\times K$ 条在跑。完成比例达到 $\lambda$ 就暂停生成，开始训练，不等拖尾的。

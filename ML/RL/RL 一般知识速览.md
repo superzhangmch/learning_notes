@@ -2,7 +2,9 @@
 
 ### (1). 区别
 
-不是说是否只需要查表, 不需要带参数的 model. 而是关于 state+action => next_state怎么获得: 是用 model 预估, 还是直接看 env 的直接反馈.
+不是说是否只需要查表, 不需要带参数的 model. 而是关于 state+action => next_state (也就是 env 怎么反应)怎么获得: 是用 model 预估, 还是直接看 env 的直接反馈.
+
+note: 环境模型很难学准, 需额外引入一个要训练的模型, 而很多 env 本身就很快, 所以绝大多数实践场景用 model-free. 
 
 model-free/model-based 和"是否用复杂model"是正交的:
 ```

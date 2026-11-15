@@ -107,8 +107,13 @@ Q(s, a)
 
 ### (5). 怎么构建 loss 并 train 起来
 
-几种方式train: TD(0), MC, TD(n)
+几种方式train: TD(0), MC, TD(n). 三种方式的差异在于 target 怎么弄出.
 
+核心思想:
+- TD(0): 走 1 步真实 r, 然后立刻 bootstrap
+- MC:    走完整个 episode, 全是真实 r
+- TD(n): 走 n 步真实 r, 然后 bootstrap. 介于TD(0) 与 MC 两者之间
+  
 #### (a). TD(0)
 
 V(s) 的 TD(0)
@@ -130,18 +135,45 @@ Q(s,a) 的 TD(0)
 
 V 和 Q 的 TD(0) 结构几乎一样，核心差异是 Q 的 target 里多了一个 max 操作，这个 max 在连续动作空间做不到，这就是为什么连续动作必须上 Actor。
 
-#### (b). TD(n)
-
-#### (c). MC 蒙特卡洛
+#### (b). MC 蒙特卡洛
 
 - 采样一条完整 trajectory: (s₀,a₀,r₀), (s₁,a₁,r₁), ..., (sᵀ,aᵀ,rᵀ)
 - 每个时间步的 target: yₜ = rₜ + γrₜ₊₁ + γ²rₜ₊₂ + ... + γᵀ⁻ᵗrᵀ
 - Loss:
   - V(s) 学习: L = Σₜ (yₜ - V(sₜ; θ))²
   - Q(s,a) 学习: L = Σₜ (yₜ - Q(sₜ, aₜ; θ))²
-  - y_t 只是由实际 roll out trajectory 的 reward 决定, 不需要 V/Q 网络参与
+  - yₜ 只是由实际 roll out trajectory 的 reward 决定, 不需要 V/Q 网络参与
 
 MC 的 V 和 Q 用完全相同的 target（真实 reward sum），差别只是 loss 中的V/Q项, 表示建模了不同的东西. 
+
+是从开局开始, sample 完整 trajectory, 然后用好多完整的trajectory 来train? 还是在每个 state s: 采样多个 sub-trajectory, 从而学好这个 s?
+- 现实中一般是前者. 实践中是采样多条完整 trajectory 攒成 batch 来训练，不是对每个 s 单独采样多条 sub-trajectory，因为 env 很难任意 reset 到指定状态。
+
+#### (c). TD(n)
+
+V(s) 的 TD(n)
+- 采样 n 步: (s₀,a₀,r₀), (s₁,a₁,r₁), ..., (sₙ,aₙ,rₙ)
+  - 从 s₀,a₀ 出发采样n步, 只需要做一次(剩余的不确定性由 V(sₙ) 来处理), 而不用搞多个 n-step-trajectory
+- Target: y = r₀ + γr₁ + γ²r₂ + ... + γⁿ⁻¹rₙ₋₁ + γⁿV(sₙ; θ_old)
+  - 和 TD(0)一样, 要用老版本的 V来辅助估计 target
+- Loss: L = (y - V(s₀; θ))²
+
+Q(s,a) 的 TD(n)
+- 采样 n 步: (s₀,a₀,r₀), (s₁,a₁,r₁), ..., (sₙ,aₙ,rₙ)
+- Target: y = r₀ + γr₁ + ... + γⁿ⁻¹rₙ₋₁ + γⁿ max_{a'} Q(sₙ, a'; θ_old)
+  - 和 TD(0) Q 一样, 多了 max 操作
+- Loss: L = (y - Q(s₀,a₀; θ))²
+
+#### (d). 对比
+
+```
+              偏差 (Bias)    方差 (Variance)            
+TD(0)         高             低
+TD(n)         中             中
+MC            无偏           高
+```
+
+TD(0) y = r + γV(s'; θ_old), 用 V 来估计, 导致 y 的bias大. 而 MC 真做一遍, 所以bias 小. 但是 MC 的每一步都有随机, 所以方差大.
 
 ----
 

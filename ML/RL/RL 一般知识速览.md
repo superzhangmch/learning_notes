@@ -36,7 +36,7 @@ Policy-Based:
 
 ----
 
-## Q(s, a), V(s)
+## Value-Based: Q(s, a), V(s)
 
 ### (1). 定义
 V(s)
@@ -179,7 +179,7 @@ MC            无偏           高
 
 TD(0) y = r + γV(s'; θ_old), 用 V 来估计, 导致 y 的bias大. 而 MC 真做一遍, 所以bias 小. 但是 MC 的每一步都有随机, 所以方差大.
 
-## 策略梯度: REINFORCE -> actor_critic
+## Policy-Based: 策略梯度, REINFORCE, actor_critic
 
 ### (1). Policy Gradient
 

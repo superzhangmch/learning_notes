@@ -206,7 +206,7 @@ REINFORCE 中:
 于是引入 Baseline 技巧: ∇θ J = Σₜ ∇θ log π(aₜ|sₜ) · (Gₜ - baseline(sₜ))
 - 减去 baseline 不影响梯度期望, 但降低方差:
 - baseline(sₜ) 通常取 V(sₜ) → Gₜ - V(sₜ) ≈ A(sₜ,aₜ), 也就是所谓的 Advantage(变成了衡量这个 action 比平均水平好多少)
-
+  - 另外 LLM 后训练的 GRPO, 唯了简化 advantage, 用多次采样的均值当作 V 的估计, 从而省去了 V 网络. 乃后话.
 上面这样引入了 Value 估计(乃 value-based 方法), 于是有了 policy-based(策略梯度) 和 value-based(V估计) 结合的 Actor-Critic 方法: 
 
 ```

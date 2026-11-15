@@ -47,9 +47,12 @@ Q(s, a)
 - Q(s,a) = 在状态 s, 执行动作 a, 之后按策略 π 走下去的累计折扣 reward 期望
 - Q(s,a) = E[ r₀ + γr₁ + γ²r₂ + ... | s₀=s, a₀=a, 之后按π ]
 
-两个名词解释:
+名词解释:
 - Q-learning:学习 Q(s, a),用表格存储,按公式逐项更新。
 - DQN:同样学习 Q(s, a),但用神经网络来近似,通过梯度下降训练。
+- DDPG(Deep Deterministic Policy Gradient): 解决的是连续动作空间问题。它本质上是一种 Q 学习(虽然是很不同流派):
+  - Q-Learning: 策略 = argmax_a Q(s,a)
+  - DDPG: 与它类似, 只是 argmax_a Q(s,a) 换成 Actor μ(s) => max Q(s, μ(s))
 
 ### (2). 怎么建模他们: 既可以是查表法, 也可以是神经网络拟合
 - 查表: 只适用于 state 空间有限且小的情况
@@ -259,6 +262,38 @@ PPO
 ```
 
 一句话: REINFORCE 是 MC + Policy Gradient，简单但方差大；Actor-Critic 用 Critic 的 TD error 替换 MC 的 Gₜ，每步都能更新且方差更低，代价是引入了 bootstrap 的偏差。
+
+----
+
+## 确定性策略优化: DDPG
+
+解决连续动作空间问题
+
+```
+两个完全独立的network:
+  1. Q(s, a) -> q_val
+  2. μ(s) -> action val(连续取值)
+
+loop:
+  1. Actor 和 env 交互, 收集 (s, a, r, s')
+     a = μ(s; φ) + 噪声     ← 加噪声探索
+     存入 Replay Buffer
+  2. 从 Buffer 采样 mini-batch
+  3. 更新 Q 网络(这一步和一般 q 学习基本一模一样)
+     y = r + γ · Q(s', μ(s'; φ⁻); θ⁻)   // θ⁻, φ⁻, 网络的旧参数
+     L = (y - Q(s,a; θ))²
+     梯度更新 θ
+
+  4. 更新 Actor(把能令Q最大的 action 弄出来):
+     L_actor = -Q(s, μ(s; φ); θ)
+                    ↑
+               让 Q 尽量大
+     梯度更新 φ
+
+  5. 软更新 target 网络:
+     θ⁻ ← τθ + (1-τ)θ⁻
+     φ⁻ ← τφ + (1-τ)φ⁻
+```
 
 ----
 

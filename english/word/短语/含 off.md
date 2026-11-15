@@ -38,6 +38,7 @@
   - He always **shows off** his expensive car.（他总是炫耀自己的豪车。）  
 - **Wipe off**：擦掉，抹去  
   - She **wiped off** the dust from the table.（她擦掉了桌子上的灰尘。）  
+- **sell off**: 清仓出售、甩卖
 
 ### **表示突然发生**  
 - **Turn off**：关闭，使失去兴趣  

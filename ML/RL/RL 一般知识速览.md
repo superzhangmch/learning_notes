@@ -47,6 +47,10 @@ Q(s, a)
 - Q(s,a) = 在状态 s, 执行动作 a, 之后按策略 π 走下去的累计折扣 reward 期望
 - Q(s,a) = E[ r₀ + γr₁ + γ²r₂ + ... | s₀=s, a₀=a, 之后按π ]
 
+两个名词解释:
+- Q-learning:学习 Q(s, a),用表格存储,按公式逐项更新。
+- DQN:同样学习 Q(s, a),但用神经网络来近似,通过梯度下降训练。
+
 ### (2). 怎么建模他们: 既可以是查表法, 也可以是神经网络拟合
 - 查表: 只适用于 state 空间有限且小的情况
   - V(s)    → 一张大表, 每个 s 对应一个值
@@ -174,6 +178,87 @@ MC            无偏           高
 ```
 
 TD(0) y = r + γV(s'; θ_old), 用 V 来估计, 导致 y 的bias大. 而 MC 真做一遍, 所以bias 小. 但是 MC 的每一步都有随机, 所以方差大.
+
+## 策略梯度: REINFORCE -> actor_critic
+
+### (1). Policy Gradient
+
+- 目标: 最大化期望累计 reward J(θ) = E_{τ~π}[ Σ γᵗrₜ ]
+- 对 θ 求梯度: ∇θ J = E[ Σₜ ∇θ log π(aₜ|sₜ; θ) · Gₜ ]
+  - Gₜ: 从t开始的累计reward
+  - 直觉：
+    - Gₜ > 0 且大  → 这个 action 好, 增大它的概率
+    - Gₜ < 0 或小  → 这个 action 差, 减小它的概率
+
+### (2). REINFORCE - 策略梯度方法的最直接实现
+
+- 用当前策略 π 采样完整 trajectory: (s₀,a₀,r₀), (s₁,a₁,r₁), ..., (sᵀ,aᵀ,rᵀ)
+- 计算每个时间步的累计 reward: Gₜ = rₜ + γrₜ₊₁ + γ²rₜ₊₂ + ...  ← 就是 MC target
+- 更新策略: ∇θ J = Σₜ ∇θ log π(aₜ|sₜ; θ) · Gₜ
+- 本质: MC + Policy Gradient. 只有一个网络: π(a|s; θ)
+
+### (3). Actor-Critic
+
+REINFORCE 中:
+- Gₜ 方差极大:v同一个 (s,a), 不同 trajectory 的 Gₜ 差很多
+- 必须等 episode 结束:和 MC 一样的缺点
+
+于是引入 Baseline 技巧: ∇θ J = Σₜ ∇θ log π(aₜ|sₜ) · (Gₜ - baseline(sₜ))
+- 减去 baseline 不影响梯度期望, 但降低方差:
+- baseline(sₜ) 通常取 V(sₜ) → Gₜ - V(sₜ) ≈ A(sₜ,aₜ), 也就是所谓的 Advantage(变成了衡量这个 action 比平均水平好多少)
+
+上面这样引入了 Value 估计(乃 value-based 方法), 于是有了 policy-based(策略梯度) 和 value-based(V估计) 结合的 Actor-Critic 方法: 
+
+```
+REINFORCE 用 Gₜ (MC) 作为信号  → 高方差
+Actor-Critic 用 V 或 Q 来替代  → 低方差
+
+Actor:  π(a|s; θ)   学策略
+Critic: V(s; w)     学状态价值, 用来指导 Actor
+```
+
+因为取代了 MC, 所以不再需要等 episode 结束, 每步都能更新:
+```
+1. 执行一步: s, a, r, s'
+2. Critic 计算 TD error (δ):
+   δ = r + γV(s'; w) - V(s; w)
+       └──── y ───┘    └─预测─┘
+   
+   这个 δ 就是 Advantage 的估计:
+   δ ≈ A(s,a) = Q(s,a) - V(s)
+
+3. 更新 Critic:
+   L_critic = δ²
+   → 梯度更新 w
+
+4. 更新 Actor:
+   ∇θ J = ∇θ log π(a|s; θ) · δ
+   → δ 大说明这个 action 比预期好, 增大概率
+   → δ 小说明比预期差, 减小概率
+```
+
+因为是结合两种方式, 所以需要两个网络:
+```
+Actor:  π(a|s; θ)   → 输出动作概率分布
+Critic: V(s; w)     → 输出标量
+
+分开训练:
+  Critic 用 TD loss 更新 w
+  Actor 用 policy gradient + δ 更新 θ
+```
+
+关系总结:
+```
+REINFORCE
+  ↓ 加 baseline (V)
+REINFORCE with baseline  ≈  Actor-Critic 的特例
+  ↓ 把 MC 换成 TD
+Actor-Critic
+  ↓ 加 clip 限制更新幅度
+PPO
+```
+
+一句话: REINFORCE 是 MC + Policy Gradient，简单但方差大；Actor-Critic 用 Critic 的 TD error 替换 MC 的 Gₜ，每步都能更新且方差更低，代价是引入了 bootstrap 的偏差。
 
 ----
 

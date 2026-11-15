@@ -1,3 +1,39 @@
+## Value-Based vs Policy-Based
+
+核心区别
+- Value-Based:
+  - 学 Q(s,a) 或 V(s)
+  - 策略是隐式的: 选 Q 值最大的 action, π(s) = argmax_a Q(s,a)
+- Policy-Based:
+  - 直接学 π(a|s). 直接输出 action 的概率分布.
+  - 不显式学 Q(s,a) / V(s)
+
+```
+Value-Based:
+  给每个动作打分, 选分最高的
+  "这步棋价值 8 分, 那步棋价值 3 分, 选 8 分的"
+
+Policy-Based:
+  直接告诉你概率分布
+  "这步棋走 70%, 那步棋走 30%"
+  不关心具体分值
+```
+
+各自的问题, 以及怎么解决:
+- Value-Based: 连续动作空间难处理
+  - argmax_a Q(s,a) 在连续空间无法穷举
+- Policy-Based: 高方差, 样本效率低
+  - Monte Carlo 采样估计梯度, 抖动大
+- Actor-Critic:两者结合以便互补
+  - Actor  = Policy-Based  (输出动作)
+  - Critic = Value-Based   (打分, 指导 Actor)
+
+对应算法
+- Value-Based:    DQN 系列
+- Policy-Based:   REINFORCE
+- Actor-Critic:   A2C, PPO, DDPG, SAC ...
+  - Actor-Critic 是目前的绝对主流，纯 Value-Based 或纯 Policy-Based 单独用的越来越少。
+
 ## model-free vs model-based
 
 ### (1). 区别

@@ -34,6 +34,28 @@ Policy-Based:
 - Actor-Critic:   A2C, PPO, DDPG, SAC ...
   - Actor-Critic 是目前的绝对主流，纯 Value-Based 或纯 Policy-Based 单独用的越来越少。
 
+----
+
+## Q(s, a), V(s)
+
+V(s)
+- V(s) = 从状态 s 出发, 按照当前策略 π 一直走下去, 所能获得的累计 reward 的期望
+- V(s) = E[ r₀ + γr₁ + γ²r₂ + ... | s₀ = s, 按策略 π 行动 ]
+
+Q(s, a)
+- Q(s,a) = 在状态 s, 执行动作 a, 之后按策略 π 走下去的累计折扣 reward 期望
+- Q(s,a) = E[ r₀ + γr₁ + γ²r₂ + ... | s₀=s, a₀=a, 之后按π ]
+- 和 V 关系
+  * 如果 s,a 之后的 s' 是确定的:
+    - Q(s,a) = r(s,a) + γ·V(s')
+  * 如果 s,a 之后的 s' 不确定的（随机环境）: s' 是个分布: P(s'|s,a)
+    - $Q(s,a) = r(s,a) + γ · E_{s'~P}[V(s')]$
+  * Bellman 方程:
+    - $Q(s,a) = r(s,a) + γ · E_{s'}[ V(s') ]$
+    - $V(s) = E_{a~π}[ Q(s,a) ]$
+
+----
+
 ## model-free vs model-based
 
 ### (1). 区别

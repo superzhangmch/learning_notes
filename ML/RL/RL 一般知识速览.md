@@ -182,6 +182,51 @@ MC            无偏           高
 
 TD(0) y = r + γV(s'; θ_old), 用 V 来估计, 导致 y 的bias大. 而 MC 真做一遍, 所以bias 小. 但是 MC 的每一步都有随机, 所以方差大.
 
+### (6). DQN 的优化升级
+
+#### (a). double-DQN:
+
+```
+标准的 DQN:  y = r + γ · Q_target(s',  argmax Q_target(s', a'))
+Double DQN: y = r + γ · Q_target(s',  argmax Q_online(s', a'))
+```
+
+差异在于 target y 怎么构建: 构建y的时候, 需要选最佳action. 使用老参数的network来选, 还是用最新参数的来选(此即double-DQN)?
+
+#### (b). dueling-DQN:
+
+乃对 Q(s, a) 的一种特殊建模方式, 因此train 框架和没它时一模一样. 
+
+做法: 做分解 Q(s, a) = V(s) + A(s, a), 且是一个network主干, 两个预测head, 一次预测这两个分量
+- V(s)	State Value	当前状态本身的价值，与动作无关
+- A(s, a)	Advantage Function	在状态 s 下，选动作 a 相对于平均水平的优势
+
+```
+                    ┌─────────────────┐
+                    │   共享卷积/MLP   │  ← 提取状态特征
+                    │ (Shared Layers) │
+                    └────────┬────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+     ┌────────▼────────┐           ┌────────▼────────┐
+     │  Value Stream   │           │Advantage Stream │
+     │   V(s) ∈ ℝ¹     │           │  A(s,a) ∈ ℝ|A|  │
+     └────────┬────────┘           └────────┬────────┘
+              │                             │
+              └──────────────┬──────────────┘
+                             │  合并 (Aggregation)
+                    ┌────────▼────────┐
+                    │    Q(s, a)      │
+                    └─────────────────┘
+```
+
+因为有训练不稳定因素, 于是又减 avg(A): Q(s, a) = V(s) + A(s,a) - mean(A) = V(s) + ( A(s, a) - 1/|A| ∑_{a'} A(s, a') )
+- 不稳来源: Q = V + A, 那么 Q = (V+C) + (A-C) == (V-C) + (A+C), V 和 A 无法被唯一确定. 有均值后, train之后 Q ≈ V.
+  - 即强制 Advantage 的均值为 0, 这样V(s) 就能真正反映状态价值, 训练更稳定
+
+----
+
 ## Policy-Based: 策略梯度, REINFORCE, actor_critic
 
 ### (1). Policy Gradient

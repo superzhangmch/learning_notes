@@ -16,6 +16,8 @@ LLM 多轮交互中，新一轮需要把过去几轮的交互也发给llm，那�
 
 那么也就可以推测，LLM 多轮，前几轮交互在新一轮对话中，各家目前一般是不做什么 cache的。
 
+一个问题: 不说disk cache, 那么 kv-cache 是集中式的, 还是本机cache, 同样的prefix 的请求直接引导到上一次的处理 gpu? claude 系列model 算cache 过期时间的时候, 是请求start 刷新下cache 的last use time(或者说first token). 如果生成长结果时间过长, 那么也会导致cache 失效. 如此看, 至少他家, 这个cache 是在集中式的 cache server 上存的.
+
 ========
 另外：下面是 chatgpt deepResearch 的结果：
 

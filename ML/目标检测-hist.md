@@ -173,7 +173,7 @@ CNN Backbone → 特征图 → 展平为序列
  ↓
 Transformer Encoder（建立全局依赖）
  ↓
-Transformer Decoder
+Transformer Decoder: 不是自回归的, 而是并行 100 query tokens in, 100 predictions out
 （100个可学习的 Object Query）
  ↓
 匈牙利算法做二分图匹配（训练时）
@@ -181,53 +181,49 @@ Transformer Decoder
 直接输出 N 个 (类别, 坐标)
 ```
 
-- 💡 创新：
-  - **无 Anchor、无 NMS**，流程极简
+- 无 Anchor、无 NMS，流程极简
   - 全局注意力，对遮挡/关系推理更强
-- ❌ 问题：
+- 问题：
   - 训练收敛极慢（需要 500 epoch vs Faster RCNN 的 12）
   - 小目标还是弱
 
----
+### dino
 
-### Deformable DETR / DAB-DETR / DN-DETR（2021–2022）
-
-逐步解决 DETR 的收敛慢问题：
-- **Deformable DETR**：注意力只看少数关键点，快 10 倍
-- **DN-DETR**：训练时加噪声正样本，加速收敛
-- **DINO**：目前 Transformer 检测的 SOTA 基础
-
----
-
-## 🗂️ 总体演进脉络
+Transformer 检测的 SOTA 基础.
 
 ```
-手工特征时代          CNN两阶段时代            单阶段时代          Transformer时代
+给每个 Query 一个初始位置 (Reference Point)
+      ↓
+Cross-Attention 不再盲目全图搜索
+而是以 Reference Point 为中心局部attend
+      ↓
+收敛从 500 epoch → 12 epoch
+```
+
+Reference Point 怎么来: 从 Encoder 输出中选
+```
+图片
+  ↓
+Transformer Encoder
+  ↓
+输出每个位置的特征 + 显著性得分 (加一个小的分类 Head（线性层）, 每个位置输出一个显著性得分（前景/背景二分类）)
+  ↓
+取 Top-K 个显著性最高的位置
+  ↓
+这些位置坐标 → 作为 Reference Point
+初始化对应 Query 的位置先验
+```
+
+---
+
+## 总体演进脉络
+
+```
+手工特征时代          CNN两阶段时代               单阶段时代          Transformer时代
     │                     │                       │                    │
 Viola-Jones          R-CNN (2014)            YOLO v1 (2015)      DETR (2020)
  HOG+SVM             Fast R-CNN              SSD (2016)          Def-DETR(2021)
-   DPM               Faster R-CNN ◄─────►  RetinaNet(2017)      DINO (2022)
-                      (两阶段巅峰)            YOLOv3~v8          RT-DETR(2023)
-                                             (工程落地王)
+   DPM               Faster R-CNN ◄─────►    RetinaNet(2017)     DINO (2022)
+                      (两阶段巅峰)             YOLOv3~v8           RT-DETR(2023)
+                                              (工程落地王)
 ```
-
----
-
-## 💡 每一代解决的核心问题
-
-| 时代 | 核心痛点 | 解决方案 |
-|------|---------|---------|
-| R-CNN | 特征弱 | 用CNN提特征 |
-| Fast R-CNN | 重复计算 | ROI Pooling共享特征图 |
-| Faster R-CNN | Proposal慢 | RPN网络生成候选框 |
-| YOLO | 两阶段慢 | 直接回归，单次前向 |
-| RetinaNet | 正负样本失衡 | Focal Loss |
-| FPN | 多尺度弱 | 特征金字塔 |
-| DETR | Anchor/NMS繁琐 | Transformer + 集合预测 |
-
----
-
-> 🎯 **一句话总结整个历史：**
-> 每一代研究者都在问同一个问题——
-> **"上一代方法最慢/最差的那个环节，能不能用神经网络替换掉？"**
-> 替换完了，新的瓶颈出现，下一代继续替换，就这样滚动到了今天。

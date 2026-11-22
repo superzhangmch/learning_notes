@@ -2,7 +2,7 @@
 
 深度学习之后的发展历史. 
 
-## R-CNN 系列
+## R-CNN 系列: 两阶段(选框+判断)
 
 ### (1). R-CNN（2014）: 深度学习只负责特征提取
 
@@ -21,46 +21,31 @@ SVM 分类 + 线性回归修正坐标
 - Selective Search: 本身不走深度学习 Model，它是一个纯传统计算机视觉算法，基于图像的底层特征（颜色、纹理、尺寸、形状等）来生成候选区域（Region Proposals）。
 - R-CNN 里深度学习只负责特征提取，分类和回归都是传统方法。
 
-### (2). Fast R-CNN（2015）: 仍然依赖于 rule based selective search
+### (2). Fast R-CNN（2015）: 仍然依赖于selective search(rule based)
 
-一次 cnn 得到feature map; 同时在原图上做 selective search, 得到好多候选; 然后对每个候选: 
+做一次 cnn 网络得到feature map; 同时在原图上做 selective search, 得到好多候选; 然后对每个候选: 
 - 在 feature map 上映射, 得到这个候选 box 的feature sub-region, 经过 ROI Pooling, 就能获得固定大小的表示(无论候选多大), 然后就可以经过一定网络做分类/回归.
-  - ROI Pooling：任意大小的候选框 → 固定大小特征
+  - ROI Pooling：对任意大小的候选框, 在feature 上映射截取, 再弄成固定大小, 方便接 FC
+    - ROI = Region of Interest
   - 可以端到端训练，Loss = 分类Loss + 回归Loss
+    - 分类（是什么）+ 回归(定位, 在哪里）
 - 瓶颈在 Selective Search
 
 ### (3). Faster R-CNN（2015）
 
-候选框也用神经网络来生成
+借助 RPN, 用神经网络来生成候选框:
+- RPN（Region Proposal Network）：遍历画面的每个位置(通过feature-map), 每个位置看k个框
+  - feature map 上每个点 → 预设 k 个 Anchor（不同尺度/比例）
+  - 每个 Anchor 预测：
+    - 是否有物体（2分类）
+    - 坐标偏移量（4个值）
 
-```
-原图
- ↓
-Backbone (VGG/ResNet) → 共享特征图
-       ↙                    ↘
-  RPN网络                 ROI Pooling
-(生成候选框)           (用候选框截取特征)
-       ↘                    ↙
-         Detection Head
-         (分类 + 回归)
-```
+有了候选框, 仍然是用 ROI Pooling(对任意大小的候选框, 在feature 上映射截取, 再弄成固定大小, 方便接 FC), 然后做对这个候选的预测.
 
-#### RPN（Region Proposal Network）核心设计：
-```
-特征图上每个点 → 预设 k 个 Anchor（不同尺度/比例）
-每个 Anchor 预测：
-  - 是否有物体（2分类）
-  - 坐标偏移量（4个值）
-```
-
-- 💡 创新：
-  - **全程GPU**，候选框生成也是网络的一部分
-  - Anchor 机制：**预设框 + 预测偏移**，大幅降低回归难度
-  - 速度：**5 fps**，精度大幅提升
-- ❌ 问题：
-  - 两阶段，速度仍有瓶颈
-  - Anchor 超参数多（尺度/比例要手调）
-  - 小目标还是不好检
+整体上算是end2end, 但是候选框集合, 仍然是笨拙的遍历式的. "端到端"是相对SS而言的，内部训练还是有点麻烦:
+- RPN 和 检测头 共享同一个 Backbone, 但是:
+  - 早期训练是交替训练的（4步法）：1. 单独训练 RPN; 2. 用RPN结果训练检测头; 3. 再微调 RPN; 4. 再微调检测头
+  - 后来才有近似联合训练的方式
 
 ---
 
